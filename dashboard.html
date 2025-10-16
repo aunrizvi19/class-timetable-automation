@@ -26,58 +26,52 @@
             </nav>
         </aside>
 
-        <main class="main-content">
-            <header class="dashboard-header">
-                <h1>Dashboard</h1>
-                <div class="header-tools">
-                    <input type="text" placeholder="Search...">
-                    <img src="https://i.imgur.com/7D7I6dI.png" alt="User Profile" class="profile-pic">
-                </div>
-            </header>
-            
-            <section class="cards">
-                <div class="card">
-                    <h3>Total Courses</h3>
-                    <p>48</p>
-                </div>
-                <div class="card">
-                    <h3>Total Faculty</h3>
-                    <p>25</p>
-                </div>
-                <div class="card">
-                    <h3>Rooms Available</h3>
-                    <p>15</p>
-                </div>
-                <div class="card">
-                    <h3>Conflicts</h3>
-                    <p class="warning">1</p>
-                </div>
-            </section>
+       <main class="main-content">
+    <header class="dashboard-header">
+        <h1>Dashboard</h1>
+        <div class="header-tools">
+            <input type="text" placeholder="Search...">
+            <img src="https://i.imgur.com/7D7I6dI.png" alt="User Profile" class="profile-pic">
+        </div>
+    </header>
+    
+    <section class="quick-actions">
+        <button class="action-btn-quick"><a href="index.html">📅 View Timetable</a></button>
+        <button class="action-btn-quick"><a href="courses.html">＋ Add Course</a></button>
+        <button class="action-btn-quick"><a href="faculty.html">＋ Add Faculty</a></button>
+    </section>
 
-            <section class="dashboard-main">
-                <div class="chart-container">
-                    <h2>Room Occupancy by Type</h2>
-                    <canvas id="occupancyChart"></canvas>
-                </div>
-                <div class="recent-activity-container">
-                    <h2>Recent Activity</h2>
-                    <ul class="activity-list">
-                        <li>
-                            <div class="activity-icon-publish">✓</div>
-                            <p>Timetable for 'CS - Year 2' published.</p>
-                        </li>
-                        <li>
-                            <div class="activity-icon-add">＋</div>
-                            <p>New course 'CS-405' was added.</p>
-                        </li>
-                         <li>
-                            <div class="activity-icon-delete">－</div>
-                            <p>Room 203 was removed.</p>
-                        </li>
-                    </ul>
-                </div>
-            </section>
-        </main>
+    <section class="cards">
+        </section>
+
+    <section class="dashboard-main">
+        <div class="chart-container">
+            <h2>Room Occupancy by Type</h2>
+            <canvas id="occupancyChart"></canvas>
+        </div>
+        <div class="todays-schedule-container">
+            <h2>Today's Schedule</h2>
+            <ul class="schedule-list">
+                <li>
+                    <span class="time">09:00</span>
+                    <p><strong>CS-201</strong> with Dr. Grant <em>(Room 301)</em></p>
+                </li>
+                <li>
+                    <span class="time">10:00</span>
+                    <p><strong>CS-205</strong> with Dr. Sattler <em>(Lab 4)</em></p>
+                </li>
+                <li class="break">
+                    <span class="time">11:00</span>
+                    <p><strong>Lunch Break</strong></p>
+                </li>
+                 <li>
+                    <span class="time">12:00</span>
+                    <p><strong>MA-210</strong> with Dr. Malcolm <em>(Room 205)</em></p>
+                </li>
+            </ul>
+        </div>
+    </section>
+</main>
     </div>
     <script src="script.js"></script>
 </body>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Dashboard | TimeTable Pro</title> 
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>TimeTable Pro</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+					<li><a href="dashboard.html">🏠 Dashboard</a></li>
+        			<li><a href="index.html">📅 Timetable</a></li>
+					<li><a href="courses.html">📚 Courses</a></li> 
+					<li><a href="faculty.html">👩‍🏫 Faculty</a></li>
+					<li><a href="rooms.html" class="active">🚪 Rooms</a></li>
+					<li><a href="settings.html">⚙️ Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+    <h1>Manage Rooms</h1>
+    <button class="action-btn publish-btn">➕ Add New Room</button>
+</header>
+
+<section class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Room Number</th>
+                <th>Capacity</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>301</td>
+                <td>75</td>
+                <td>Lecture Hall</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Lab 4</td>
+                <td>30</td>
+                <td>Computer Lab</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+            <tr>
+                <td>205-B</td>
+                <td>50</td>
+                <td>Lecture Hall</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+            </main>
+    </div>
+    <div id="roomModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 id="modalTitle">Add New Room</h2>
+        <form id="roomForm">
+            <div class="form-group">
+                <label for="roomNumber">Room Number:</label>
+                <input type="text" id="roomNumber" required>
+            </div>
+            <div class="form-group">
+                <label for="roomCapacity">Capacity:</label>
+                <input type="number" id="roomCapacity" required>
+            </div>
+            <div class="form-group">
+                <label for="roomType">Type:</label>
+                <input type="text" id="roomType" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="action-btn publish-btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Dashboard | TimeTable Pro</title> 
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>TimeTable Pro</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+					<li><a href="dashboard.html">🏠 Dashboard</a></li>
+        			<li><a href="index.html">📅 Timetable</a></li>
+					<li><a href="courses.html">📚 Courses</a></li> 
+					<li><a href="faculty.html">👩‍🏫 Faculty</a></li>
+					<li><a href="rooms.html">🚪 Rooms</a></li>
+					<li><a href="settings.html" class="active">⚙️ Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+    <header class="main-header">
+        <h1>Settings</h1>
+        <button class="action-btn publish-btn">Save Changes</button>
+    </header>
+
+    <div class="settings-container">
+        <section class="settings-section">
+            <h2>Generation Parameters</h2>
+            <div class="form-group">
+                <label for="max-hours">Max consecutive hours per day:</label>
+                <input type="number" id="max-hours" value="3">
+            </div>
+            <div class="form-group">
+                <label for="lunch-break">Lunch Break Time:</label>
+                <select id="lunch-break">
+                    <option>12:00 - 13:00</option>
+                    <option>13:00 - 14:00</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Notifications</h2>
+            <div class="form-group-toggle">
+                <label for="email-toggle">Enable email notifications for faculty:</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="email-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </section>
+    </div>
+</main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

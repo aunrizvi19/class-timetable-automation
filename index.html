@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable System | Admin Dashboard</title>
+	<link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>TimeTable Pro</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html">🏠 Dashboard</a></li>
+        			<li><a href="index.html" class="active">📅 Timetable</a></li>
+					<li><a href="courses.html">📚 Courses</a></li> 
+					<li><a href="faculty.html">👩‍🏫 Faculty</a></li>
+					<li><a href="rooms.html">🚪 Rooms</a></li>
+					<li><a href="settings.html">⚙️ Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Timetable Management</h1>
+                <div class="header-actions">
+                    <button class="action-btn generate-btn">Generate Timetable</button>
+                    <button class="action-btn publish-btn">Publish Changes</button>
+                </div>
+            </header>
+            
+            <section class="filters">
+                <div class="filter-group">
+                    <label for="class-select">Class:</label>
+                    <select id="class-select">
+                        <option>Computer Science - Year 2</option>
+                        <option>Mechanical Eng - Year 3</option>
+                        <option>Physics - Year 1</option>
+                    </select>
+                </div>
+                 <div class="filter-group">
+                    <label for="faculty-select">Faculty:</label>
+                    <select id="faculty-select">
+                        <option>All</option>
+                        <option>Dr. Alan Grant</option>
+                        <option>Dr. Ellie Sattler</option>
+                    </select>
+                </div>
+            </section>
+            
+            <section class="timetable-container">
+                <table class="timetable-grid">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>09:00 - 10:00</td>
+                            <td>
+                                <div class="timetable-slot">
+                                    <strong>CS-201</strong>
+                                    <span>Dr. Alan Grant</span>
+                                    <em>Room 301</em>
+                                </div>
+                            </td>
+                            <td></td>
+                            <td>
+                                <div class="timetable-slot">
+                                    <strong>CS-201</strong>
+                                    <span>Dr. Alan Grant</span>
+                                    <em>Room 301</em>
+                                </div>
+                            </td>
+                            <td></td>
+                            <td>
+                                <div class="timetable-slot">
+                                    <strong>MA-210</strong>
+                                    <span>Dr. Ian Malcolm</span>
+                                    <em>Room 205</em>
+                                 </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>10:00 - 11:00</td>
+                            <td></td>
+                             <td>
+                                <div class="timetable-slot">
+                                    <strong>CS-205</strong>
+                                    <span>Dr. Ellie Sattler</span>
+                                    <em>Lab 4</em>
+                                 </div>
+                            </td>
+                            <td></td>
+                            <td>
+                                <div class="timetable-slot">
+                                    <strong>CS-205</strong>
+                                    <span>Dr. Ellie Sattler</span>
+                                    <em>Lab 4</em>
+                                 </div>
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>11:00 - 12:00</td>
+                            <td colspan="5" class="break-slot">Lunch Break</td>
+                        </tr>
+                        </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+	<div id="editModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Edit Time Slot</h2>
+        <form id="editForm">
+            <div class="form-group">
+                <label for="course-input">Course Code:</label>
+                <input type="text" id="course-input" value="CS-201">
+            </div>
+            <div class="form-group">
+                <label for="faculty-input">Faculty:</label>
+                <select id="faculty-input">
+                    <option>Dr. Alan Grant</option>
+                    <option>Dr. Ellie Sattler</option>
+                    <option>Dr. Ian Malcolm</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="room-input">Room:</label>
+                <input type="text" id="room-input" value="Room 301">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="action-btn publish-btn">Save Changes</button>
+                <button type="button" class="action-btn delete-btn">Delete Slot</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

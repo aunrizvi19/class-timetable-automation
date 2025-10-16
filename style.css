@@ -1,0 +1,297 @@
+/* --- Global Styles & Variables --- */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #0056b3;
+    --background-color: #f8f9fa;
+    --card-bg-color: #ffffff;
+    --text-color: #343a40;
+    --sidebar-text-color: #e9ecef;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* --- Basic Setup --- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* --- Layout --- */
+.container { display: flex; min-height: 100vh; }
+.sidebar { width: 250px; background: linear-gradient(180deg, #343a40, #212529); color: var(--sidebar-text-color); }
+.main-content { flex-grow: 1; padding: 2rem; }
+
+/* Sidebar (reusable from previous example) */
+.sidebar-header { padding: 1.5rem; text-align: center; font-size: 1.2rem; }
+.sidebar-nav ul { list-style-type: none; }
+.sidebar-nav a { display: block; padding: 1rem 1.5rem; color: var(--sidebar-text-color); text-decoration: none; transition: background-color 0.3s; }
+.sidebar-nav a:hover, .sidebar-nav a.active { background-color: rgba(255, 255, 255, 0.1); }
+
+/* --- Header & Actions --- */
+.main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.header-actions .action-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.header-actions .action-btn:hover { transform: translateY(-2px); }
+.generate-btn { background-color: var(--primary-color); }
+.publish-btn { background-color: #28a745; margin-left: 1rem; }
+
+/* --- Filters --- */
+.filters { display: flex; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background-color: var(--card-bg-color); border-radius: 8px; box-shadow: var(--shadow); }
+.filter-group label { margin-right: 0.5rem; font-weight: 600; }
+.filter-group select { padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; }
+
+/* --- Timetable Grid --- */
+.timetable-container { background-color: var(--card-bg-color); padding: 2rem; border-radius: 8px; box-shadow: var(--shadow); }
+.timetable-grid { width: 100%; border-collapse: collapse; }
+.timetable-grid th, .timetable-grid td {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    text-align: center;
+    height: 100px; /* Fixed height for slots */
+}
+.timetable-grid th { background-color: #f1f3f5; }
+
+.timetable-slot {
+    background-color: #e7f5ff;
+    border-left: 5px solid var(--primary-color);
+    padding: 0.75rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: box-shadow 0.3s;
+}
+.timetable-slot:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.timetable-slot strong { font-size: 0.9rem; }
+.timetable-slot span, .timetable-slot em { font-size: 0.8rem; color: #555; }
+
+.break-slot { background-color: #f8f9fa; font-weight: 600; color: #adb5bd; }
+/* --- Modal Styles --- */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5); /* Dim background */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* --- Form Styles --- */
+#editForm .form-group { margin-bottom: 1rem; }
+#editForm label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+#editForm input, #editForm select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; }
+.delete-btn { background-color: #dc3545; }
+/* --- Conflict Highlighting --- */
+.timetable-slot.conflict {
+    border-left: 5px solid #dc3545; /* Red border for conflicts */
+    background-color: #fff2f2;
+}
+/* --- Data Table Styles --- */
+.data-table-container {
+    background-color: var(--card-bg-color);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* --- Table Action Buttons --- */
+.action-btn-table {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    margin-right: 0.5rem;
+}
+
+.action-btn-table.edit { background-color: var(--primary-color); }
+.action-btn-table.delete { background-color: #dc3545; }
+
+/* --- Settings Page Styles --- */
+.settings-container {
+    background-color: var(--card-bg-color);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.settings-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.settings-section:last-child { border-bottom: none; }
+
+.settings-section h2 { margin-bottom: 1.5rem; }
+
+.form-group-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- Toggle Switch --- */
+.toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+}
+.slider:before {
+    position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+input:checked + .slider { background-color: var(--primary-color); }
+input:checked + .slider:before { transform: translateX(26px); }
+
+/* --- Enhanced Dashboard Styles --- */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-tools {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-tools input {
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.profile-pic {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.card .warning {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.dashboard-main {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.chart-container, .recent-activity-container {
+    background-color: var(--card-bg-color);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+}
+
+.activity-list li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.activity-list li:last-child {
+    margin-bottom: 0;
+}
+
+.activity-list .activity-icon-publish,
+.activity-list .activity-icon-add,
+.activity-list .activity-icon-delete {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.activity-icon-publish { background-color: #28a745; }
+.activity-icon-add { background-color: #007bff; }
+.activity-icon-delete { background-color: #ffc107; }

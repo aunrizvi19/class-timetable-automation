@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Dashboard | TimeTable Pro</title> 
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>TimeTable Pro</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+					<li><a href="dashboard.html">🏠 Dashboard</a></li>
+        			<li><a href="index.html">📅 Timetable</a></li>
+					<li><a href="courses.html">📚 Courses</a></li> 
+					<li><a href="faculty.html" class="active">👩‍🏫 Faculty</a></li>
+					<li><a href="rooms.html">🚪 Rooms</a></li>
+					<li><a href="settings.html">⚙️ Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+			<header class="main-header">
+    <h1>Manage Faculty</h1>
+    <button class="action-btn publish-btn">➕ Add New Faculty</button>
+</header>
+
+<section class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Faculty ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FAC-101</td>
+                <td>Dr. Alan Grant</td>
+                <td>Computer Science</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+            <tr>
+                <td>FAC-102</td>
+                <td>Dr. Ellie Sattler</td>
+                <td>Biology</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+             <tr>
+                <td>FAC-103</td>
+                <td>Dr. Ian Malcolm</td>
+                <td>Mathematics</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+            </main>
+    </div>
+    <div id="facultyModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 id="modalTitle">Add New Faculty</h2>
+        <form id="facultyForm">
+            <div class="form-group">
+                <label for="facultyId">Faculty ID:</label>
+                <input type="text" id="facultyId" required>
+            </div>
+            <div class="form-group">
+                <label for="facultyName">Name:</label>
+                <input type="text" id="facultyName" required>
+            </div>
+            <div class="form-group">
+                <label for="facultyDept">Department:</label>
+                <input type="text" id="facultyDept" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="action-btn publish-btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+    <script src="script.js"></script>
+</body>
+</html>

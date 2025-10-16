@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TimeTable Pro</title> 
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>TimeTable Pro</h2>
+            </div>
+            <nav class="sidebar-nav">
+                 <ul>
+                    <li><a href="dashboard.html" class="active">🏠 Dashboard</a></li>
+                    <li><a href="index.html">📅 Timetable</a></li>
+                    <li><a href="courses.html">📚 Courses</a></li>
+                    <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
+                    <li><a href="rooms.html">🚪 Rooms</a></li>
+                    <li><a href="settings.html">⚙️ Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>Dashboard</h1>
+                <div class="header-tools">
+                    <input type="text" placeholder="Search...">
+                    <img src="https://i.imgur.com/7D7I6dI.png" alt="User Profile" class="profile-pic">
+                </div>
+            </header>
+            
+            <section class="cards">
+                <div class="card">
+                    <h3>Total Courses</h3>
+                    <p>48</p>
+                </div>
+                <div class="card">
+                    <h3>Total Faculty</h3>
+                    <p>25</p>
+                </div>
+                <div class="card">
+                    <h3>Rooms Available</h3>
+                    <p>15</p>
+                </div>
+                <div class="card">
+                    <h3>Conflicts</h3>
+                    <p class="warning">1</p>
+                </div>
+            </section>
+
+            <section class="dashboard-main">
+                <div class="chart-container">
+                    <h2>Room Occupancy by Type</h2>
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+                <div class="recent-activity-container">
+                    <h2>Recent Activity</h2>
+                    <ul class="activity-list">
+                        <li>
+                            <div class="activity-icon-publish">✓</div>
+                            <p>Timetable for 'CS - Year 2' published.</p>
+                        </li>
+                        <li>
+                            <div class="activity-icon-add">＋</div>
+                            <p>New course 'CS-405' was added.</p>
+                        </li>
+                         <li>
+                            <div class="activity-icon-delete">－</div>
+                            <p>Room 203 was removed.</p>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -135,8 +135,10 @@ connectDB().then(() => {
             res.status(500).json({ message: "Error deleting data from database" });
         }
     });
+    // ================== END COURSES ==================
 
-    // ================== FACULTY (NEW SECTION) ==================
+
+    // ================== FACULTY ==================
     app.get('/api/faculty', async (req, res) => {
       console.log("Received request for GET /api/faculty");
       try {
@@ -230,6 +232,101 @@ connectDB().then(() => {
         }
     });
     // ================== END FACULTY ==================
+
+
+    // ================== ROOMS (NEW SECTION) ==================
+    app.get('/api/rooms', async (req, res) => {
+      console.log("Received request for GET /api/rooms");
+      try {
+        if (!db) return res.status(500).json({ message: "Database not connected" });
+        const roomsCollection = db.collection('rooms');
+        const rooms = await roomsCollection.find({}).toArray();
+        res.json(rooms);
+        console.log("Sent rooms data:", rooms.length > 0 ? rooms.length + " rooms" : "empty array");
+      } catch (err) {
+        console.error("Error fetching rooms:", err);
+        res.status(500).json({ message: "Error fetching room data from database" });
+      }
+    });
+
+    app.post('/api/rooms', async (req, res) => {
+        console.log("Received request for POST /api/rooms");
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const newRoom = req.body;
+            console.log("Data received:", newRoom);
+
+            if (!newRoom.room_number || newRoom.capacity == null || !newRoom.type) {
+                return res.status(400).json({ message: "Missing required fields (room_number, capacity, type)" });
+            }
+            // Use room_number as the unique _id
+            newRoom._id = newRoom.room_number;
+            // Ensure capacity is a number
+            newRoom.capacity = parseInt(newRoom.capacity);
+
+            const roomsCollection = db.collection('rooms');
+            const result = await roomsCollection.insertOne(newRoom);
+            console.log("Insert result:", result);
+
+            if (result.insertedId) {
+                res.status(201).json(newRoom);
+            } else {
+                res.status(500).json({ message: "Failed to insert room" });
+            }
+        } catch (err) {
+            if (err.code === 11000) {
+                 console.error("Error inserting room: Duplicate key", err.keyValue);
+                 res.status(409).json({ message: `Room with number ${req.body.room_number} already exists.` });
+            } else {
+                console.error("Error inserting room:", err);
+                res.status(500).json({ message: "Error saving room data to database" });
+            }
+        }
+    });
+
+    app.put('/api/rooms/:number', async (req, res) => {
+        const roomNumber = req.params.number;
+        const updatedData = req.body;
+        console.log(`Received request for PUT /api/rooms/${roomNumber}`, updatedData);
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            if (updatedData.capacity == null || !updatedData.type) {
+                return res.status(400).json({ message: "Missing required fields for update (capacity, type)" });
+            }
+            const roomsCollection = db.collection('rooms');
+            const result = await roomsCollection.updateOne(
+                { _id: roomNumber },
+                { $set: { capacity: parseInt(updatedData.capacity), type: updatedData.type } }
+            );
+            console.log("Update result:", result);
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ message: `Room with number ${roomNumber} not found.` });
+            }
+            res.json({ message: "Room updated successfully", id: roomNumber });
+        } catch (err) {
+            console.error("Error updating room:", err);
+            res.status(500).json({ message: "Error updating room data in database" });
+        }
+    });
+
+    app.delete('/api/rooms/:number', async (req, res) => {
+        const roomNumber = req.params.number;
+        console.log(`Received request for DELETE /api/rooms/${roomNumber}`);
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const roomsCollection = db.collection('rooms');
+            const result = await roomsCollection.deleteOne({ _id: roomNumber });
+            console.log("Delete result:", result);
+            if (result.deletedCount === 0) {
+                return res.status(404).json({ message: `Room with number ${roomNumber} not found.` });
+            }
+            res.status(204).send();
+        } catch (err) {
+            console.error("Error deleting room:", err);
+            res.status(500).json({ message: "Error deleting data from database" });
+        }
+    });
+    // ================== END ROOMS ==================
 
 
     // --- Start Server ---

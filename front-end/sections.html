@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rooms | TimeTable Pro</title> 
+    <title>Sections | TimeTable Pro</title> 
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="rooms-page"> <div class="container">
+<body class="sections-page"> <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
@@ -16,8 +16,10 @@
                 <ul>
                     <li><a href="dashboard.html">🏠 Dashboard</a></li>
                     <li><a href="index.html">📅 Timetable</a></li>
-                    <li><a href="sections.html">📚 Sections</a></li> <li><a href="courses.html">📖 Courses</a></li> <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
-                    <li><a href="rooms.html" class="active">🚪 Rooms</a></li>
+                    <li><a href="sections.html" class="active">📚 Sections</a></li>
+                    <li><a href="courses.html">📖 Courses</a></li> 
+                    <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
+                    <li><a href="rooms.html">🚪 Rooms</a></li>
                     <li><a href="settings.html">⚙️ Settings</a></li>
                 </ul>
             </nav>
@@ -25,17 +27,18 @@
 
         <main class="main-content">
             <header class="main-header">
-                <h1>Manage Rooms</h1>
-                <button class="action-btn publish-btn">➕ Add New Room</button>
+                <h1>Manage Sections</h1>
+                <button class="action-btn publish-btn">➕ Add New Section</button>
             </header>
 
             <section class="data-table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Room Number</th>
-                            <th>Capacity</th>
-                            <th>Type</th>
+                            <th>Section ID</th>
+                            <th>Department</th>
+                            <th>Semester</th>
+                            <th>Section Name</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -46,22 +49,26 @@
         </main>
     </div>
 
-    <div id="roomModal" class="modal">
+    <div id="sectionModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h2 id="modalTitle">Add New Room</h2>
-            <form id="roomForm">
+            <h2 id="modalTitle">Add New Section</h2>
+            <form id="sectionForm">
                 <div class="form-group">
-                    <label for="roomNumber">Room Number:</label>
-                    <input type="text" id="roomNumber" required>
+                    <label for="sectionId">Section ID (e.g., CS-3-A):</label>
+                    <input type="text" id="sectionId" placeholder="DEPT-SEM-NAME" required>
                 </div>
                 <div class="form-group">
-                    <label for="roomCapacity">Capacity:</label>
-                    <input type="number" id="roomCapacity" required>
+                    <label for="sectionDept">Department:</label>
+                    <input type="text" id="sectionDept" placeholder="Computer Science" required>
                 </div>
                 <div class="form-group">
-                    <label for="roomType">Type:</label>
-                    <input type="text" id="roomType" required>
+                    <label for="sectionSem">Semester:</label>
+                    <input type="number" id="sectionSem" placeholder="3" required>
+                </div>
+                <div class="form-group">
+                    <label for="sectionName">Section Name (e.g., A, B):</label>
+                    <input type="text" id="sectionName" placeholder="A" required>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="action-btn publish-btn">Save Changes</button>

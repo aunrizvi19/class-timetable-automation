@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR DASHBOARD PAGE (dashboard.html) --- [UPDATED] ---
+    // == LOGIC FOR DASHBOARD PAGE (dashboard.html)
     // =================================================================
     const occupancyChartCanvas = document.getElementById('occupancyChart');
     let myOccupancyChart = null; // To hold the chart instance
@@ -415,6 +415,143 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
+    // == LOGIC FOR SECTIONS PAGE (sections.html) --- [NEW] ---
+    // =================================================================
+    const sectionModal = document.getElementById('sectionModal');
+    if (sectionModal) {
+        async function loadAndRenderSections() {
+            const sections = await fetchSections();
+            renderSectionsTable(sections);
+        }
+        loadAndRenderSections();
+
+        const addBtn = document.querySelector('body.sections-page .main-header .publish-btn');
+        const sectionForm = document.getElementById('sectionForm');
+        const modalTitle = sectionModal.querySelector('#modalTitle');
+        const closeModalBtn = sectionModal.querySelector('.close-button');
+        let editingRow = null;
+
+        const openModal = () => {
+             if (!editingRow) {
+                modalTitle.textContent = 'Add New Section';
+                document.getElementById('sectionId').readOnly = false;
+                sectionForm.reset();
+             }
+             sectionModal.style.display = 'block';
+        }
+        const closeModal = () => {
+            sectionModal.style.display = 'none';
+            editingRow = null; 
+            sectionForm.reset(); 
+            document.getElementById('sectionId').readOnly = false;
+        };
+
+        if(addBtn) addBtn.addEventListener('click', () => { 
+            editingRow = null;
+            openModal(); 
+        });
+
+        const sectionTable = document.querySelector('.sections-page .data-table');
+        if(sectionTable) {
+            sectionTable.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('edit')) {
+                    editingRow = e.target.closest('tr'); 
+                    const cells = editingRow.children; 
+                    document.getElementById('sectionId').value = cells[0].textContent; 
+                    document.getElementById('sectionDept').value = cells[1].textContent; 
+                    document.getElementById('sectionSem').value = cells[2].textContent;
+                    document.getElementById('sectionName').value = cells[3].textContent; 
+                    modalTitle.textContent = 'Edit Section'; 
+                    document.getElementById('sectionId').readOnly = true;
+                    openModal();
+                } else if (e.target.classList.contains('delete')) {
+                    const rowToDelete = e.target.closest('tr');
+                    const sectionIdToDelete = rowToDelete.children[0].textContent;
+                    if (confirm(`Are you sure you want to delete section ${sectionIdToDelete}?`)) {
+                        try {
+                            const response = await fetch(`http://localhost:3000/api/sections/${sectionIdToDelete}`, {
+                                method: 'DELETE',
+                            });
+
+                            if (!response.ok) {
+                                let errorMsg = response.statusText;
+                                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ }
+                                console.error("Error deleting section:", response.status, errorMsg);
+                                alert(`Error deleting section: ${errorMsg}`);
+                                return;
+                            }
+                            console.log(`Section ${sectionIdToDelete} deleted successfully`);
+                            loadAndRenderSections(); // Reload table
+                        } catch (error) {
+                            console.error("Network error deleting section:", error);
+                            alert("Could not connect to server to delete section.");
+                        }
+                    }
+                }
+            });
+        }
+
+        sectionForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            const id = document.getElementById('sectionId').value;
+            const dept = document.getElementById('sectionDept').value;
+            const sem = parseInt(document.getElementById('sectionSem').value); 
+            const name = document.getElementById('sectionName').value;
+            
+            const sectionData = { 
+                department: dept, 
+                semester: sem,
+                section_name: name
+            };
+
+            let url = 'http://localhost:3000/api/sections';
+            let method = 'POST';
+
+            if (editingRow) {
+                const originalId = id;
+                url = `http://localhost:3000/api/sections/${originalId}`;
+                method = 'PUT';
+                if (!dept || isNaN(sem) || !name) {
+                     alert("All fields must be filled correctly when editing.");
+                     return;
+                }
+            } else {
+                sectionData.section_id = id;
+                if (!id || !dept || isNaN(sem) || !name) {
+                    alert("Please fill in all fields correctly for the new section.");
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sectionData),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error(`Error ${editingRow ? 'updating' : 'adding'} section:`, response.status, errorData);
+                    alert(`Error ${editingRow ? 'updating' : 'adding'} section: ${errorData.message || response.statusText}`);
+                    return;
+                }
+
+                console.log(`Section ${editingRow ? 'updated' : 'added'} successfully`);
+                closeModal();
+                loadAndRenderSections(); // Reload the table
+
+            } catch (error) {
+                console.error(`Network error ${editingRow ? 'updating' : 'adding'} section:`, error);
+                alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} section.`);
+            }
+        });
+        
+        closeModalBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (event) => { if (event.target == sectionModal) closeModal(); });
+    }
+
+    // =================================================================
     // == LOGIC FOR SETTINGS PAGE (settings.html)
     // =================================================================
     const saveBtn = document.getElementById('saveSettingsBtn');
@@ -432,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR LOGIN/SIGNUP PAGE (login.html) --- [FULLY UPDATED] ---
+    // == LOGIC FOR LOGIN/SIGNUP PAGE (login.html)
     // =================================================================
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -737,6 +874,61 @@ function renderRoomsTable(rooms) {
                 <td>${room.room_number || room._id}</td>
                 <td>${room.capacity}</td>
                 <td>${room.type}</td>
+                <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', rowHTML);
+    });
+}
+
+// =================================================================
+// == HELPER FUNCTIONS (FOR SECTIONS PAGE) --- [NEW] ---
+// =================================================================
+async function fetchSections() {
+    console.log("Fetching sections from backend...");
+    try {
+        const response = await fetch('http://localhost:3000/api/sections'); 
+        if (!response.ok) {
+            console.error("Error fetching sections:", response.status, response.statusText);
+            alert(`Error loading sections: ${response.statusText}`);
+            return null;
+        }
+        const sections = await response.json();
+        console.log("Sections received:", sections);
+        return sections;
+    } catch (error) {
+        console.error("Network error fetching sections:", error);
+        alert("Could not connect to the server to load sections.");
+        return null;
+    }
+}
+
+function renderSectionsTable(sections) {
+    const tableBody = document.querySelector('.sections-page .data-table tbody');
+    if (!tableBody) {
+        if (document.body.classList.contains('sections-page')) {
+           console.error("Could not find sections table body to render!");
+        }
+        return;
+    }
+
+    tableBody.innerHTML = ''; 
+
+    if (!sections || sections.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5">No sections found.</td></tr>'; // Colspan is 5
+        return;
+    }
+
+    sections.forEach(section => {
+        const rowHTML = `
+            <tr>
+                <td>${section.section_id || section._id}</td>
+                <td>${section.department}</td>
+                <td>${section.semester}</td>
+                <td>${section.section_name}</td>
                 <td>
                     <button class="action-btn-table edit">Edit</button>
                     <button class="action-btn-table delete">Delete</button>

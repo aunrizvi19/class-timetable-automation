@@ -451,25 +451,32 @@ body.dark-mode {
 body.dark-mode .sidebar {
     background: linear-gradient(180deg, #2c2c2c, #1a1a1a);
 }
-body.dark-mode .timetable-grid th, 
-body.dark-mode .data-table th,
+
 body.dark-mode .action-btn-quick:hover {
     background-color: #333;
 }
+
 body.dark-mode .timetable-slot {
     background-color: #3a4b6d;
 }
 body.dark-mode .modal-content {
      background-color: #333;
 }
+body.dark-mode .form-group input, 
+body.dark-mode .form-group select {
+    background-color: #444;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
 
 /* === UNIVERSAL DARK MODE TABLE & LIST FIX === */
 body.dark-mode .data-table-container,
 body.dark-mode .data-table th,
-body.dark-mode .todays-schedule-container, /* Added this */
-body.dark-mode .filters, /* Added this */
-body.dark-mode .settings-container, /* Added this */
-body.dark-mode .action-btn-quick, /* Added this */
+body.dark-mode .todays-schedule-container,
+body.dark-mode .filters,
+body.dark-mode .settings-container,
+body.dark-mode .action-btn-quick,
 body.dark-mode .chart-container {
     background-color: var(--card-bg-color);
 }
@@ -478,10 +485,13 @@ body.dark-mode .data-table tbody tr {
     border-color: var(--border-color);
 }
 body.dark-mode .data-table tbody tr:hover {
-    background-color: #3b3b3b; /* Darker hover */
+    background-color: #3b3b3b;
 }
 body.dark-mode .schedule-list li {
-    border-color: var(--border-color); /* Fix for schedule list lines */
+    border-color: var(--border-color);
+}
+body.dark-mode .timetable-grid th {
+    background-color: #333;
 }
 /* === END DARK MODE FIX === */
 

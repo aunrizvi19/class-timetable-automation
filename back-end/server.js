@@ -130,6 +130,7 @@ connectDB().then(() => {
         }
     });
 
+
     // ================== COURSES ==================
     // GET Route to fetch all courses
     app.get('/api/courses', async (req, res) => {
@@ -245,7 +246,7 @@ connectDB().then(() => {
             const newFaculty = req.body;
             console.log("Data received:", newFaculty);
 
-            // --- UPDATED VALIDATION ---
+            // --- VALIDATION ---
             if (!newFaculty.faculty_id || !newFaculty.name || !newFaculty.department || !newFaculty.designation) {
                 return res.status(400).json({ message: "Missing required fields (faculty_id, name, department, designation)" });
             }
@@ -279,7 +280,7 @@ connectDB().then(() => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
             
-            // --- UPDATED VALIDATION ---
+            // --- THIS IS THE FIX ---
             if (!updatedData.name || !updatedData.department || !updatedData.designation) {
                 return res.status(400).json({ message: "Missing required fields for update (name, department, designation)" });
             }
@@ -420,6 +421,107 @@ connectDB().then(() => {
         }
     });
     // ================== END ROOMS ==================
+    
+
+    // ================== SECTIONS (NEW) ==================
+    app.get('/api/sections', async (req, res) => {
+        console.log("Received request for GET /api/sections");
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const sectionsCollection = db.collection('sections');
+            const sections = await sectionsCollection.find({}).toArray();
+            res.json(sections);
+            console.log("Sent sections data:", sections.length > 0 ? sections.length + " sections" : "empty array");
+        } catch (err) {
+            console.error("Error fetching sections:", err);
+            res.status(500).json({ message: "Error fetching section data from database" });
+        }
+    });
+
+    app.post('/api/sections', async (req, res) => {
+        console.log("Received request for POST /api/sections");
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const newSection = req.body;
+            console.log("Data received:", newSection);
+
+            if (!newSection.section_id || !newSection.department || newSection.semester == null || !newSection.section_name) {
+                return res.status(400).json({ message: "Missing required fields (section_id, department, semester, section_name)" });
+            }
+            
+            newSection._id = newSection.section_id;
+            newSection.semester = parseInt(newSection.semester);
+            // We will add courses/faculty assignments later
+            newSection.assignments = []; 
+
+            const sectionsCollection = db.collection('sections');
+            const result = await sectionsCollection.insertOne(newSection);
+            console.log("Insert result:", result);
+
+            if (result.insertedId) {
+                res.status(201).json(newSection);
+            } else {
+                res.status(500).json({ message: "Failed to insert section" });
+            }
+        } catch (err) {
+            if (err.code === 11000) {
+                 console.error("Error inserting section: Duplicate key", err.keyValue);
+                 res.status(409).json({ message: `Section with ID ${req.body.section_id} already exists.` });
+            } else {
+                console.error("Error inserting section:", err);
+                res.status(500).json({ message: "Error saving section data to database" });
+            }
+        }
+    });
+
+    app.put('/api/sections/:id', async (req, res) => {
+        const sectionId = req.params.id;
+        const updatedData = req.body;
+        console.log(`Received request for PUT /api/sections/${sectionId}`, updatedData);
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            if (!updatedData.department || updatedData.semester == null || !updatedData.section_name) {
+                return res.status(400).json({ message: "Missing required fields for update (department, semester, section_name)" });
+            }
+            const sectionsCollection = db.collection('sections');
+            const result = await sectionsCollection.updateOne(
+                { _id: sectionId },
+                { $set: { 
+                    department: updatedData.department, 
+                    semester: parseInt(updatedData.semester),
+                    section_name: updatedData.section_name
+                    // Note: We are NOT updating assignments here yet
+                } }
+            );
+            console.log("Update result:", result);
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ message: `Section with ID ${sectionId} not found.` });
+            }
+            res.json({ message: "Section updated successfully", id: sectionId });
+        } catch (err) {
+            console.error("Error updating section:", err);
+            res.status(500).json({ message: "Error updating section data in database" });
+        }
+    });
+
+    app.delete('/api/sections/:id', async (req, res) => {
+        const sectionId = req.params.id;
+        console.log(`Received request for DELETE /api/sections/${sectionId}`);
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const sectionsCollection = db.collection('sections');
+            const result = await sectionsCollection.deleteOne({ _id: sectionId });
+            console.log("Delete result:", result);
+            if (result.deletedCount === 0) {
+                return res.status(404).json({ message: `Section with ID ${sectionId} not found.` });
+            }
+            res.status(204).send();
+        } catch (err) {
+            console.error("Error deleting section:", err);
+            res.status(500).json({ message: "Error deleting section data from database" });
+        }
+    });
+    // ================== END SECTIONS ==================
 
 
     // --- Start Server ---

@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>Dashboard | TimeTable Pro</title> 
+    <title>Courses | TimeTable Pro</title> 
     
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="courses-page">
+<body class="courses-page"> <!-- ADDED CLASS -->
     <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -17,12 +17,12 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-					<li><a href="dashboard.html">🏠 Dashboard</a></li>
-        			<li><a href="index.html">📅 Timetable</a></li>
-					<li><a href="courses.html" class="active">📚 Courses</a></li> <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
-					<li><a href="rooms.html">🚪 Rooms</a></li>
-					<li><a href="settings.html">⚙️ Settings</a></li>
-                    </ul>
+                    <li><a href="dashboard.html">🏠 Dashboard</a></li>
+                    <li><a href="index.html">📅 Timetable</a></li>
+                    <li><a href="courses.html" class="active">📚 Courses</a></li> <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
+                    <li><a href="rooms.html">🚪 Rooms</a></li>
+                    <li><a href="settings.html">⚙️ Settings</a></li>
+                </ul>
             </nav>
         </aside>
 
@@ -43,35 +43,19 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>CS-201</td>
-                    <td>Data Structures</td>
-                    <td>4</td>
-                    <td>
-                        <button class="action-btn-table edit">Edit</button>
-                        <button class="action-btn-table delete">Delete</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>MA-210</td>
-                    <td>Linear Algebra</td>
-                    <td>3</td>
-                    <td>
-                        <button class="action-btn-table edit">Edit</button>
-                        <button class="action-btn-table delete">Delete</button>
-                    </td>
-                </tr>
+                <!-- This will be populated by script.js -->
             </tbody>
         </table>
     </section>
 </main>
     </div>
+
+    <!-- MODAL ADDED HERE -->
     <div id="courseModal" class="modal">
     <div class="modal-content">
         <span class="close-button">&times;</span>
         <h2 id="modalTitle">Add New Course</h2>
         <form id="courseForm">
-            <input type="hidden" id="editMode" value="">
             <div class="form-group">
                 <label for="courseCode">Course Code:</label>
                 <input type="text" id="courseCode" required>
@@ -90,6 +74,9 @@
         </form>
     </div>
 </div>
+    <!-- END OF MODAL -->
+
     <script src="script.js"></script>
 </body>
 </html>
+

@@ -70,17 +70,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR FACULTY PAGE (faculty.html)
+    // == LOGIC FOR FACULTY PAGE (faculty.html)  --- [UPDATED SECTION] ---
     // =================================================================
     const facultyModal = document.getElementById('facultyModal');
     if (facultyModal) {
-        // --- ADDED: Fetch and render faculty on page load ---
+        // --- Fetch and render faculty on page load ---
         async function loadAndRenderFaculty() {
-            const faculty = await fetchFaculty(); // Calls the new helper function
-            renderFacultyTable(faculty); // Calls the new helper function
+            const faculty = await fetchFaculty(); // Calls the helper function
+            renderFacultyTable(faculty); // Calls the helper function
         }
         loadAndRenderFaculty(); // Call the function immediately
-        // --- END OF ADDED CODE ---
 
         const addBtn = document.querySelector('body.faculty-page .main-header .publish-btn');
         const facultyForm = document.getElementById('facultyForm');
@@ -92,8 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
              // Reset form state for adding unless editingRow is set
              if (!editingRow) {
                 modalTitle.textContent = 'Add New Faculty';
-                // Make faculty ID editable when adding
-                document.getElementById('facultyId').readOnly = false;
+                document.getElementById('facultyId').readOnly = false; // Make ID editable when adding
                 facultyForm.reset();
              }
              facultyModal.style.display = 'block';
@@ -102,8 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             facultyModal.style.display = 'none';
             editingRow = null; // Clear editing state
             facultyForm.reset(); // Clear form fields
-            // Ensure faculty ID is editable again after closing an edit modal
-            document.getElementById('facultyId').readOnly = false;
+            document.getElementById('facultyId').readOnly = false; // Ensure ID is editable again
         };
 
         if(addBtn) addBtn.addEventListener('click', () => {
@@ -113,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const facultyTable = document.querySelector('.faculty-page .data-table');
          if (facultyTable) {
-            facultyTable.addEventListener('click', async (e) => { // Make async for delete/edit later
+            facultyTable.addEventListener('click', async (e) => { // Made async
                 if (e.target.classList.contains('edit')) {
                     editingRow = e.target.closest('tr');
                     const cells = editingRow.children;
@@ -121,40 +118,95 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('facultyName').value = cells[1].textContent;
                     document.getElementById('facultyDept').value = cells[2].textContent;
                     modalTitle.textContent = 'Edit Faculty';
-                    // Make faculty ID read-only when editing
-                    document.getElementById('facultyId').readOnly = true;
+                    document.getElementById('facultyId').readOnly = true; // Make ID read-only when editing
                     openModal();
                 } else if (e.target.classList.contains('delete')) {
-                    // TODO: Connect delete faculty to backend
+                    // --- Connect DELETE button to backend ---
                     const rowToDelete = e.target.closest('tr');
                     const facultyIdToDelete = rowToDelete.children[0].textContent;
-                    if (confirm(`Are you sure you want to delete faculty member ${facultyIdToDelete}? (Frontend only)`)) {
-                         e.target.closest('tr').remove();
+                    if (confirm(`Are you sure you want to delete faculty member ${facultyIdToDelete}?`)) {
+                        try {
+                            const response = await fetch(`http://localhost:3000/api/faculty/${facultyIdToDelete}`, {
+                                method: 'DELETE',
+                            });
+
+                            if (!response.ok) {
+                                let errorMsg = response.statusText;
+                                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ }
+                                console.error("Error deleting faculty:", response.status, errorMsg);
+                                alert(`Error deleting faculty: ${errorMsg}`);
+                                return;
+                            }
+                            console.log(`Faculty ${facultyIdToDelete} deleted successfully`);
+                            loadAndRenderFaculty(); // Reload table
+                        } catch (error) {
+                            console.error("Network error deleting faculty:", error);
+                            alert("Could not connect to server to delete faculty.");
+                        }
                     }
                 }
             });
          }
-        facultyForm.addEventListener('submit', async (e) => { // Make async for add/edit later
+
+        // --- UPDATED Submit Listener for ADDING and EDITING faculty ---
+        facultyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: Connect add/edit faculty to backend
             const id = document.getElementById('facultyId').value;
             const name = document.getElementById('facultyName').value;
             const dept = document.getElementById('facultyDept').value;
+
+            // Data sent in the request body
+            const facultyData = {
+                name: name,
+                department: dept
+            };
+
+            let url = 'http://localhost:3000/api/faculty';
+            let method = 'POST';
+
             if (editingRow) {
-                // Placeholder: Update local row visually (temporary)
-                const cells = editingRow.children;
-                // cells[0].textContent = id; // Don't change ID
-                cells[1].textContent = name;
-                cells[2].textContent = dept;
-                alert("Edit functionality not yet connected to backend.");
+                // UPDATE (PUT) request
+                const originalId = id; // Get ID from read-only form
+                url = `http://localhost:3000/api/faculty/${originalId}`;
+                method = 'PUT';
+                if (!name || !dept) {
+                     alert("Name and Department cannot be empty when editing.");
+                     return;
+                }
             } else {
-                 alert("Add functionality not yet connected to backend.");
-                // Placeholder: Add local row visually (temporary)
-                 document.querySelector('.faculty-page .data-table tbody').insertAdjacentHTML('beforeend', `<tr><td>${id}</td><td>${name}</td><td>${dept}</td><td><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td></tr>`);
+                // ADD (POST) request
+                facultyData.faculty_id = id; // Add the ID for POST
+                if (!id || !name || !dept) {
+                    alert("Please fill in all fields for the new faculty member.");
+                    return;
+                }
             }
-             closeModal();
-             // loadAndRenderFaculty(); // Uncomment this when backend connected
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(facultyData),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error(`Error ${editingRow ? 'updating' : 'adding'} faculty:`, response.status, errorData);
+                    alert(`Error ${editingRow ? 'updating' : 'adding'} faculty: ${errorData.message || response.statusText}`);
+                    return;
+                }
+
+                console.log(`Faculty ${editingRow ? 'updated' : 'added'} successfully`);
+                closeModal();
+                loadAndRenderFaculty(); // Reload the table
+
+            } catch (error) {
+                console.error(`Network error ${editingRow ? 'updating' : 'adding'} faculty:`, error);
+                alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} faculty.`);
+            }
         });
+        // --- END OF UPDATED Submit Listener ---
+
         closeModalBtn.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == facultyModal) closeModal(); });
     }
@@ -320,9 +372,8 @@ function renderCoursesTable(courses) {
     });
 }
 
-
 // =================================================================
-// == HELPER FUNCTIONS (FOR DATA PAGES LIKE FACULTY) // <<< NEW SECTION ADDED
+// == HELPER FUNCTIONS (FOR DATA PAGES LIKE FACULTY)
 // =================================================================
 
 /**

@@ -1,6 +1,7 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb'); // Import MongoClient
 const cors = require('cors'); // <-- Import cors
+const bcrypt = require('bcrypt'); // <-- Import bcrypt for password hashing
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -44,6 +45,90 @@ async function connectDB() {
 // Connect to the database when the server starts
 connectDB().then(() => {
     // --- API Routes ---
+
+    // ================== AUTHENTICATION ==================
+    // POST Route to SIGNUP a new user
+    app.post('/api/signup', async (req, res) => {
+        console.log("Received request for POST /api/signup");
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const { name, email, password } = req.body;
+            if (!name || !email || !password) {
+                return res.status(400).json({ message: "Missing required fields (name, email, password)" });
+            }
+
+            const usersCollection = db.collection('users');
+
+            // Check if user already exists
+            const existingUser = await usersCollection.findOne({ email: email });
+            if (existingUser) {
+                return res.status(409).json({ message: "Email already in use." });
+            }
+
+            // Hash the password
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+            // Insert new user
+            const newUser = {
+                name: name,
+                email: email,
+                password: hashedPassword, // Store the hashed password
+                _id: email // Use email as unique ID
+            };
+            
+            const result = await usersCollection.insertOne(newUser);
+            console.log("Insert result:", result);
+
+            if (result.insertedId) {
+                // Don't send the password back to the client
+                res.status(201).json({ message: "User created successfully!", user: { name: name, email: email } });
+            } else {
+                res.status(500).json({ message: "Failed to create user" });
+            }
+        } catch (err) {
+            console.error("Error signing up user:", err);
+            res.status(500).json({ message: "Error saving user to database" });
+        }
+    });
+
+    // POST Route to LOGIN a user
+    app.post('/api/login', async (req, res) => {
+        console.log("Received request for POST /api/login");
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const { email, password } = req.body;
+            if (!email || !password) {
+                return res.status(400).json({ message: "Missing required fields (email, password)" });
+            }
+
+            const usersCollection = db.collection('users');
+
+            // Find the user by email
+            const user = await usersCollection.findOne({ _id: email });
+            if (!user) {
+                return res.status(404).json({ message: "Invalid email or password." });
+            }
+
+            // Compare the provided password with the stored hashed password
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(401).json({ message: "Invalid email or password." });
+            }
+            
+            // Successful login
+            // In a real app, you'd create a JWT here. For now, just send success.
+            console.log(`User ${user.email} logged in successfully`);
+            res.status(200).json({ 
+                message: "Login successful!", 
+                user: { name: user.name, email: user.email } 
+            });
+
+        } catch (err) {
+            console.error("Error logging in user:", err);
+            res.status(500).json({ message: "Error logging in" });
+        }
+    });
 
     // ================== COURSES ==================
     // GET Route to fetch all courses
@@ -160,9 +245,9 @@ connectDB().then(() => {
             const newFaculty = req.body;
             console.log("Data received:", newFaculty);
 
-            // Use 'faculty_id' from request body as the field name
-            if (!newFaculty.faculty_id || !newFaculty.name || !newFaculty.department) {
-                return res.status(400).json({ message: "Missing required fields (faculty_id, name, department)" });
+            // --- UPDATED VALIDATION ---
+            if (!newFaculty.faculty_id || !newFaculty.name || !newFaculty.department || !newFaculty.designation) {
+                return res.status(400).json({ message: "Missing required fields (faculty_id, name, department, designation)" });
             }
             // Use faculty_id as the unique _id
             newFaculty._id = newFaculty.faculty_id;
@@ -193,16 +278,24 @@ connectDB().then(() => {
         console.log(`Received request for PUT /api/faculty/${facultyId}`, updatedData);
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-            // Validate only name and department are needed for update
-            if (!updatedData.name || !updatedData.department) {
-                return res.status(400).json({ message: "Missing required fields for update (name, department)" });
+            
+            // --- UPDATED VALIDATION ---
+            if (!updatedData.name || !updatedData.department || !updatedData.designation) {
+                return res.status(400).json({ message: "Missing required fields for update (name, department, designation)" });
             }
+            
             const facultyCollection = db.collection('faculty');
+            
+            // --- UPDATED $set ---
             const result = await facultyCollection.updateOne(
                 { _id: facultyId }, // Filter by _id (which is faculty_id)
-                // Update name and department
-                { $set: { name: updatedData.name, department: updatedData.department } }
+                { $set: { 
+                    name: updatedData.name, 
+                    department: updatedData.department,
+                    designation: updatedData.designation // Add designation to the update
+                } }
             );
+            
             console.log("Update result:", result);
             if (result.matchedCount === 0) {
                 return res.status(404).json({ message: `Faculty with ID ${facultyId} not found.` });
@@ -234,7 +327,7 @@ connectDB().then(() => {
     // ================== END FACULTY ==================
 
 
-    // ================== ROOMS (NEW SECTION) ==================
+    // ================== ROOMS ==================
     app.get('/api/rooms', async (req, res) => {
       console.log("Received request for GET /api/rooms");
       try {

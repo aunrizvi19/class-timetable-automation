@@ -7,8 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="timetable-page"> <!-- ADDED CLASS -->
-    <div class="container">
+<body class="timetable-page"> <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
@@ -29,16 +28,16 @@
             <header class="main-header">
                 <h1>Timetable Management</h1>
                 <div class="header-actions">
-                    <button class="action-btn generate-btn">Generate Timetable</button>
-                    <button class="action-btn publish-btn">Publish Changes</button>
+                    <button class="action-btn generate-btn">🚀 Generate Timetable</button>
+                    <button class="action-btn publish-btn">✅ Publish Changes</button>
                 </div>
             </header>
             
-            <!-- UPDATED FILTERS -->
             <section class="filters">
                 <div class="filter-group">
                     <label for="dept-select">Department:</label>
                     <select id="dept-select">
+                        <option value="all">All Departments</option>
                         <option value="cs">Computer Science</option>
                         <option value="mech">Mechanical Engineering</option>
                         <option value="phy">Physics</option>
@@ -48,6 +47,7 @@
                 <div class="filter-group">
                     <label for="sem-select">Semester:</label>
                     <select id="sem-select">
+                        <option value="all">All Semesters</option>
                         <option value="1">Semester 1</option>
                         <option value="2">Semester 2</option>
                         <option value="3">Semester 3</option>
@@ -59,10 +59,12 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="faculty-select">Faculty:</label>
-                    <select id="faculty-select">
-                        <option value="all">All</option>
-                        <!-- Options will be loaded dynamically -->
+                    <label for="section-select">Section:</label>
+                    <select id="section-select">
+                        <option value="all">All Sections</option>
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
                     </select>
                 </div>
             </section>
@@ -81,14 +83,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- This will be populated by script.js -->
-                    </tbody>
+                        </tbody>
                 </table>
             </section>
         </main>
     </div>
 
-    <!-- This modal is for editing a class *slot* on the timetable -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -120,4 +120,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-

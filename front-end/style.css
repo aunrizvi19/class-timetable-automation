@@ -1,7 +1,12 @@
 /* --- Global Styles & Variables --- */
 :root {
     --primary-color: #007bff;
+    --primary-color-dark: #0069d9;
     --secondary-color: #0056b3;
+    --success-color: #28a745;
+    --success-color-dark: #218838;
+    --danger-color: #dc3545;
+    --danger-color-dark: #c82333;
     --background-color: #f8f9fa;
     --card-bg-color: #ffffff;
     --text-color: #343a40;
@@ -31,23 +36,45 @@ body {
 
 /* --- Header & Actions --- */
 .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.header-actions .action-btn {
+
+/* === REFINED BUTTON STYLES === */
+.action-btn {
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px; /* Slightly more rounded */
     color: white;
     font-weight: 600;
+    font-size: 0.95rem;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    letter-spacing: 0.5px;
 }
-.header-actions .action-btn:hover { transform: translateY(-2px); }
+.action-btn:hover, .action-btn:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    outline: none;
+}
+.action-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.header-actions { display: flex; gap: 1rem; }
+
 .generate-btn { background-color: var(--primary-color); }
-.publish-btn { background-color: #28a745; margin-left: 1rem; }
+.generate-btn:hover { background-color: var(--primary-color-dark); }
+
+.publish-btn { background-color: var(--success-color); }
+.publish-btn:hover { background-color: var(--success-color-dark); }
+/* === END REFINED BUTTONS === */
+
 
 /* --- Filters --- */
-.filters { display: flex; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background-color: var(--card-bg-color); border-radius: 8px; box-shadow: var(--shadow); }
-.filter-group label { margin-right: 0.5rem; font-weight: 600; }
-.filter-group select { padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; }
+.filters { display: flex; flex-wrap: wrap; /* Allows wrapping on small screens */ gap: 1.5rem; margin-bottom: 2rem; padding: 1.5rem; background-color: var(--card-bg-color); border-radius: 8px; box-shadow: var(--shadow); }
+.filter-group { display: flex; align-items: center; }
+.filter-group label { margin-right: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+.filter-group select { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 5px; background-color: #fff; }
 
 /* --- Timetable Grid --- */
 .timetable-container { background-color: var(--card-bg-color); padding: 2rem; border-radius: 8px; box-shadow: var(--shadow); }
@@ -77,6 +104,7 @@ body {
 .timetable-slot span, .timetable-slot em { font-size: 0.8rem; color: #555; }
 
 .break-slot { background-color: #f8f9fa; font-weight: 600; color: #adb5bd; }
+
 /* --- Modal Styles --- */
 .modal {
     display: none; /* Hidden by default */
@@ -92,10 +120,10 @@ body {
 
 .modal-content {
     background-color: #fff;
-    margin: 15% auto;
+    margin: 10% auto; /* Reduced top margin */
     padding: 2rem;
     border: 1px solid var(--border-color);
-    width: 80%;
+    width: 90%;
     max-width: 500px;
     border-radius: 8px;
     position: relative;
@@ -116,21 +144,26 @@ body {
     cursor: pointer;
 }
 
-/* --- Form Styles --- */
-#editForm .form-group { margin-bottom: 1rem; }
-#editForm label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-#editForm input, #editForm select {
+/* --- Form Styles (reusable in modal) --- */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+.form-group input, .form-group select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 5px;
+    font-family: 'Poppins', sans-serif; /* Ensure form elements inherit font */
+    font-size: 0.95rem;
 }
 
 .form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; }
-.delete-btn { background-color: #dc3545; }
+
+.delete-btn { background-color: var(--danger-color); }
+.delete-btn:hover { background-color: var(--danger-color-dark); }
+
 /* --- Conflict Highlighting --- */
 .timetable-slot.conflict {
-    border-left: 5px solid #dc3545; /* Red border for conflicts */
+    border-left: 5px solid var(--danger-color); /* Red border for conflicts */
     background-color: #fff2f2;
 }
 /* --- Data Table Styles --- */
@@ -169,12 +202,19 @@ body {
     font-weight: 500;
     cursor: pointer;
     margin-right: 0.5rem;
+    transition: all 0.2s ease;
+}
+.action-btn-table:hover {
+    transform: scale(1.05);
 }
 
 .action-btn-table.edit { background-color: var(--primary-color); }
-.action-btn-table.delete { background-color: #dc3545; }
+.action-btn-table.edit:hover { background-color: var(--primary-color-dark); }
+.action-btn-table.delete { background-color: var(--danger-color); }
+.action-btn-table.delete:hover { background-color: var(--danger-color-dark); }
 
-/* --- Settings Page Styles --- */
+
+/* === SETTINGS PAGE ALIGNMENT === */
 .settings-container {
     background-color: var(--card-bg-color);
     padding: 2rem;
@@ -190,6 +230,23 @@ body {
 .settings-section:last-child { border-bottom: none; }
 
 .settings-section h2 { margin-bottom: 1.5rem; }
+
+/* New layout for settings form */
+.settings-form-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem 2rem;
+}
+.settings-form-layout .form-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.settings-form-layout .form-group label {
+    font-weight: 500; /* Lighter weight for settings */
+}
+/* === END SETTINGS ALIGNMENT === */
+
 
 .form-group-toggle {
     display: flex;
@@ -243,6 +300,56 @@ input:checked + .slider:before { transform: translateX(26px); }
     cursor: pointer;
 }
 
+/* === NEW STAT CARD STYLES === */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background-color: var(--card-bg-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.stat-card .icon {
+    font-size: 2rem;
+    padding: 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.stat-card .icon.icon-courses {
+    background-color: #e7f5ff;
+    color: #007bff;
+}
+.stat-card .icon.icon-faculty {
+    background-color: #eafbf3;
+    color: #28a745;
+}
+.stat-card .icon.icon-rooms {
+    background-color: #fff8e6;
+    color: #ffc107;
+}
+
+.stat-card .info h3 {
+    font-size: 2.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+.stat-card .info p {
+    font-size: 0.9rem;
+    color: #888;
+}
+/* === END STAT CARD STYLES === */
+
 .card .warning {
     color: #dc3545;
     font-weight: 600;
@@ -255,7 +362,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     margin-top: 2rem;
 }
 
-.chart-container, .recent-activity-container {
+.chart-container, .todays-schedule-container, .recent-activity-container {
     background-color: var(--card-bg-color);
     padding: 2rem;
     border-radius: 8px;
@@ -309,10 +416,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     box-shadow: var(--shadow);
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s;
 }
 .action-btn-quick:hover {
     transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     background-color: #f1f3f5;
 }
 .action-btn-quick a {
@@ -321,12 +429,6 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 /* --- Dashboard Today's Schedule --- */
-.todays-schedule-container {
-    background-color: var(--card-bg-color);
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-}
 .schedule-list { list-style: none; }
 .schedule-list li {
     display: flex;
@@ -338,6 +440,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .schedule-list li:last-child { border-bottom: none; }
 .schedule-list li .time { font-weight: 600; color: var(--primary-color); }
 .schedule-list li.break p { color: #888; font-style: italic; }
+
 /* --- Dark Mode Theme --- */
 body.dark-mode {
     --background-color: #1a1a1a;
@@ -359,6 +462,51 @@ body.dark-mode .timetable-slot {
 body.dark-mode .modal-content {
      background-color: #333;
 }
+
+/* === UNIVERSAL DARK MODE TABLE & LIST FIX === */
+body.dark-mode .data-table-container,
+body.dark-mode .data-table th,
+body.dark-mode .todays-schedule-container, /* Added this */
+body.dark-mode .filters, /* Added this */
+body.dark-mode .settings-container, /* Added this */
+body.dark-mode .action-btn-quick, /* Added this */
+body.dark-mode .chart-container {
+    background-color: var(--card-bg-color);
+}
+body.dark-mode .data-table tbody tr {
+    background-color: var(--card-bg-color);
+    border-color: var(--border-color);
+}
+body.dark-mode .data-table tbody tr:hover {
+    background-color: #3b3b3b; /* Darker hover */
+}
+body.dark-mode .schedule-list li {
+    border-color: var(--border-color); /* Fix for schedule list lines */
+}
+/* === END DARK MODE FIX === */
+
+
+/* Dark mode for new stat cards */
+body.dark-mode .stat-card {
+    background-color: var(--card-bg-color);
+}
+body.dark-mode .stat-card .info p {
+    color: #aaa;
+}
+body.dark-mode .stat-card .icon.icon-courses {
+    background-color: #2a3f5c;
+    color: #5aa1ff;
+}
+body.dark-mode .stat-card .icon.icon-faculty {
+    background-color: #2c4737;
+    color: #55d47a;
+}
+body.dark-mode .stat-card .icon.icon-rooms {
+    background-color: #4d432b;
+    color: #ffd966;
+}
+
+
 /* --- Timetable Scrolling for more columns --- */
 .timetable-container {
     overflow-x: auto; /* Enable horizontal scrolling if needed */
@@ -445,6 +593,16 @@ body.dark-mode .modal-content {
 .toggle-text a:hover {
     text-decoration: underline;
 }
+
+/* === NEW AUTH ERROR STYLE === */
+.auth-error {
+    color: var(--danger-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    min-height: 1.2em; /* Prevents layout jump */
+}
+
 
 /* Dark mode adjustments for login page */
 body.dark-mode.login-page {

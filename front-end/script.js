@@ -34,12 +34,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR DASHBOARD PAGE (dashboard.html)
+    // == LOGIC FOR DASHBOARD PAGE (dashboard.html) --- [UPDATED] ---
     // =================================================================
     const occupancyChartCanvas = document.getElementById('occupancyChart');
+    let myOccupancyChart = null; // To hold the chart instance
+
     if (occupancyChartCanvas) {
-        const ctx = occupancyChartCanvas.getContext('2d');
-        new Chart(ctx, { type: 'bar', data: { labels: ['Lecture Halls', 'Computer Labs', 'Science Labs', 'Auditoriums'], datasets: [{ label: 'Occupied Rooms', data: [20, 15, 12, 3], backgroundColor: ['rgba(54, 162, 235, 0.6)','rgba(255, 99, 132, 0.6)','rgba(75, 192, 192, 0.6)','rgba(153, 102, 255, 0.6)'], borderColor: ['rgba(54, 162, 235, 1)','rgba(255, 99, 132, 1)','rgba(75, 192, 192, 1)','rgba(153, 102, 255, 1)'], borderWidth: 1 }] }, options: { responsive: true, scales: { y: { beginAtZero: true } } } });
+        
+        /**
+         * Fetches data and populates the dashboard stats and chart.
+         */
+        async function loadDashboardStats() {
+            try {
+                // Fetch all data in parallel
+                const [courses, faculty, rooms] = await Promise.all([
+                    fetchCourses(), 
+                    fetchFaculty(), 
+                    fetchRooms()
+                ]);
+
+                // --- 1. Update Stat Cards ---
+                if (courses) {
+                    document.getElementById('totalCoursesStat').textContent = courses.length;
+                }
+                if (faculty) {
+                    document.getElementById('totalFacultyStat').textContent = faculty.length;
+                }
+                if (rooms) {
+                    document.getElementById('totalRoomsStat').textContent = rooms.length;
+                }
+
+                // --- 2. Process Data for Chart ---
+                const roomTypeCounts = {};
+                if (rooms) {
+                    for (const room of rooms) {
+                        const type = room.type || 'Unknown';
+                        roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
+                    }
+                }
+
+                const chartLabels = Object.keys(roomTypeCounts);
+                const chartData = Object.values(roomTypeCounts);
+                
+                // Simple color generator
+                const backgroundColors = chartLabels.map((_, index) => `rgba(${index * 60 % 255}, ${index * 100 % 255}, ${index * 40 % 255}, 0.6)`);
+                const borderColors = chartLabels.map((_, index) => `rgba(${index * 60 % 255}, ${index * 100 % 255}, ${index * 40 % 255}, 1)`);
+
+
+                // --- 3. Render Chart ---
+                const ctx = occupancyChartCanvas.getContext('2d');
+                
+                // Destroy old chart instance if it exists
+                if (myOccupancyChart) {
+                    myOccupancyChart.destroy();
+                }
+
+                myOccupancyChart = new Chart(ctx, { 
+                    type: 'bar', 
+                    data: { 
+                        labels: chartLabels.length > 0 ? chartLabels : ['No Data'], 
+                        datasets: [{ 
+                            label: 'Room Count', 
+                            data: chartData.length > 0 ? chartData : [0], 
+                            backgroundColor: chartLabels.length > 0 ? backgroundColors : ['rgba(200, 200, 200, 0.6)'], 
+                            borderColor: chartLabels.length > 0 ? borderColors : ['rgba(200, 200, 200, 1)'], 
+                            borderWidth: 1 
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, 
+                        scales: { y: { beginAtZero: true } } 
+                    } 
+                });
+
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+                alert("Could not load dashboard statistics. Please check the connection.");
+            }
+        }
+
+        // Load the stats when the page loads
+        loadDashboardStats();
     }
 
     // =================================================================
@@ -70,58 +145,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR FACULTY PAGE (faculty.html)  --- [UPDATED SECTION] ---
+    // == LOGIC FOR FACULTY PAGE (faculty.html)
     // =================================================================
     const facultyModal = document.getElementById('facultyModal');
     if (facultyModal) {
-        // --- Fetch and render faculty on page load ---
         async function loadAndRenderFaculty() {
-            const faculty = await fetchFaculty(); // Calls the helper function
-            renderFacultyTable(faculty); // Calls the helper function
+            const faculty = await fetchFaculty(); 
+            renderFacultyTable(faculty); 
         }
-        loadAndRenderFaculty(); // Call the function immediately
+        loadAndRenderFaculty(); 
 
         const addBtn = document.querySelector('body.faculty-page .main-header .publish-btn');
         const facultyForm = document.getElementById('facultyForm');
         const modalTitle = facultyModal.querySelector('#modalTitle');
         const closeModalBtn = facultyModal.querySelector('.close-button');
-        let editingRow = null; // Variable to track which row we are editing
+        let editingRow = null; 
 
         const openModal = () => {
-             // Reset form state for adding unless editingRow is set
              if (!editingRow) {
                 modalTitle.textContent = 'Add New Faculty';
-                document.getElementById('facultyId').readOnly = false; // Make ID editable when adding
+                document.getElementById('facultyId').readOnly = false; 
                 facultyForm.reset();
              }
              facultyModal.style.display = 'block';
         }
         const closeModal = () => {
             facultyModal.style.display = 'none';
-            editingRow = null; // Clear editing state
-            facultyForm.reset(); // Clear form fields
-            document.getElementById('facultyId').readOnly = false; // Ensure ID is editable again
+            editingRow = null; 
+            facultyForm.reset(); 
+            document.getElementById('facultyId').readOnly = false; 
         };
 
         if(addBtn) addBtn.addEventListener('click', () => {
-             editingRow = null; // Ensure we are in "add" mode
+             editingRow = null; 
              openModal();
         });
 
         const facultyTable = document.querySelector('.faculty-page .data-table');
          if (facultyTable) {
-            facultyTable.addEventListener('click', async (e) => { // Made async
+            facultyTable.addEventListener('click', async (e) => { 
                 if (e.target.classList.contains('edit')) {
                     editingRow = e.target.closest('tr');
                     const cells = editingRow.children;
-                    document.getElementById('facultyId').value = cells[0].textContent; // Populate ID
+                    document.getElementById('facultyId').value = cells[0].textContent; 
                     document.getElementById('facultyName').value = cells[1].textContent;
                     document.getElementById('facultyDept').value = cells[2].textContent;
+                    document.getElementById('facultyDesignation').value = cells[3].textContent; // POPULATE DESIGNATION
                     modalTitle.textContent = 'Edit Faculty';
-                    document.getElementById('facultyId').readOnly = true; // Make ID read-only when editing
+                    document.getElementById('facultyId').readOnly = true; 
                     openModal();
                 } else if (e.target.classList.contains('delete')) {
-                    // --- Connect DELETE button to backend ---
                     const rowToDelete = e.target.closest('tr');
                     const facultyIdToDelete = rowToDelete.children[0].textContent;
                     if (confirm(`Are you sure you want to delete faculty member ${facultyIdToDelete}?`)) {
@@ -148,17 +221,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
          }
 
-        // --- UPDATED Submit Listener for ADDING and EDITING faculty ---
         facultyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('facultyId').value;
             const name = document.getElementById('facultyName').value;
             const dept = document.getElementById('facultyDept').value;
+            const designation = document.getElementById('facultyDesignation').value; // GET DESIGNATION
 
             // Data sent in the request body
             const facultyData = {
                 name: name,
-                department: dept
+                department: dept,
+                designation: designation // ADD DESIGNATION
             };
 
             let url = 'http://localhost:3000/api/faculty';
@@ -166,17 +240,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (editingRow) {
                 // UPDATE (PUT) request
-                const originalId = id; // Get ID from read-only form
+                const originalId = id; 
                 url = `http://localhost:3000/api/faculty/${originalId}`;
                 method = 'PUT';
-                if (!name || !dept) {
-                     alert("Name and Department cannot be empty when editing.");
+                if (!name || !dept || !designation) { // VALIDATE DESIGNATION
+                     alert("Name, Department, and Designation cannot be empty when editing.");
                      return;
                 }
             } else {
                 // ADD (POST) request
                 facultyData.faculty_id = id; // Add the ID for POST
-                if (!id || !name || !dept) {
+                if (!id || !name || !dept || !designation) { // VALIDATE DESIGNATION
                     alert("Please fill in all fields for the new faculty member.");
                     return;
                 }
@@ -205,8 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} faculty.`);
             }
         });
-        // --- END OF UPDATED Submit Listener ---
-
+        
         closeModalBtn.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == facultyModal) closeModal(); });
     }
@@ -216,26 +289,127 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const roomModal = document.getElementById('roomModal');
     if (roomModal) {
-         // NOTE: This section still uses frontend-only logic. Needs backend integration.
+        async function loadAndRenderRooms() {
+            const rooms = await fetchRooms();
+            renderRoomsTable(rooms);
+        }
+        loadAndRenderRooms();
+
         const addBtn = document.querySelector('body.rooms-page .main-header .publish-btn');
         const roomForm = document.getElementById('roomForm');
         const modalTitle = roomModal.querySelector('#modalTitle');
         const closeModalBtn = roomModal.querySelector('.close-button');
         let editingRow = null;
-        const openModal = () => roomModal.style.display = 'block';
-        const closeModal = () => { roomModal.style.display = 'none'; editingRow = null; roomForm.reset(); };
-        if(addBtn) addBtn.addEventListener('click', () => { modalTitle.textContent = 'Add New Room'; openModal(); });
+
+        const openModal = () => {
+             if (!editingRow) {
+                modalTitle.textContent = 'Add New Room';
+                document.getElementById('roomNumber').readOnly = false;
+                roomForm.reset();
+             }
+             roomModal.style.display = 'block';
+        }
+        const closeModal = () => {
+            roomModal.style.display = 'none';
+            editingRow = null; 
+            roomForm.reset(); 
+            document.getElementById('roomNumber').readOnly = false;
+        };
+
+        if(addBtn) addBtn.addEventListener('click', () => { 
+            editingRow = null;
+            openModal(); 
+        });
+
         const roomTable = document.querySelector('.rooms-page .data-table');
         if(roomTable) {
-            roomTable.addEventListener('click', (e) => {
+            roomTable.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('edit')) {
-                    editingRow = e.target.closest('tr'); const cells = editingRow.children; document.getElementById('roomNumber').value = cells[0].textContent; document.getElementById('roomCapacity').value = cells[1].textContent; document.getElementById('roomType').value = cells[2].textContent; modalTitle.textContent = 'Edit Room'; openModal();
+                    editingRow = e.target.closest('tr'); 
+                    const cells = editingRow.children; 
+                    document.getElementById('roomNumber').value = cells[0].textContent; 
+                    document.getElementById('roomCapacity').value = cells[1].textContent; 
+                    document.getElementById('roomType').value = cells[2].textContent; 
+                    modalTitle.textContent = 'Edit Room'; 
+                    document.getElementById('roomNumber').readOnly = true;
+                    openModal();
                 } else if (e.target.classList.contains('delete')) {
-                    if (confirm('Are you sure you want to delete this room?')) { e.target.closest('tr').remove(); }
+                    const rowToDelete = e.target.closest('tr');
+                    const roomNumberToDelete = rowToDelete.children[0].textContent;
+                    if (confirm(`Are you sure you want to delete room ${roomNumberToDelete}?`)) {
+                        try {
+                            const response = await fetch(`http://localhost:3000/api/rooms/${roomNumberToDelete}`, {
+                                method: 'DELETE',
+                            });
+
+                            if (!response.ok) {
+                                let errorMsg = response.statusText;
+                                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ }
+                                console.error("Error deleting room:", response.status, errorMsg);
+                                alert(`Error deleting room: ${errorMsg}`);
+                                return;
+                            }
+                            console.log(`Room ${roomNumberToDelete} deleted successfully`);
+                            loadAndRenderRooms(); // Reload table
+                        } catch (error) {
+                            console.error("Network error deleting room:", error);
+                            alert("Could not connect to server to delete room.");
+                        }
+                    }
                 }
             });
         }
-        roomForm.addEventListener('submit', (e) => { e.preventDefault(); const number = document.getElementById('roomNumber').value; const capacity = document.getElementById('roomCapacity').value; const type = document.getElementById('roomType').value; if (editingRow) { const cells = editingRow.children; cells[0].textContent = number; cells[1].textContent = capacity; cells[2].textContent = type; } else { document.querySelector('.data-table tbody').insertAdjacentHTML('beforeend', `<tr><td>${number}</td><td>${capacity}</td><td>${type}</td><td><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td></tr>`); } closeModal(); });
+
+        roomForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            const number = document.getElementById('roomNumber').value; 
+            const capacity = parseInt(document.getElementById('roomCapacity').value); 
+            const type = document.getElementById('roomType').value;
+            
+            const roomData = { capacity: capacity, type: type };
+            let url = 'http://localhost:3000/api/rooms';
+            let method = 'POST';
+
+            if (editingRow) {
+                const originalNumber = number;
+                url = `http://localhost:3000/api/rooms/${originalNumber}`;
+                method = 'PUT';
+                if (isNaN(capacity) || !type) {
+                     alert("Capacity and Type cannot be empty when editing.");
+                     return;
+                }
+            } else {
+                roomData.room_number = number;
+                if (!number || isNaN(capacity) || !type) {
+                    alert("Please fill in all fields correctly for the new room.");
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(roomData),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error(`Error ${editingRow ? 'updating' : 'adding'} room:`, response.status, errorData);
+                    alert(`Error ${editingRow ? 'updating' : 'adding'} room: ${errorData.message || response.statusText}`);
+                    return;
+                }
+
+                console.log(`Room ${editingRow ? 'updated' : 'added'} successfully`);
+                closeModal();
+                loadAndRenderRooms(); // Reload the table
+
+            } catch (error) {
+                console.error(`Network error ${editingRow ? 'updating' : 'adding'} room:`, error);
+                alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} room.`);
+            }
+        });
+        
         closeModalBtn.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == roomModal) closeModal(); });
     }
@@ -258,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR LOGIN/SIGNUP PAGE (login.html)
+    // == LOGIC FOR LOGIN/SIGNUP PAGE (login.html) --- [FULLY UPDATED] ---
     // =================================================================
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -267,10 +441,97 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTitle = document.getElementById('formTitle');
 
     if (loginForm && signupForm) { // Only run if we are on the login page
-        showSignupLink.addEventListener('click', (e) => { e.preventDefault(); loginForm.style.display = 'none'; signupForm.style.display = 'block'; formTitle.textContent = 'Sign Up'; });
-        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); signupForm.style.display = 'none'; loginForm.style.display = 'block'; formTitle.textContent = 'Login'; });
-        loginForm.addEventListener('submit', (e) => { e.preventDefault(); alert('Login attempt (no backend yet!)'); window.location.href = 'dashboard.html'; });
-        signupForm.addEventListener('submit', (e) => { e.preventDefault(); alert('Signup attempt (no backend yet!)'); signupForm.style.display = 'none'; loginForm.style.display = 'block'; formTitle.textContent = 'Login'; });
+        const loginErrorEl = document.getElementById('loginError');
+        const signupErrorEl = document.getElementById('signupError');
+
+        showSignupLink.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            loginErrorEl.textContent = ''; // Clear errors
+            signupErrorEl.textContent = '';
+            loginForm.style.display = 'none'; 
+            signupForm.style.display = 'block'; 
+            formTitle.textContent = 'Sign Up'; 
+        });
+        showLoginLink.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            loginErrorEl.textContent = ''; // Clear errors
+            signupErrorEl.textContent = '';
+            signupForm.style.display = 'none'; 
+            loginForm.style.display = 'block'; 
+            formTitle.textContent = 'Login'; 
+        });
+        
+        // --- LOGIN FORM SUBMISSION ---
+        loginForm.addEventListener('submit', async (e) => { 
+            e.preventDefault();
+            loginErrorEl.textContent = ''; // Clear previous errors
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginButton = loginForm.querySelector('.auth-btn');
+            loginButton.textContent = 'Logging in...';
+            loginButton.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Login failed');
+                }
+
+                // --- SUCCESS ---
+                console.log(data.message);
+                // We're not using tokens yet, so just redirect
+                window.location.href = 'dashboard.html'; 
+
+            } catch (error) {
+                loginErrorEl.textContent = error.message;
+            } finally {
+                loginButton.textContent = 'Login';
+                loginButton.disabled = false;
+            }
+        });
+        
+        // --- SIGNUP FORM SUBMISSION ---
+        signupForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            signupErrorEl.textContent = ''; // Clear previous errors
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const signupButton = signupForm.querySelector('.auth-btn');
+            signupButton.textContent = 'Signing up...';
+            signupButton.disabled = true;
+            
+            try {
+                 const response = await fetch('http://localhost:3000/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Signup failed');
+                }
+
+                // --- SUCCESS ---
+                alert('Signup successful! Please log in.');
+                showLoginLink.click(); // Switch to login form
+
+            } catch (error) {
+                signupErrorEl.textContent = error.message;
+            } finally {
+                signupButton.textContent = 'Sign Up';
+                signupButton.disabled = false;
+            }
+        });
     }
 
 }); // <<< THIS IS THE SINGLE CLOSING BRACE for DOMContentLoaded
@@ -327,14 +588,15 @@ function populateTimetable(data) {
 }
 
 // =================================================================
-// == HELPER FUNCTIONS (FOR DATA PAGES LIKE COURSES)
+// == HELPER FUNCTIONS (FOR COURSES PAGE)
 // =================================================================
 async function fetchCourses() {
     console.log("Fetching courses from backend...");
     try {
-        const response = await fetch('http://localhost:3000/api/courses'); // URL of our GET endpoint
+        const response = await fetch('http://localhost:3000/api/courses');
         if (!response.ok) {
             console.error("Error fetching courses:", response.status, response.statusText);
+            if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
             alert(`Error loading courses: ${response.statusText}`);
             return null;
         }
@@ -343,13 +605,14 @@ async function fetchCourses() {
         return courses;
     } catch (error) {
         console.error("Network error fetching courses:", error);
+        if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
         alert("Could not connect to the server to load courses.");
         return null;
     }
 }
 
 function renderCoursesTable(courses) {
-    const tableBody = document.querySelector('.courses-page .data-table tbody'); // Target the courses table body
+    const tableBody = document.querySelector('.courses-page .data-table tbody'); 
     if (!tableBody) {
         if (document.body.classList.contains('courses-page')) { console.error("Could not find courses table body to render!"); }
         return;
@@ -373,19 +636,15 @@ function renderCoursesTable(courses) {
 }
 
 // =================================================================
-// == HELPER FUNCTIONS (FOR DATA PAGES LIKE FACULTY)
+// == HELPER FUNCTIONS (FOR FACULTY PAGE)
 // =================================================================
-
-/**
- * Fetches all faculty from the backend API.
- * Returns an array of faculty objects or null if an error occurs.
- */
 async function fetchFaculty() {
     console.log("Fetching faculty from backend...");
     try {
-        const response = await fetch('http://localhost:3000/api/faculty'); // URL of faculty GET endpoint
+        const response = await fetch('http://localhost:3000/api/faculty'); 
         if (!response.ok) {
             console.error("Error fetching faculty:", response.status, response.statusText);
+            if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
             alert(`Error loading faculty: ${response.statusText}`);
             return null;
         }
@@ -394,17 +653,13 @@ async function fetchFaculty() {
         return faculty;
     } catch (error) {
         console.error("Network error fetching faculty:", error);
+        if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
         alert("Could not connect to the server to load faculty.");
         return null;
     }
 }
 
-/**
- * Renders the faculty data into the HTML table.
- * @param {Array} facultyMembers - An array of faculty objects.
- */
 function renderFacultyTable(facultyMembers) {
-    // Target the faculty table body specifically
     const tableBody = document.querySelector('.faculty-page .data-table tbody');
     if (!tableBody) {
         if (document.body.classList.contains('faculty-page')) {
@@ -413,10 +668,10 @@ function renderFacultyTable(facultyMembers) {
         return;
     }
 
-    tableBody.innerHTML = ''; // Clear existing rows
+    tableBody.innerHTML = ''; 
 
     if (!facultyMembers || facultyMembers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4">No faculty members found.</td></tr>'; // Colspan is 4
+        tableBody.innerHTML = '<tr><td colspan="5">No faculty members found.</td></tr>'; // Colspan is 5 now
         return;
     }
 
@@ -426,6 +681,62 @@ function renderFacultyTable(facultyMembers) {
                 <td>${faculty.faculty_id || faculty._id}</td>
                 <td>${faculty.name}</td>
                 <td>${faculty.department}</td>
+                <td>${faculty.designation}</td> <td>
+                    <button class="action-btn-table edit">Edit</button>
+                    <button class="action-btn-table delete">Delete</button>
+                </td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', rowHTML);
+    });
+}
+
+// =================================================================
+// == HELPER FUNCTIONS (FOR ROOMS PAGE)
+// =================================================================
+async function fetchRooms() {
+    console.log("Fetching rooms from backend...");
+    try {
+        const response = await fetch('http://localhost:3000/api/rooms'); 
+        if (!response.ok) {
+            console.error("Error fetching rooms:", response.status, response.statusText);
+            if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
+            alert(`Error loading rooms: ${response.statusText}`);
+            return null;
+        }
+        const rooms = await response.json();
+        console.log("Rooms received:", rooms);
+        return rooms;
+    } catch (error) {
+        console.error("Network error fetching rooms:", error);
+        if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
+        alert("Could not connect to the server to load rooms.");
+        return null;
+    }
+}
+
+function renderRoomsTable(rooms) {
+    const tableBody = document.querySelector('.rooms-page .data-table tbody');
+    if (!tableBody) {
+        if (document.body.classList.contains('rooms-page')) {
+           console.error("Could not find rooms table body to render!");
+        }
+        return;
+    }
+
+    tableBody.innerHTML = ''; 
+
+    if (!rooms || rooms.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4">No rooms found.</td></tr>';
+        return;
+    }
+
+    rooms.forEach(room => {
+        const rowHTML = `
+            <tr>
+                <td>${room.room_number || room._id}</td>
+                <td>${room.capacity}</td>
+                <td>${room.type}</td>
                 <td>
                     <button class="action-btn-table edit">Edit</button>
                     <button class="action-btn-table delete">Delete</button>

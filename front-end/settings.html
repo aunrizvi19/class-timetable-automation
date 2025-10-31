@@ -28,34 +28,36 @@
         <main class="main-content">
             <header class="main-header">
                 <h1>Settings</h1>
-                <button class="action-btn publish-btn" id="saveSettingsBtn">Save Changes</button>
+                <button class="action-btn publish-btn" id="saveSettingsBtn">💾 Save Changes</button>
             </header>
 
             <div class="settings-container">
                 <section class="settings-section">
                     <h2>Generation Parameters</h2>
-                    <div class="form-group">
-                        <label for="max-hours">Max consecutive hours per day:</label>
-                        <input type="number" id="max-hours" value="3">
+                    <div class="settings-form-layout">
+                        <div class="form-group">
+                            <label for="max-hours">Max consecutive hours per day:</label>
+                            <input type="number" id="max-hours" value="3">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="lunchBreakStart">Lunch Break Start (HH:MM):</label>
+                            <input type="text" id="lunchBreakStart" value="12:45">
+                        </div>
+                        <div class="form-group">
+                            <label for="lunchBreakDuration">Lunch Duration (minutes):</label>
+                            <input type="number" id="lunchBreakDuration" value="45">
+                        </div>
+                        <div class="form-group">
+                            <label for="teaBreakStart">Tea Break Start (HH:MM):</label>
+                            <input type="text" id="teaBreakStart" value="10:30">
+                        </div>
+                        <div class="form-group">
+                            <label for="teaBreakDuration">Tea Duration (minutes):</label>
+                            <input type="number" id="teaBreakDuration" value="15">
+                        </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="lunchBreakStart">Lunch Break Start Time (HH:MM):</label>
-                        <input type="text" id="lunchBreakStart" value="12:45">
-                    </div>
-                    <div class="form-group">
-                        <label for="lunchBreakDuration">Lunch Duration (minutes):</label>
-                        <input type="number" id="lunchBreakDuration" value="45">
-                    </div>
-                    <div class="form-group">
-                        <label for="teaBreakStart">Tea Break Start Time (HH:MM):</label>
-                        <input type="text" id="teaBreakStart" value="10:30">
-                    </div>
-                    <div class="form-group">
-                        <label for="teaBreakDuration">Tea Duration (minutes):</label>
-                        <input type="number" id="teaBreakDuration" value="15">
-                    </div>
-                    </section>
+                </section>
 
                 <section class="settings-section">
                     <h2>Appearance</h2>

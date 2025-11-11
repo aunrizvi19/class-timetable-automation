@@ -1,3 +1,6 @@
+// Global variable to store the section ID we are currently editing assignments for
+let currentAssignmentSectionId = null;
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // =================================================================
@@ -37,23 +40,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // == LOGIC FOR DASHBOARD PAGE (dashboard.html)
     // =================================================================
     const occupancyChartCanvas = document.getElementById('occupancyChart');
-    let myOccupancyChart = null; // To hold the chart instance
+    let myOccupancyChart = null; 
 
     if (occupancyChartCanvas) {
-        
-        /**
-         * Fetches data and populates the dashboard stats and chart.
-         */
         async function loadDashboardStats() {
             try {
-                // Fetch all data in parallel
                 const [courses, faculty, rooms] = await Promise.all([
                     fetchCourses(), 
                     fetchFaculty(), 
                     fetchRooms()
                 ]);
 
-                // --- 1. Update Stat Cards ---
                 if (courses) {
                     document.getElementById('totalCoursesStat').textContent = courses.length;
                 }
@@ -64,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('totalRoomsStat').textContent = rooms.length;
                 }
 
-                // --- 2. Process Data for Chart ---
                 const roomTypeCounts = {};
                 if (rooms) {
                     for (const room of rooms) {
@@ -75,16 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const chartLabels = Object.keys(roomTypeCounts);
                 const chartData = Object.values(roomTypeCounts);
-                
-                // Simple color generator
                 const backgroundColors = chartLabels.map((_, index) => `rgba(${index * 60 % 255}, ${index * 100 % 255}, ${index * 40 % 255}, 0.6)`);
                 const borderColors = chartLabels.map((_, index) => `rgba(${index * 60 % 255}, ${index * 100 % 255}, ${index * 40 % 255}, 1)`);
-
-
-                // --- 3. Render Chart ---
                 const ctx = occupancyChartCanvas.getContext('2d');
                 
-                // Destroy old chart instance if it exists
                 if (myOccupancyChart) {
                     myOccupancyChart.destroy();
                 }
@@ -109,11 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error("Error loading dashboard data:", error);
-                alert("Could not load dashboard statistics. Please check the connection.");
             }
         }
-
-        // Load the stats when the page loads
         loadDashboardStats();
     }
 
@@ -149,18 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const facultyModal = document.getElementById('facultyModal');
     if (facultyModal) {
-        async function loadAndRenderFaculty() {
-            const faculty = await fetchFaculty(); 
-            renderFacultyTable(faculty); 
-        }
+        async function loadAndRenderFaculty() { const faculty = await fetchFaculty(); renderFacultyTable(faculty); }
         loadAndRenderFaculty(); 
-
         const addBtn = document.querySelector('body.faculty-page .main-header .publish-btn');
         const facultyForm = document.getElementById('facultyForm');
         const modalTitle = facultyModal.querySelector('#modalTitle');
         const closeModalBtn = facultyModal.querySelector('.close-button');
         let editingRow = null; 
-
         const openModal = () => {
              if (!editingRow) {
                 modalTitle.textContent = 'Add New Faculty';
@@ -169,18 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
              }
              facultyModal.style.display = 'block';
         }
-        const closeModal = () => {
-            facultyModal.style.display = 'none';
-            editingRow = null; 
-            facultyForm.reset(); 
-            document.getElementById('facultyId').readOnly = false; 
-        };
-
-        if(addBtn) addBtn.addEventListener('click', () => {
-             editingRow = null; 
-             openModal();
-        });
-
+        const closeModal = () => { facultyModal.style.display = 'none'; editingRow = null; facultyForm.reset(); document.getElementById('facultyId').readOnly = false; };
+        if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
         const facultyTable = document.querySelector('.faculty-page .data-table');
          if (facultyTable) {
             facultyTable.addEventListener('click', async (e) => { 
@@ -190,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('facultyId').value = cells[0].textContent; 
                     document.getElementById('facultyName').value = cells[1].textContent;
                     document.getElementById('facultyDept').value = cells[2].textContent;
-                    document.getElementById('facultyDesignation').value = cells[3].textContent; // POPULATE DESIGNATION
+                    document.getElementById('facultyDesignation').value = cells[3].textContent;
                     modalTitle.textContent = 'Edit Faculty';
                     document.getElementById('facultyId').readOnly = true; 
                     openModal();
@@ -199,87 +171,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     const facultyIdToDelete = rowToDelete.children[0].textContent;
                     if (confirm(`Are you sure you want to delete faculty member ${facultyIdToDelete}?`)) {
                         try {
-                            const response = await fetch(`http://localhost:3000/api/faculty/${facultyIdToDelete}`, {
-                                method: 'DELETE',
-                            });
-
-                            if (!response.ok) {
-                                let errorMsg = response.statusText;
-                                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ }
-                                console.error("Error deleting faculty:", response.status, errorMsg);
-                                alert(`Error deleting faculty: ${errorMsg}`);
-                                return;
-                            }
+                            const response = await fetch(`http://localhost:3000/api/faculty/${facultyIdToDelete}`, { method: 'DELETE', });
+                            if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting faculty:", response.status, errorMsg); alert(`Error deleting faculty: ${errorMsg}`); return; }
                             console.log(`Faculty ${facultyIdToDelete} deleted successfully`);
-                            loadAndRenderFaculty(); // Reload table
-                        } catch (error) {
-                            console.error("Network error deleting faculty:", error);
-                            alert("Could not connect to server to delete faculty.");
-                        }
+                            loadAndRenderFaculty();
+                        } catch (error) { console.error("Network error deleting faculty:", error); alert("Could not connect to server to delete faculty."); }
                     }
                 }
             });
          }
-
         facultyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('facultyId').value;
             const name = document.getElementById('facultyName').value;
             const dept = document.getElementById('facultyDept').value;
-            const designation = document.getElementById('facultyDesignation').value; // GET DESIGNATION
-
-            // Data sent in the request body
-            const facultyData = {
-                name: name,
-                department: dept,
-                designation: designation // ADD DESIGNATION
-            };
-
+            const designation = document.getElementById('facultyDesignation').value;
+            const facultyData = { name: name, department: dept, designation: designation };
             let url = 'http://localhost:3000/api/faculty';
             let method = 'POST';
-
             if (editingRow) {
-                // UPDATE (PUT) request
                 const originalId = id; 
                 url = `http://localhost:3000/api/faculty/${originalId}`;
                 method = 'PUT';
-                if (!name || !dept || !designation) { // VALIDATE DESIGNATION
-                     alert("Name, Department, and Designation cannot be empty when editing.");
-                     return;
-                }
+                if (!name || !dept || !designation) { alert("Name, Department, and Designation cannot be empty when editing."); return; }
             } else {
-                // ADD (POST) request
-                facultyData.faculty_id = id; // Add the ID for POST
-                if (!id || !name || !dept || !designation) { // VALIDATE DESIGNATION
-                    alert("Please fill in all fields for the new faculty member.");
-                    return;
-                }
+                facultyData.faculty_id = id;
+                if (!id || !name || !dept || !designation) { alert("Please fill in all fields for the new faculty member."); return; }
             }
-
             try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(facultyData),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error(`Error ${editingRow ? 'updating' : 'adding'} faculty:`, response.status, errorData);
-                    alert(`Error ${editingRow ? 'updating' : 'adding'} faculty: ${errorData.message || response.statusText}`);
-                    return;
-                }
-
+                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(facultyData), });
+                if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} faculty:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} faculty: ${errorData.message || response.statusText}`); return; }
                 console.log(`Faculty ${editingRow ? 'updated' : 'added'} successfully`);
                 closeModal();
-                loadAndRenderFaculty(); // Reload the table
-
-            } catch (error) {
-                console.error(`Network error ${editingRow ? 'updating' : 'adding'} faculty:`, error);
-                alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} faculty.`);
-            }
+                loadAndRenderFaculty();
+            } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} faculty:`, error); alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} faculty.`); }
         });
-        
         closeModalBtn.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == facultyModal) closeModal(); });
     }
@@ -289,18 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const roomModal = document.getElementById('roomModal');
     if (roomModal) {
-        async function loadAndRenderRooms() {
-            const rooms = await fetchRooms();
-            renderRoomsTable(rooms);
-        }
+        async function loadAndRenderRooms() { const rooms = await fetchRooms(); renderRoomsTable(rooms); }
         loadAndRenderRooms();
-
         const addBtn = document.querySelector('body.rooms-page .main-header .publish-btn');
         const roomForm = document.getElementById('roomForm');
         const modalTitle = roomModal.querySelector('#modalTitle');
         const closeModalBtn = roomModal.querySelector('.close-button');
         let editingRow = null;
-
         const openModal = () => {
              if (!editingRow) {
                 modalTitle.textContent = 'Add New Room';
@@ -309,18 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
              }
              roomModal.style.display = 'block';
         }
-        const closeModal = () => {
-            roomModal.style.display = 'none';
-            editingRow = null; 
-            roomForm.reset(); 
-            document.getElementById('roomNumber').readOnly = false;
-        };
-
-        if(addBtn) addBtn.addEventListener('click', () => { 
-            editingRow = null;
-            openModal(); 
-        });
-
+        const closeModal = () => { roomModal.style.display = 'none'; editingRow = null; roomForm.reset(); document.getElementById('roomNumber').readOnly = false; };
+        if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
         const roomTable = document.querySelector('.rooms-page .data-table');
         if(roomTable) {
             roomTable.addEventListener('click', async (e) => {
@@ -338,96 +249,55 @@ document.addEventListener('DOMContentLoaded', () => {
                     const roomNumberToDelete = rowToDelete.children[0].textContent;
                     if (confirm(`Are you sure you want to delete room ${roomNumberToDelete}?`)) {
                         try {
-                            const response = await fetch(`http://localhost:3000/api/rooms/${roomNumberToDelete}`, {
-                                method: 'DELETE',
-                            });
-
-                            if (!response.ok) {
-                                let errorMsg = response.statusText;
-                                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ }
-                                console.error("Error deleting room:", response.status, errorMsg);
-                                alert(`Error deleting room: ${errorMsg}`);
-                                return;
-                            }
+                            const response = await fetch(`http://localhost:3000/api/rooms/${roomNumberToDelete}`, { method: 'DELETE', });
+                            if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting room:", response.status, errorMsg); alert(`Error deleting room: ${errorMsg}`); return; }
                             console.log(`Room ${roomNumberToDelete} deleted successfully`);
-                            loadAndRenderRooms(); // Reload table
-                        } catch (error) {
-                            console.error("Network error deleting room:", error);
-                            alert("Could not connect to server to delete room.");
-                        }
+                            loadAndRenderRooms();
+                        } catch (error) { console.error("Network error deleting room:", error); alert("Could not connect to server to delete room."); }
                     }
                 }
             });
         }
-
         roomForm.addEventListener('submit', async (e) => { 
             e.preventDefault(); 
             const number = document.getElementById('roomNumber').value; 
             const capacity = parseInt(document.getElementById('roomCapacity').value); 
             const type = document.getElementById('roomType').value;
-            
             const roomData = { capacity: capacity, type: type };
             let url = 'http://localhost:3000/api/rooms';
             let method = 'POST';
-
             if (editingRow) {
                 const originalNumber = number;
                 url = `http://localhost:3000/api/rooms/${originalNumber}`;
                 method = 'PUT';
-                if (isNaN(capacity) || !type) {
-                     alert("Capacity and Type cannot be empty when editing.");
-                     return;
-                }
+                if (isNaN(capacity) || !type) { alert("Capacity and Type cannot be empty when editing."); return; }
             } else {
                 roomData.room_number = number;
-                if (!number || isNaN(capacity) || !type) {
-                    alert("Please fill in all fields correctly for the new room.");
-                    return;
-                }
+                if (!number || isNaN(capacity) || !type) { alert("Please fill in all fields correctly for the new room."); return; }
             }
-
             try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(roomData),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error(`Error ${editingRow ? 'updating' : 'adding'} room:`, response.status, errorData);
-                    alert(`Error ${editingRow ? 'updating' : 'adding'} room: ${errorData.message || response.statusText}`);
-                    return;
-                }
-
+                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roomData), });
+                if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} room:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} room: ${errorData.message || response.statusText}`); return; }
                 console.log(`Room ${editingRow ? 'updated' : 'added'} successfully`);
                 closeModal();
-                loadAndRenderRooms(); // Reload the table
-
-            } catch (error) {
-                console.error(`Network error ${editingRow ? 'updating' : 'adding'} room:`, error);
-                alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} room.`);
-            }
+                loadAndRenderRooms();
+            } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} room:`, error); alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} room.`); }
         });
-        
         closeModalBtn.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == roomModal) closeModal(); });
     }
 
     // =================================================================
-    // == LOGIC FOR SECTIONS PAGE (sections.html) --- [NEW] ---
+    // == LOGIC FOR SECTIONS PAGE (sections.html) --- [UPDATED] ---
     // =================================================================
     const sectionModal = document.getElementById('sectionModal');
     if (sectionModal) {
-        async function loadAndRenderSections() {
-            const sections = await fetchSections();
-            renderSectionsTable(sections);
-        }
+        async function loadAndRenderSections() { const sections = await fetchSections(); renderSectionsTable(sections); }
         loadAndRenderSections();
 
-        const addBtn = document.querySelector('body.sections-page .main-header .publish-btn');
+        const addBtn = document.getElementById('addNewSectionBtn');
         const sectionForm = document.getElementById('sectionForm');
-        const modalTitle = sectionModal.querySelector('#modalTitle');
+        const modalTitle = sectionModal.querySelector('#sectionModalTitle');
         const closeModalBtn = sectionModal.querySelector('.close-button');
         let editingRow = null;
 
@@ -439,23 +309,16 @@ document.addEventListener('DOMContentLoaded', () => {
              }
              sectionModal.style.display = 'block';
         }
-        const closeModal = () => {
-            sectionModal.style.display = 'none';
-            editingRow = null; 
-            sectionForm.reset(); 
-            document.getElementById('sectionId').readOnly = false;
-        };
+        const closeModal = () => { sectionModal.style.display = 'none'; editingRow = null; sectionForm.reset(); document.getElementById('sectionId').readOnly = false; };
 
-        if(addBtn) addBtn.addEventListener('click', () => { 
-            editingRow = null;
-            openModal(); 
-        });
+        if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
 
-        const sectionTable = document.querySelector('.sections-page .data-table');
-        if(sectionTable) {
-            sectionTable.addEventListener('click', async (e) => {
-                if (e.target.classList.contains('edit')) {
-                    editingRow = e.target.closest('tr'); 
+        const sectionTableBody = document.getElementById('sectionsTableBody');
+        if(sectionTableBody) {
+            sectionTableBody.addEventListener('click', async (e) => {
+                const target = e.target;
+                if (target.classList.contains('edit')) {
+                    editingRow = target.closest('tr'); 
                     const cells = editingRow.children; 
                     document.getElementById('sectionId').value = cells[0].textContent; 
                     document.getElementById('sectionDept').value = cells[1].textContent; 
@@ -464,29 +327,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalTitle.textContent = 'Edit Section'; 
                     document.getElementById('sectionId').readOnly = true;
                     openModal();
-                } else if (e.target.classList.contains('delete')) {
-                    const rowToDelete = e.target.closest('tr');
+                } else if (target.classList.contains('delete')) {
+                    const rowToDelete = target.closest('tr');
                     const sectionIdToDelete = rowToDelete.children[0].textContent;
                     if (confirm(`Are you sure you want to delete section ${sectionIdToDelete}?`)) {
                         try {
-                            const response = await fetch(`http://localhost:3000/api/sections/${sectionIdToDelete}`, {
-                                method: 'DELETE',
-                            });
-
-                            if (!response.ok) {
-                                let errorMsg = response.statusText;
-                                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ }
-                                console.error("Error deleting section:", response.status, errorMsg);
-                                alert(`Error deleting section: ${errorMsg}`);
-                                return;
-                            }
+                            const response = await fetch(`http://localhost:3000/api/sections/${sectionIdToDelete}`, { method: 'DELETE', });
+                            if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting section:", response.status, errorMsg); alert(`Error deleting section: ${errorMsg}`); return; }
                             console.log(`Section ${sectionIdToDelete} deleted successfully`);
-                            loadAndRenderSections(); // Reload table
-                        } catch (error) {
-                            console.error("Network error deleting section:", error);
-                            alert("Could not connect to server to delete section.");
-                        }
+                            loadAndRenderSections();
+                        } catch (error) { console.error("Network error deleting section:", error); alert("Could not connect to server to delete section."); }
                     }
+                } else if (target.classList.contains('assign')) {
+                    // --- NEW: Handle Assign Button Click ---
+                    const row = target.closest('tr');
+                    const sectionId = row.children[0].textContent;
+                    openAssignmentModal(sectionId);
                 }
             });
         }
@@ -497,58 +353,171 @@ document.addEventListener('DOMContentLoaded', () => {
             const dept = document.getElementById('sectionDept').value;
             const sem = parseInt(document.getElementById('sectionSem').value); 
             const name = document.getElementById('sectionName').value;
-            
-            const sectionData = { 
-                department: dept, 
-                semester: sem,
-                section_name: name
-            };
-
+            const sectionData = { department: dept, semester: sem, section_name: name };
             let url = 'http://localhost:3000/api/sections';
             let method = 'POST';
-
             if (editingRow) {
                 const originalId = id;
                 url = `http://localhost:3000/api/sections/${originalId}`;
                 method = 'PUT';
-                if (!dept || isNaN(sem) || !name) {
-                     alert("All fields must be filled correctly when editing.");
-                     return;
-                }
+                if (!dept || isNaN(sem) || !name) { alert("All fields must be filled correctly when editing."); return; }
             } else {
                 sectionData.section_id = id;
-                if (!id || !dept || isNaN(sem) || !name) {
-                    alert("Please fill in all fields correctly for the new section.");
-                    return;
-                }
+                if (!id || !dept || isNaN(sem) || !name) { alert("Please fill in all fields correctly for the new section."); return; }
             }
+            try {
+                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sectionData), });
+                if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} section:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} section: ${errorData.message || response.statusText}`); return; }
+                console.log(`Section ${editingRow ? 'updated' : 'added'} successfully`);
+                closeModal();
+                loadAndRenderSections();
+            } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} section:`, error); alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} section.`); }
+        });
+        closeModalBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (event) => { if (event.target == sectionModal) closeModal(); });
+    
+        // --- NEW: Assignment Modal Logic ---
+        const assignmentModal = document.getElementById('assignmentModal');
+        const assignmentForm = document.getElementById('assignmentForm');
+        const assignmentList = document.getElementById('assignmentList');
+        const assignmentModalTitle = document.getElementById('assignmentModalTitle');
+        const assignCourseSelect = document.getElementById('assignCourseSelect');
+        const assignFacultySelect = document.getElementById('assignFacultySelect');
+        
+        const openAssignmentModal = async (sectionId) => {
+            currentAssignmentSectionId = sectionId; // Store the section ID globally
+            assignmentModalTitle.textContent = `Manage Assignments for ${sectionId}`;
+            assignmentModal.style.display = 'block';
+            
+            // Clear old data
+            assignCourseSelect.innerHTML = '<option value="">Loading...</option>';
+            assignFacultySelect.innerHTML = '<option value="">Loading...</option>';
+            assignmentList.innerHTML = '<li>Loading...</li>';
 
             try {
-                const response = await fetch(url, {
-                    method: method,
+                // Fetch courses, faculty, and section data in parallel
+                const [courses, faculty, sectionData] = await Promise.all([
+                    fetchCourses(),
+                    fetchFaculty(),
+                    fetchSection(sectionId) // New helper function
+                ]);
+
+                // Populate course dropdown
+                assignCourseSelect.innerHTML = '<option value="">Select a course...</option>';
+                if(courses) {
+                    courses.forEach(course => {
+                        assignCourseSelect.innerHTML += `<option value="${course._id}">${course._id} - ${course.course_name}</option>`;
+                    });
+                }
+                
+                // Populate faculty dropdown
+                assignFacultySelect.innerHTML = '<option value="">Select a faculty...</option>';
+                if(faculty) {
+                    faculty.forEach(fac => {
+                        assignFacultySelect.innerHTML += `<option value="${fac._id}">${fac.name} (${fac.designation})</option>`;
+                    });
+                }
+                
+                // Render the list of current assignments
+                renderAssignmentList(sectionData.assignments || []);
+
+            } catch (error) {
+                console.error("Error populating assignment modal:", error);
+                assignmentList.innerHTML = '<li>Error loading assignments.</li>';
+            }
+        };
+
+        const closeAssignmentModal = () => {
+            assignmentModal.style.display = 'none';
+            currentAssignmentSectionId = null;
+            assignmentForm.reset();
+        };
+
+        assignmentModal.querySelector('.close-button').addEventListener('click', closeAssignmentModal);
+        window.addEventListener('click', (event) => { if (event.target == assignmentModal) closeAssignmentModal(); });
+
+        // Handle NEW assignment form submission
+        assignmentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentAssignmentSectionId) return;
+
+            const courseSelect = assignCourseSelect;
+            const facultySelect = assignFacultySelect;
+
+            const courseId = courseSelect.value;
+            const courseName = courseSelect.options[courseSelect.selectedIndex].text;
+            const facultyId = facultySelect.value;
+            const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
+
+            if (!courseId || !facultyId) {
+                alert("Please select both a course and a faculty member.");
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/assign`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(sectionData),
+                    body: JSON.stringify({ 
+                        courseId, 
+                        facultyId, 
+                        courseName, // Send text for easier display
+                        facultyName // Send text for easier display
+                    })
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error(`Error ${editingRow ? 'updating' : 'adding'} section:`, response.status, errorData);
-                    alert(`Error ${editingRow ? 'updating' : 'adding'} section: ${errorData.message || response.statusText}`);
-                    return;
+                    throw new Error(errorData.message || 'Failed to add assignment');
                 }
 
-                console.log(`Section ${editingRow ? 'updated' : 'added'} successfully`);
-                closeModal();
-                loadAndRenderSections(); // Reload the table
+                const newAssignment = await response.json();
+                
+                // Add new assignment to the list without a full reload
+                renderAssignmentList([...(document.getElementById('assignmentList')._assignments || []), newAssignment]);
+                assignmentForm.reset();
 
             } catch (error) {
-                console.error(`Network error ${editingRow ? 'updating' : 'adding'} section:`, error);
-                alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} section.`);
+                console.error("Error adding assignment:", error);
+                alert(`Error: ${error.message}`);
             }
         });
-        
-        closeModalBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (event) => { if (event.target == sectionModal) closeModal(); });
+
+        // Handle DELETING an assignment
+        assignmentList.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-assignment')) {
+                const assignmentId = e.target.dataset.id;
+                if (!currentAssignmentSectionId || !assignmentId) return;
+
+                if (confirm("Are you sure you want to remove this assignment?")) {
+                    try {
+                        const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/unassign`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ assignmentId })
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || 'Failed to delete assignment');
+                        }
+
+                        // Remove from list without reload
+                        e.target.closest('li').remove();
+                        
+                        // Update stored assignments
+                        const currentAssignments = document.getElementById('assignmentList')._assignments || [];
+                        const updatedAssignments = currentAssignments.filter(a => a._id !== assignmentId);
+                        renderAssignmentList(updatedAssignments);
+
+
+                    } catch (error) {
+                         console.error("Error deleting assignment:", error);
+                        alert(`Error: ${error.message}`);
+                    }
+                }
+            }
+        });
     }
 
     // =================================================================
@@ -577,55 +546,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const showLoginLink = document.getElementById('showLogin');
     const formTitle = document.getElementById('formTitle');
 
-    if (loginForm && signupForm) { // Only run if we are on the login page
+    if (loginForm && signupForm) {
         const loginErrorEl = document.getElementById('loginError');
         const signupErrorEl = document.getElementById('signupError');
-
-        showSignupLink.addEventListener('click', (e) => { 
-            e.preventDefault(); 
-            loginErrorEl.textContent = ''; // Clear errors
-            signupErrorEl.textContent = '';
-            loginForm.style.display = 'none'; 
-            signupForm.style.display = 'block'; 
-            formTitle.textContent = 'Sign Up'; 
-        });
-        showLoginLink.addEventListener('click', (e) => { 
-            e.preventDefault(); 
-            loginErrorEl.textContent = ''; // Clear errors
-            signupErrorEl.textContent = '';
-            signupForm.style.display = 'none'; 
-            loginForm.style.display = 'block'; 
-            formTitle.textContent = 'Login'; 
-        });
-        
-        // --- LOGIN FORM SUBMISSION ---
+        showSignupLink.addEventListener('click', (e) => { e.preventDefault(); loginErrorEl.textContent = ''; signupErrorEl.textContent = ''; loginForm.style.display = 'none'; signupForm.style.display = 'block'; formTitle.textContent = 'Sign Up'; });
+        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); loginErrorEl.textContent = ''; signupErrorEl.textContent = ''; signupForm.style.display = 'none'; loginForm.style.display = 'block'; formTitle.textContent = 'Login'; });
         loginForm.addEventListener('submit', async (e) => { 
             e.preventDefault();
-            loginErrorEl.textContent = ''; // Clear previous errors
+            loginErrorEl.textContent = '';
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const loginButton = loginForm.querySelector('.auth-btn');
             loginButton.textContent = 'Logging in...';
             loginButton.disabled = true;
-
             try {
-                const response = await fetch('http://localhost:3000/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
+                const response = await fetch('http://localhost:3000/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Login failed');
-                }
-
-                // --- SUCCESS ---
+                if (!response.ok) { throw new Error(data.message || 'Login failed'); }
                 console.log(data.message);
-                // We're not using tokens yet, so just redirect
                 window.location.href = 'dashboard.html'; 
-
             } catch (error) {
                 loginErrorEl.textContent = error.message;
             } finally {
@@ -633,35 +572,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginButton.disabled = false;
             }
         });
-        
-        // --- SIGNUP FORM SUBMISSION ---
         signupForm.addEventListener('submit', async (e) => { 
             e.preventDefault(); 
-            signupErrorEl.textContent = ''; // Clear previous errors
+            signupErrorEl.textContent = '';
             const name = document.getElementById('signupName').value;
             const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
             const signupButton = signupForm.querySelector('.auth-btn');
             signupButton.textContent = 'Signing up...';
             signupButton.disabled = true;
-            
             try {
-                 const response = await fetch('http://localhost:3000/api/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password })
-                });
-
+                 const response = await fetch('http://localhost:3000/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) });
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Signup failed');
-                }
-
-                // --- SUCCESS ---
+                if (!response.ok) { throw new Error(data.message || 'Signup failed'); }
                 alert('Signup successful! Please log in.');
-                showLoginLink.click(); // Switch to login form
-
+                showLoginLink.click();
             } catch (error) {
                 signupErrorEl.textContent = error.message;
             } finally {
@@ -671,11 +596,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-}); // <<< THIS IS THE SINGLE CLOSING BRACE for DOMContentLoaded
+}); // <<< END of DOMContentLoaded
 
 // =================================================================
-// == HELPER FUNCTIONS (FOR TIMETABLE PAGE)
+// == HELPER FUNCTIONS
 // =================================================================
+
+// --- TIMETABLE ---
 async function fetchTimetableData() {
     console.log("Requesting new timetable from backend...");
     const courses = [{ course: "CS-101", faculty: "Dr. Grant", room: "301" },{ course: "MA-210", faculty: "Dr. Malcolm", room: "205" },{ course: "BIO-150", faculty: "Dr. Sattler", room: "Lab 2" },{ course: "PHY-300", faculty: "Dr. Wu", room: "104" }];
@@ -724,40 +651,26 @@ function populateTimetable(data) {
     if (timetableModal) { const openModal = () => timetableModal.style.display = 'block'; tbody.querySelectorAll('.timetable-slot').forEach(slot => { slot.addEventListener('click', openModal); }); }
 }
 
-// =================================================================
-// == HELPER FUNCTIONS (FOR COURSES PAGE)
-// =================================================================
+// --- COURSES ---
 async function fetchCourses() {
-    console.log("Fetching courses from backend...");
     try {
         const response = await fetch('http://localhost:3000/api/courses');
-        if (!response.ok) {
-            console.error("Error fetching courses:", response.status, response.statusText);
-            if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
-            alert(`Error loading courses: ${response.statusText}`);
-            return null;
-        }
+        if (!response.ok) { throw new Error(response.statusText); }
         const courses = await response.json();
-        console.log("Courses received:", courses);
         return courses;
     } catch (error) {
-        console.error("Network error fetching courses:", error);
-        if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
-        alert("Could not connect to the server to load courses.");
+        console.error("Error fetching courses:", error);
+        if (!document.body.classList.contains('dashboard-page')) { alert("Could not load courses."); }
         return null;
     }
 }
-
 function renderCoursesTable(courses) {
     const tableBody = document.querySelector('.courses-page .data-table tbody'); 
-    if (!tableBody) {
-        if (document.body.classList.contains('courses-page')) { console.error("Could not find courses table body to render!"); }
-        return;
-    }
-    tableBody.innerHTML = ''; // Clear existing rows
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
     if (!courses || courses.length === 0) { tableBody.innerHTML = '<tr><td colspan="4">No courses found.</td></tr>'; return; }
     courses.forEach(course => {
-        const rowHTML = `
+        tableBody.innerHTML += `
             <tr>
                 <td>${course.course_code || course._id}</td>
                 <td>${course.course_name}</td>
@@ -768,108 +681,69 @@ function renderCoursesTable(courses) {
                 </td>
             </tr>
         `;
-        tableBody.insertAdjacentHTML('beforeend', rowHTML);
     });
 }
 
-// =================================================================
-// == HELPER FUNCTIONS (FOR FACULTY PAGE)
-// =================================================================
+// --- FACULTY ---
 async function fetchFaculty() {
-    console.log("Fetching faculty from backend...");
     try {
         const response = await fetch('http://localhost:3000/api/faculty'); 
-        if (!response.ok) {
-            console.error("Error fetching faculty:", response.status, response.statusText);
-            if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
-            alert(`Error loading faculty: ${response.statusText}`);
-            return null;
-        }
+        if (!response.ok) { throw new Error(response.statusText); }
         const faculty = await response.json();
-        console.log("Faculty received:", faculty);
         return faculty;
     } catch (error) {
-        console.error("Network error fetching faculty:", error);
-        if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
-        alert("Could not connect to the server to load faculty.");
+        console.error("Error fetching faculty:", error);
+        if (!document.body.classList.contains('dashboard-page')) { alert("Could not load faculty."); }
         return null;
     }
 }
-
 function renderFacultyTable(facultyMembers) {
     const tableBody = document.querySelector('.faculty-page .data-table tbody');
-    if (!tableBody) {
-        if (document.body.classList.contains('faculty-page')) {
-           console.error("Could not find faculty table body to render!");
-        }
-        return;
-    }
-
+    if (!tableBody) return;
     tableBody.innerHTML = ''; 
-
     if (!facultyMembers || facultyMembers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">No faculty members found.</td></tr>'; // Colspan is 5 now
+        tableBody.innerHTML = '<tr><td colspan="5">No faculty members found.</td></tr>';
         return;
     }
-
     facultyMembers.forEach(faculty => {
-        const rowHTML = `
+        tableBody.innerHTML += `
             <tr>
                 <td>${faculty.faculty_id || faculty._id}</td>
                 <td>${faculty.name}</td>
                 <td>${faculty.department}</td>
-                <td>${faculty.designation}</td> <td>
+                <td>${faculty.designation}</td>
+                <td>
                     <button class="action-btn-table edit">Edit</button>
                     <button class="action-btn-table delete">Delete</button>
                 </td>
             </tr>
         `;
-        tableBody.insertAdjacentHTML('beforeend', rowHTML);
     });
 }
 
-// =================================================================
-// == HELPER FUNCTIONS (FOR ROOMS PAGE)
-// =================================================================
+// --- ROOMS ---
 async function fetchRooms() {
-    console.log("Fetching rooms from backend...");
     try {
         const response = await fetch('http://localhost:3000/api/rooms'); 
-        if (!response.ok) {
-            console.error("Error fetching rooms:", response.status, response.statusText);
-            if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
-            alert(`Error loading rooms: ${response.statusText}`);
-            return null;
-        }
+        if (!response.ok) { throw new Error(response.statusText); }
         const rooms = await response.json();
-        console.log("Rooms received:", rooms);
         return rooms;
     } catch (error) {
-        console.error("Network error fetching rooms:", error);
-        if (document.body.classList.contains('dashboard-page')) return null; // Don't alert on dashboard
-        alert("Could not connect to the server to load rooms.");
+        console.error("Error fetching rooms:", error);
+        if (!document.body.classList.contains('dashboard-page')) { alert("Could not load rooms."); }
         return null;
     }
 }
-
 function renderRoomsTable(rooms) {
     const tableBody = document.querySelector('.rooms-page .data-table tbody');
-    if (!tableBody) {
-        if (document.body.classList.contains('rooms-page')) {
-           console.error("Could not find rooms table body to render!");
-        }
-        return;
-    }
-
+    if (!tableBody) return;
     tableBody.innerHTML = ''; 
-
     if (!rooms || rooms.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="4">No rooms found.</td></tr>';
         return;
     }
-
     rooms.forEach(room => {
-        const rowHTML = `
+        tableBody.innerHTML += `
             <tr>
                 <td>${room.room_number || room._id}</td>
                 <td>${room.capacity}</td>
@@ -880,61 +754,83 @@ function renderRoomsTable(rooms) {
                 </td>
             </tr>
         `;
-        tableBody.insertAdjacentHTML('beforeend', rowHTML);
     });
 }
 
-// =================================================================
-// == HELPER FUNCTIONS (FOR SECTIONS PAGE) --- [NEW] ---
-// =================================================================
+// --- SECTIONS ---
 async function fetchSections() {
-    console.log("Fetching sections from backend...");
     try {
         const response = await fetch('http://localhost:3000/api/sections'); 
-        if (!response.ok) {
-            console.error("Error fetching sections:", response.status, response.statusText);
-            alert(`Error loading sections: ${response.statusText}`);
-            return null;
-        }
+        if (!response.ok) { throw new Error(response.statusText); }
         const sections = await response.json();
-        console.log("Sections received:", sections);
         return sections;
     } catch (error) {
-        console.error("Network error fetching sections:", error);
-        alert("Could not connect to the server to load sections.");
+        console.error("Error fetching sections:", error);
+        alert("Could not load sections.");
         return null;
     }
 }
-
+// NEW Helper: Fetch a SINGLE section
+async function fetchSection(sectionId) {
+     try {
+        const response = await fetch(`http://localhost:3000/api/sections/${sectionId}`); 
+        if (!response.ok) { throw new Error(response.statusText); }
+        const section = await response.json();
+        return section;
+    } catch (error) {
+        console.error(`Error fetching section ${sectionId}:`, error);
+        alert(`Could not load data for section ${sectionId}.`);
+        return null;
+    }
+}
 function renderSectionsTable(sections) {
-    const tableBody = document.querySelector('.sections-page .data-table tbody');
-    if (!tableBody) {
-        if (document.body.classList.contains('sections-page')) {
-           console.error("Could not find sections table body to render!");
-        }
-        return;
-    }
-
+    const tableBody = document.getElementById('sectionsTableBody');
+    if (!tableBody) return;
     tableBody.innerHTML = ''; 
-
     if (!sections || sections.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">No sections found.</td></tr>'; // Colspan is 5
+        tableBody.innerHTML = '<tr><td colspan="5">No sections found.</td></tr>';
         return;
     }
-
     sections.forEach(section => {
-        const rowHTML = `
+        tableBody.innerHTML += `
             <tr>
                 <td>${section.section_id || section._id}</td>
                 <td>${section.department}</td>
                 <td>${section.semester}</td>
                 <td>${section.section_name}</td>
                 <td>
+                    <button class="action-btn-table assign">Assign</button>
                     <button class="action-btn-table edit">Edit</button>
                     <button class="action-btn-table delete">Delete</button>
                 </td>
             </tr>
         `;
-        tableBody.insertAdjacentHTML('beforeend', rowHTML);
+    });
+}
+
+// NEW Helper: Render the list of assignments in the modal
+function renderAssignmentList(assignments) {
+    const assignmentList = document.getElementById('assignmentList');
+    if (!assignmentList) return;
+
+    // Store assignments on the element for easier access/update
+    assignmentList._assignments = assignments; 
+    
+    if (!assignments || assignments.length === 0) {
+        assignmentList.innerHTML = '<li>No courses assigned yet.</li>';
+        return;
+    }
+
+    assignmentList.innerHTML = ''; // Clear list
+    assignments.forEach(assign => {
+        assignmentList.innerHTML += `
+            <li>
+                <div class="info">
+                    <strong>${assign.courseName}</strong>
+                    <span>${assign.facultyName}</span>
+                </div>
+                <button class="action-btn-table delete-assignment" data-id="${assign._id}">Remove</button>
+            </li>
+        `;
     });
 }

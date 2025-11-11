@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="sections-page"> <div class="container">
+<body class="sections-page">
+    <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
@@ -28,7 +29,7 @@
         <main class="main-content">
             <header class="main-header">
                 <h1>Manage Sections</h1>
-                <button class="action-btn publish-btn">➕ Add New Section</button>
+                <button class="action-btn publish-btn" id="addNewSectionBtn">➕ Add New Section</button>
             </header>
 
             <section class="data-table-container">
@@ -42,7 +43,7 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="sectionsTableBody">
                         </tbody>
                 </table>
             </section>
@@ -52,7 +53,7 @@
     <div id="sectionModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h2 id="modalTitle">Add New Section</h2>
+            <h2 id="sectionModalTitle">Add New Section</h2>
             <form id="sectionForm">
                 <div class="form-group">
                     <label for="sectionId">Section ID (e.g., CS-3-A):</label>
@@ -74,6 +75,40 @@
                     <button type="submit" class="action-btn publish-btn">Save Changes</button>
                 </div>
             </form>
+        </div>
+    </div>
+    <div id="assignmentModal" class="modal">
+        <div class="modal-content large"> <span class="close-button">&times;</span>
+            <h2 id="assignmentModalTitle">Manage Assignments for </h2>
+            
+            <div class="assignment-layout">
+                <div class="assignment-form-container">
+                    <h3>Assign New Course</h3>
+                    <form id="assignmentForm">
+                        <div class="form-group">
+                            <label for="assignCourseSelect">Course:</label>
+                            <select id="assignCourseSelect" required>
+                                <option value="">Loading courses...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assignFacultySelect">Faculty:</label>
+                            <select id="assignFacultySelect" required>
+                                <option value="">Loading faculty...</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="action-btn publish-btn">Assign</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="assignment-list-container">
+                    <h3>Current Assignments</h3>
+                    <ul id="assignmentList" class="assignment-list">
+                        </ul>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

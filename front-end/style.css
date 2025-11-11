@@ -7,6 +7,8 @@
     --success-color-dark: #218838;
     --danger-color: #dc3545;
     --danger-color-dark: #c82333;
+    --info-color: #17a2b8;
+    --info-color-dark: #138496;
     --background-color: #f8f9fa;
     --card-bg-color: #ffffff;
     --text-color: #343a40;
@@ -28,7 +30,7 @@ body {
 .sidebar { width: 250px; background: linear-gradient(180deg, #343a40, #212529); color: var(--sidebar-text-color); }
 .main-content { flex-grow: 1; padding: 2rem; }
 
-/* Sidebar (reusable from previous example) */
+/* Sidebar */
 .sidebar-header { padding: 1.5rem; text-align: center; font-size: 1.2rem; }
 .sidebar-nav ul { list-style-type: none; }
 .sidebar-nav a { display: block; padding: 1rem 1.5rem; color: var(--sidebar-text-color); text-decoration: none; transition: background-color 0.3s; }
@@ -41,7 +43,7 @@ body {
 .action-btn {
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 8px; /* Slightly more rounded */
+    border-radius: 8px;
     color: white;
     font-weight: 600;
     font-size: 0.95rem;
@@ -71,7 +73,7 @@ body {
 
 
 /* --- Filters --- */
-.filters { display: flex; flex-wrap: wrap; /* Allows wrapping on small screens */ gap: 1.5rem; margin-bottom: 2rem; padding: 1.5rem; background-color: var(--card-bg-color); border-radius: 8px; box-shadow: var(--shadow); }
+.filters { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem; padding: 1.5rem; background-color: var(--card-bg-color); border-radius: 8px; box-shadow: var(--shadow); }
 .filter-group { display: flex; align-items: center; }
 .filter-group label { margin-right: 0.5rem; font-weight: 600; font-size: 0.9rem; }
 .filter-group select { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 5px; background-color: #fff; }
@@ -83,7 +85,7 @@ body {
     border: 1px solid var(--border-color);
     padding: 0.5rem;
     text-align: center;
-    height: 100px; /* Fixed height for slots */
+    height: 100px;
 }
 .timetable-grid th { background-color: #f1f3f5; }
 
@@ -107,7 +109,7 @@ body {
 
 /* --- Modal Styles --- */
 .modal {
-    display: none; /* Hidden by default */
+    display: none;
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -115,12 +117,12 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.5); /* Dim background */
+    background-color: rgba(0,0,0,0.5);
 }
 
 .modal-content {
     background-color: #fff;
-    margin: 10% auto; /* Reduced top margin */
+    margin: 10% auto;
     padding: 2rem;
     border: 1px solid var(--border-color);
     width: 90%;
@@ -128,6 +130,11 @@ body {
     border-radius: 8px;
     position: relative;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* === NEW SIZING FOR ASSIGNMENT MODAL === */
+.modal-content.large {
+    max-width: 800px;
 }
 
 .close-button {
@@ -152,7 +159,7 @@ body {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 5px;
-    font-family: 'Poppins', sans-serif; /* Ensure form elements inherit font */
+    font-family: 'Poppins', sans-serif;
     font-size: 0.95rem;
 }
 
@@ -163,7 +170,7 @@ body {
 
 /* --- Conflict Highlighting --- */
 .timetable-slot.conflict {
-    border-left: 5px solid var(--danger-color); /* Red border for conflicts */
+    border-left: 5px solid var(--danger-color);
     background-color: #fff2f2;
 }
 /* --- Data Table Styles --- */
@@ -212,6 +219,9 @@ body {
 .action-btn-table.edit:hover { background-color: var(--primary-color-dark); }
 .action-btn-table.delete { background-color: var(--danger-color); }
 .action-btn-table.delete:hover { background-color: var(--danger-color-dark); }
+/* === NEW ASSIGN BUTTON STYLE === */
+.action-btn-table.assign { background-color: var(--info-color); }
+.action-btn-table.assign:hover { background-color: var(--info-color-dark); }
 
 
 /* === SETTINGS PAGE ALIGNMENT === */
@@ -231,7 +241,6 @@ body {
 
 .settings-section h2 { margin-bottom: 1.5rem; }
 
-/* New layout for settings form */
 .settings-form-layout {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -243,7 +252,7 @@ body {
     justify-content: space-between;
 }
 .settings-form-layout .form-group label {
-    font-weight: 500; /* Lighter weight for settings */
+    font-weight: 500;
 }
 /* === END SETTINGS ALIGNMENT === */
 
@@ -441,6 +450,62 @@ input:checked + .slider:before { transform: translateX(26px); }
 .schedule-list li .time { font-weight: 600; color: var(--primary-color); }
 .schedule-list li.break p { color: #888; font-style: italic; }
 
+
+/* === NEW ASSIGNMENT MODAL STYLES === */
+.assignment-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Two columns */
+    gap: 2rem;
+}
+
+.assignment-form-container {
+    padding-right: 2rem;
+    border-right: 1px solid var(--border-color);
+}
+
+.assignment-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.assignment-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.assignment-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+    background-color: var(--background-color);
+}
+.assignment-list li .info {
+    display: flex;
+    flex-direction: column;
+}
+.assignment-list li .info strong {
+    font-size: 0.95rem;
+}
+.assignment-list li .info span {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Use a smaller, red button for deleting assignments */
+.action-btn-table.delete-assignment {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    background-color: var(--danger-color);
+}
+.action-btn-table.delete-assignment:hover {
+    background-color: var(--danger-color-dark);
+}
+/* === END ASSIGNMENT MODAL STYLES === */
+
+
 /* --- Dark Mode Theme --- */
 body.dark-mode {
     --background-color: #1a1a1a;
@@ -477,7 +542,8 @@ body.dark-mode .todays-schedule-container,
 body.dark-mode .filters,
 body.dark-mode .settings-container,
 body.dark-mode .action-btn-quick,
-body.dark-mode .chart-container {
+body.dark-mode .chart-container,
+body.dark-mode .assignment-list-container { /* Added */
     background-color: var(--card-bg-color);
 }
 body.dark-mode .data-table tbody tr {
@@ -492,6 +558,17 @@ body.dark-mode .schedule-list li {
 }
 body.dark-mode .timetable-grid th {
     background-color: #333;
+}
+/* Fix for assignment list items in dark mode */
+body.dark-mode .assignment-list li {
+    background-color: #222; 
+    border: 1px solid var(--border-color);
+}
+body.dark-mode .assignment-list li .info span {
+    color: #aaa;
+}
+body.dark-mode .assignment-form-container {
+    border-color: var(--border-color);
 }
 /* === END DARK MODE FIX === */
 
@@ -519,7 +596,7 @@ body.dark-mode .stat-card .icon.icon-rooms {
 
 /* --- Timetable Scrolling for more columns --- */
 .timetable-container {
-    overflow-x: auto; /* Enable horizontal scrolling if needed */
+    overflow-x: auto;
 }
 
 /* --- Login/Signup Page Styles --- */
@@ -604,13 +681,12 @@ body.dark-mode .stat-card .icon.icon-rooms {
     text-decoration: underline;
 }
 
-/* === NEW AUTH ERROR STYLE === */
 .auth-error {
     color: var(--danger-color);
     font-size: 0.9rem;
     font-weight: 600;
     margin-top: 1rem;
-    min-height: 1.2em; /* Prevents layout jump */
+    min-height: 1.2em;
 }
 
 

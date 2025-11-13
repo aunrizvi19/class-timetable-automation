@@ -3,33 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sections | TimeTable Pro</title> 
+    <title>Manage Sections | TimeTable Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="sections-page">
-    <div class="container">
+<body class="sections-page admin-page"> <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
             </div>
             <nav class="sidebar-nav">
-                <ul>
-                    <li><a href="dashboard.html">🏠 Dashboard</a></li>
-                    <li><a href="index.html">📅 Timetable</a></li>
-                    <li><a href="sections.html" class="active">📚 Sections</a></li>
-                    <li><a href="courses.html">📖 Courses</a></li> 
-                    <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
-                    <li><a href="rooms.html">🚪 Rooms</a></li>
-                    <li><a href="settings.html">⚙️ Settings</a></li>
+                 <ul>
+                    <li class="nav-item-admin"><a href="dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-admin"><a href="courses.html" class="active-courses">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html" class="active-faculty">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🚪 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html" class="active-sections">Class <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
+                    
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+
+                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    
+                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
+                </ul>
+                <ul class="logout-ul">
+                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
+                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
                 <h1>Manage Sections</h1>
-                <button class="action-btn publish-btn" id="addNewSectionBtn">➕ Add New Section</button>
+                <div class="header-actions">
+                    <button id="addNewSectionBtn" class="action-btn publish-btn">Add New Section</button>
+                </div>
             </header>
 
             <section class="data-table-container">
@@ -56,49 +66,50 @@
             <h2 id="sectionModalTitle">Add New Section</h2>
             <form id="sectionForm">
                 <div class="form-group">
-                    <label for="sectionId">Section ID (e.g., CS-3-A):</label>
-                    <input type="text" id="sectionId" placeholder="DEPT-SEM-NAME" required>
+                    <label for="sectionId">Section ID (e.g., CS-3A):</label>
+                    <input type="text" id="sectionId" required>
                 </div>
                 <div class="form-group">
                     <label for="sectionDept">Department:</label>
-                    <input type="text" id="sectionDept" placeholder="Computer Science" required>
+                    <input type="text" id="sectionDept" required>
                 </div>
                 <div class="form-group">
                     <label for="sectionSem">Semester:</label>
-                    <input type="number" id="sectionSem" placeholder="3" required>
+                    <input type="number" id="sectionSem" required>
                 </div>
                 <div class="form-group">
-                    <label for="sectionName">Section Name (e.g., A, B):</label>
-                    <input type="text" id="sectionName" placeholder="A" required>
+                    <label for="sectionName">Section Name (e.g., "A", "B"):</label>
+                    <input type="text" id="sectionName" required>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="action-btn publish-btn">Save Changes</button>
+                    <button type="submit" class="action-btn publish-btn">Save Section</button>
                 </div>
             </form>
         </div>
     </div>
+    
     <div id="assignmentModal" class="modal">
         <div class="modal-content large"> <span class="close-button">&times;</span>
-            <h2 id="assignmentModalTitle">Manage Assignments for </h2>
+            <h2 id="assignmentModalTitle">Manage Assignments for CS-3A</h2>
             
             <div class="assignment-layout">
                 <div class="assignment-form-container">
-                    <h3>Assign New Course</h3>
+                    <h3>Add Assignment</h3>
                     <form id="assignmentForm">
                         <div class="form-group">
                             <label for="assignCourseSelect">Course:</label>
                             <select id="assignCourseSelect" required>
-                                <option value="">Loading courses...</option>
+                                <option value="">Select a course...</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="assignFacultySelect">Faculty:</label>
                             <select id="assignFacultySelect" required>
-                                <option value="">Loading faculty...</option>
+                                <option value="">Select a faculty...</option>
                             </select>
                         </div>
                         <div class="form-actions">
-                            <button type="submit" class="action-btn publish-btn">Assign</button>
+                            <button type="submit" class="action-btn publish-btn">Assign Course</button>
                         </div>
                     </form>
                 </div>
@@ -111,6 +122,7 @@
             </div>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

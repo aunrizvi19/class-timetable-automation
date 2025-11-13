@@ -3,71 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timetable System | Admin Dashboard</title>
+    <title>Timetable | TimeTable Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="timetable-page"> <div class="container">
+<body class="timetable-page shared-page"> <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
             </div>
             <nav class="sidebar-nav">
-                <ul>
-                    <li><a href="dashboard.html">🏠 Dashboard</a></li>
-                    <li><a href="index.html" class="active">📅 Timetable</a></li>
-                    <li><a href="sections.html">📚 Sections</a></li> <li><a href="courses.html">📖 Courses</a></li> <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
-                    <li><a href="rooms.html">🚪 Rooms</a></li>
-                    <li><a href="settings.html">⚙️ Settings</a></li>
+                 <ul>
+                    <li class="nav-item-admin"><a href="dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-admin"><a href="courses.html" class="active-courses">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html" class="active-faculty">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🚪 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html" class="active-sections">Class <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
+                    
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+
+                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    
+                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
+                </ul>
+                <ul class="logout-ul">
+                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <h1>Timetable Management</h1>
+                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                <h1>Generated Timetable</h1>
                 <div class="header-actions">
-                    <button class="action-btn generate-btn">🚀 Generate Timetable</button>
-                    <button class="action-btn publish-btn">✅ Publish Changes</button>
+                    <button class="action-btn generate-btn">Generate New Timetable</button>
+                    <button class="action-btn publish-btn">Publish Timetable</button>
                 </div>
             </header>
-            
+
             <section class="filters">
                 <div class="filter-group">
                     <label for="dept-select">Department:</label>
                     <select id="dept-select">
                         <option value="all">All Departments</option>
                         <option value="cs">Computer Science</option>
-                        <option value="mech">Mechanical Engineering</option>
-                        <option value="phy">Physics</option>
-                        <option value="math">Mathematics</option>
+                        <option value="ee">Electrical Engineering</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="sem-select">Semester:</label>
                     <select id="sem-select">
                         <option value="all">All Semesters</option>
-                        <option value="1">Semester 1</option>
-                        <option value="2">Semester 2</option>
-                        <option value="3">Semester 3</option>
-                        <option value="4">Semester 4</option>
-                        <option value="5">Semester 5</option>
-                        <option value="6">Semester 6</option>
-                        <option value="7">Semester 7</option>
-                        <option value="8">Semester 8</option>
+                        <option value="1">1st</option>
+                        <option value="3">3rd</option>
+                        <option value="5">5th</option>
+                        <option value="7">7th</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="section-select">Section:</label>
                     <select id="section-select">
                         <option value="all">All Sections</option>
-                        <option value="A">Section A</option>
-                        <option value="B">Section B</option>
-                        <option value="C">Section C</option>
+                        <option value="a">A</option>
+                        <option value="b">B</option>
                     </select>
                 </div>
             </section>
-            
+
             <section class="timetable-container">
                 <table class="timetable-grid">
                     <thead>
@@ -91,31 +95,37 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h2>Edit Time Slot</h2>
-            <form id="editForm">
+            <h2>Edit Timetable Slot</h2>
+            <form id="editSlotForm">
                 <div class="form-group">
-                    <label for="course-input">Course Code:</label>
-                    <input type="text" id="course-input" value="CS-201">
+                    <label for="editCourse">Course:</label>
+                    <select id="editCourse">
+                        <option value="cs101">CS-101 - Intro to Programming</option>
+                        <option value="ma210">MA-210 - Calculus II</option>
+                        </select>
                 </div>
                 <div class="form-group">
-                    <label for="faculty-input">Faculty:</label>
-                    <select id="faculty-input">
-                        <option>Dr. Alan Grant</option>
-                        <option>Dr. Ellie Sattler</option>
-                        <option>Dr. Ian Malcolm</option>
-                    </select>
+                    <label for="editFaculty">Faculty:</label>
+                    <select id="editFaculty">
+                        <option value="dr_grant">Dr. Grant</option>
+                        <option value="dr_malcolm">Dr. Malcolm</option>
+                        </select>
                 </div>
                 <div class="form-group">
-                    <label for="room-input">Room:</label>
-                    <input type="text" id="room-input" value="Room 301">
+                    <label for="editRoom">Room:</label>
+                    <select id="editRoom">
+                        <option value="301">301 (Lab)</option>
+                        <option value="205">205 (Lecture Hall)</option>
+                        </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="action-btn publish-btn">Save Changes</button>
                     <button type="button" class="action-btn delete-btn">Delete Slot</button>
+                    <button type="submit" class="action-btn publish-btn">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
-<script src="script.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>

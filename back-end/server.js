@@ -39,14 +39,22 @@ connectDB().then(() => {
     // --- API Routes ---
 
     // ================== AUTHENTICATION ==================
+    // POST Route to SIGNUP a new user
     app.post('/api/signup', async (req, res) => {
         console.log("Received request for POST /api/signup");
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { name, email, password } = req.body;
-            if (!name || !email || !password) {
-                return res.status(400).json({ message: "Missing required fields (name, email, password)" });
+            
+            // --- MODIFIED ---
+            const { name, email, password, role } = req.body;
+            if (!name || !email || !password || !role) {
+                return res.status(400).json({ message: "Missing required fields (name, email, password, role)" });
             }
+            if (!['admin', 'faculty', 'student'].includes(role)) {
+                return res.status(400).json({ message: "Invalid role specified." });
+            }
+            // --- END MODIFIED ---
+
             const usersCollection = db.collection('users');
             const existingUser = await usersCollection.findOne({ email: email });
             if (existingUser) {
@@ -54,11 +62,20 @@ connectDB().then(() => {
             }
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
-            const newUser = { name: name, email: email, password: hashedPassword, _id: email };
+
+            // --- MODIFIED ---
+            const newUser = {
+                name: name,
+                email: email,
+                password: hashedPassword,
+                role: role, // Save the role
+                _id: email
+            };
+            // --- END MODIFIED ---
+            
             const result = await usersCollection.insertOne(newUser);
-            console.log("Insert result:", result);
             if (result.insertedId) {
-                res.status(201).json({ message: "User created successfully!", user: { name: name, email: email } });
+                res.status(201).json({ message: "User created successfully!", user: { name: name, email: email, role: role } });
             } else {
                 res.status(500).json({ message: "Failed to create user" });
             }
@@ -68,6 +85,7 @@ connectDB().then(() => {
         }
     });
 
+    // POST Route to LOGIN a user
     app.post('/api/login', async (req, res) => {
         console.log("Received request for POST /api/login");
         try {
@@ -85,16 +103,25 @@ connectDB().then(() => {
             if (!isMatch) {
                 return res.status(401).json({ message: "Invalid email or password." });
             }
-            console.log(`User ${user.email} logged in successfully`);
+            
+            // --- MODIFIED: Return user info ---
+            console.log(`User ${user.email} (${user.role}) logged in successfully`);
             res.status(200).json({ 
                 message: "Login successful!", 
-                user: { name: user.name, email: user.email } 
+                user: { 
+                    name: user.name, 
+                    email: user.email,
+                    role: user.role // Send the role to the frontend
+                } 
             });
+            // --- END MODIFIED ---
+
         } catch (err) {
             console.error("Error logging in user:", err);
             res.status(500).json({ message: "Error logging in" });
         }
     });
+
 
     // ================== COURSES ==================
     app.get('/api/courses', async (req, res) => {
@@ -336,7 +363,6 @@ connectDB().then(() => {
         }
     });
 
-    // === NEW ENDPOINT: GET A SINGLE SECTION ===
     app.get('/api/sections/:id', async (req, res) => {
         const sectionId = req.params.id;
         try {
@@ -419,11 +445,10 @@ connectDB().then(() => {
             res.status(204).send();
         } catch (err) {
             console.error("Error deleting section:", err);
-            res.status(500).json({ message: "Error deleting section data from database" });
+            res.status(500).json({ message: "Error deleting data from database" });
         }
     });
 
-    // === NEW ENDPOINT: ASSIGN A COURSE/FACULTY TO A SECTION ===
     app.put('/api/sections/:id/assign', async (req, res) => {
         const sectionId = req.params.id;
         const { courseId, facultyId, courseName, facultyName } = req.body;
@@ -453,7 +478,6 @@ connectDB().then(() => {
                 return res.status(404).json({ message: `Section with ID ${sectionId} not found.` });
             }
             
-            // Return the newly created assignment
             res.status(201).json(newAssignment); 
 
         } catch (err) {
@@ -462,7 +486,6 @@ connectDB().then(() => {
         }
     });
 
-    // === NEW ENDPOINT: UNASSIGN A COURSE/FACULTY FROM A SECTION ===
     app.delete('/api/sections/:id/unassign', async (req, res) => {
         const sectionId = req.params.id;
         const { assignmentId } = req.body; // We need the unique ID of the assignment
@@ -477,7 +500,7 @@ connectDB().then(() => {
             const sectionsCollection = db.collection('sections');
             const result = await sectionsCollection.updateOne(
                 { _id: sectionId },
-                { $pull: { assignments: { _id: new ObjectId(assignmentId) } } } // Use $pull to remove the item from the array
+                { $pull: { assignments: { _id: new ObjectId(assignmentId) } } }
             );
 
             if (result.matchedCount === 0) {

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Faculty | TimeTable Pro</title>
+    <title>Student Dashboard | TimeTable Pro</title> 
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="faculty-page admin-page"> <div class="container">
+<body class="student-page"> <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
@@ -33,60 +33,50 @@
             </nav>
         </aside>
 
-        <main class="main-content">
-            <header class="main-header">
+       <main class="main-content">
+            <header class="dashboard-header">
                 <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>Manage Faculty</h1>
-                <div class="header-actions">
-                    <button class="action-btn publish-btn">Add New Faculty</button>
+                <h1 id="welcomeHeader">Student Dashboard</h1>
+                <div class="header-tools">
+                    <img src="https://i.imgur.com/7D7I6dI.png" alt="User Profile" class="profile-pic">
                 </div>
             </header>
-
-            <section class="data-table-container">
-                <table class="data-table">
+            
+             <section class="filters">
+                <div class="filter-group">
+                    <label for="dept-select">My Department:</label>
+                    <span class="filter-value">Computer Science</span>
+                </div>
+                <div class="filter-group">
+                    <label for="sem-select">My Semester:</label>
+                    <span class="filter-value">Semester 3</span>
+                </div>
+                <div class="filter-group">
+                    <label for="section-select">My Section:</label>
+                    <span class="filter-value">Section A</span>
+                </div>
+            </section>
+            
+            <section class="timetable-container">
+                 <h2>Your Timetable</h2>
+                <table class="timetable-grid">
                     <thead>
                         <tr>
-                            <th>Faculty ID</th>
-                            <th>Name</th>
-                            <th>Department</th>
-                            <th>Designation</th>
-                            <th>Actions</th>
+                            <th>Time</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                            <th>Saturday</th>
                         </tr>
                     </thead>
-                    <tbody id="facultyTableBody"> </tbody>
+                    <tbody id="studentTimetableBody">
+                        </tbody>
                 </table>
             </section>
         </main>
     </div>
-
-    <div id="facultyModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="modalTitle">Add New Faculty</h2>
-            <form id="facultyForm">
-                <div class="form-group">
-                    <label for="facultyId">Faculty ID:</label>
-                    <input type="text" id="facultyId" required>
-                </div>
-                <div class="form-group">
-                    <label for="facultyName">Name:</label>
-                    <input type="text" id="facultyName" required>
-                </div>
-                <div class="form-group">
-                    <label for="facultyDept">Department:</label>
-                    <input type="text" id="facultyDept" required>
-                </div>
-                <div class="form-group">
-                    <label for="facultyDesignation">Designation:</label>
-                    <input type="text" id="facultyDesignation" required>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="action-btn publish-btn">Save Faculty</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script src="script.js"></script>
 </body>
 </html>

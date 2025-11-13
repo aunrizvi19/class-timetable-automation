@@ -3,75 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings | TimeTable Pro</title> 
+    <title>Settings | TimeTable Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
+<body class="admin-page"> <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
             </div>
             <nav class="sidebar-nav">
-                <ul>
-                    <li><a href="dashboard.html">🏠 Dashboard</a></li>
-                    <li><a href="index.html">📅 Timetable</a></li>
-                    <li><a href="sections.html">📚 Sections</a></li> <li><a href="courses.html">📖 Courses</a></li> <li><a href="faculty.html">👩‍🏫 Faculty</a></li>
-                    <li><a href="rooms.html">🚪 Rooms</a></li>
-                    <li><a href="settings.html" class="active">⚙️ Settings</a></li>
+                 <ul>
+                    <li class="nav-item-admin"><a href="dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-admin"><a href="courses.html" class="active-courses">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html" class="active-faculty">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🚪 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html" class="active-sections">Class <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
+                    
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+
+                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    
+                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
+                </ul>
+                <ul class="logout-ul">
+                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
+                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
                 <h1>Settings</h1>
-                <button class="action-btn publish-btn" id="saveSettingsBtn">💾 Save Changes</button>
             </header>
 
-            <div class="settings-container">
-                <section class="settings-section">
-                    <h2>Generation Parameters</h2>
+            <section class="settings-container">
+                <div class="settings-section">
+                    <h2>Generation Constraints</h2>
                     <div class="settings-form-layout">
                         <div class="form-group">
-                            <label for="max-hours">Max consecutive hours per day:</label>
-                            <input type="number" id="max-hours" value="3">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="lunchBreakStart">Lunch Break Start (HH:MM):</label>
-                            <input type="text" id="lunchBreakStart" value="12:45">
-                        </div>
-                        <div class="form-group">
-                            <label for="lunchBreakDuration">Lunch Duration (minutes):</label>
-                            <input type="number" id="lunchBreakDuration" value="45">
-                        </div>
-                        <div class="form-group">
-                            <label for="teaBreakStart">Tea Break Start (HH:MM):</label>
-                            <input type="text" id="teaBreakStart" value="10:30">
-                        </div>
-                        <div class="form-group">
-                            <label for="teaBreakDuration">Tea Duration (minutes):</label>
-                            <input type="number" id="teaBreakDuration" value="15">
+                            <label for="max-hours">Max Consecutive Hours (Faculty):</label>
+                            <input type="number" id="max-hours" value="3" min="1">
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section class="settings-section">
+                <div class="settings-section">
+                    <h2>Academic Calendar</h2>
+                    <div class="settings-form-layout">
+                        <div class="form-group">
+                            <label for="lunchBreakStart">Lunch Break Start:</label>
+                            <input type="time" id="lunchBreakStart" value="12:45">
+                        </div>
+                         <div class="form-group">
+                            <label for="lunchBreakDuration">Lunch Break Duration (minutes):</label>
+                            <input type="number" id="lunchBreakDuration" value="45" min="15" step="15">
+                        </div>
+                         <div class="form-group">
+                            <label for="teaBreakStart">Tea Break Start:</label>
+                            <input type="time" id="teaBreakStart" value="10:30">
+                        </div>
+                         <div class="form-group">
+                            <label for="teaBreakDuration">Tea Break Duration (minutes):</label>
+                            <input type="number" id="teaBreakDuration" value="15" min="15" step="15">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
                     <h2>Appearance</h2>
                     <div class="form-group-toggle">
-                        <label for="darkModeToggle">Enable Dark Mode:</label>
+                        <label for="darkModeToggle">Dark Mode:</label>
                         <label class="toggle-switch">
                             <input type="checkbox" id="darkModeToggle">
                             <span class="slider"></span>
                         </label>
                     </div>
-                </section>
-            </div>
+                </div>
+
+                <div class="form-actions">
+                    <button id="saveSettingsBtn" class="action-btn publish-btn">Save Settings</button>
+                </div>
+            </section>
         </main>
     </div>
-    
     <script src="script.js"></script>
 </body>
 </html>

@@ -7,11 +7,10 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="login-page">
-    <div class="auth-container">
+<body class="login-page"> <div class="auth-container">
         <div class="auth-box">
             <h2 id="formTitle">Login</h2>
-            
+
             <form id="loginForm">
                 <div class="form-group">
                     <label for="loginEmail">Email:</label>
@@ -23,7 +22,6 @@
                 </div>
                 <p id="loginError" class="auth-error"></p>
                 <button type="submit" class="auth-btn">Login</button>
-                <p class="toggle-text">Don't have an account? <a href="#" id="showSignup">Sign Up</a></p>
             </form>
 
             <form id="signupForm" style="display: none;">
@@ -39,12 +37,27 @@
                     <label for="signupPassword">Password:</label>
                     <input type="password" id="signupPassword" required>
                 </div>
-                 <p id="signupError" class="auth-error"></p>
+                
+                <div class="form-group">
+                    <label for="signupRole">I am a:</label>
+                    <select id="signupRole" required>
+                        <option value="">Select your role...</option>
+                        <option value="admin">Admin</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="student">Student</option>
+                    </select>
+                </div>
+
+                <p id="signupError" class="auth-error"></p>
                 <button type="submit" class="auth-btn">Sign Up</button>
-                <p class="toggle-text">Already have an account? <a href="#" id="showLogin">Login</a></p>
             </form>
+
+            <p class="toggle-text">
+                <span id="loginToggle">Don't have an account? <a href="#" id="showSignup">Sign up</a></span>
+                <span id="signupToggle" style="display: none;">Already have an account? <a href="#" id="showLogin">Login</a></span>
+            </p>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script src="script.js?v=1.1"></script>
 </body>
 </html>

@@ -1,10 +1,110 @@
-// Global variable to store the section ID we are currently editing assignments for
-let currentAssignmentSectionId = null;
+// ... (global variable at the top)
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // =================================================================
-    // == GLOBAL SETTINGS (APPLIES TO ALL PAGES)
+    // == GLOBAL AUTH & PAGE PROTECTION
+    // =================================================================
+    const user = JSON.parse(localStorage.getItem('timetableUser'));
+    const bodyClass = document.body.classList;
+    const isLoginPage = bodyClass.contains('login-page');
+
+    // --- [NEW ROLE-BASED UI LOGIC] ---
+    // Add role class to body for CSS styling
+    if (user && !isLoginPage) {
+        if (user.role === 'admin') {
+            document.body.classList.add('role-admin');
+        } else if (user.role === 'faculty') {
+            document.body.classList.add('role-faculty');
+        } else if (user.role === 'student') {
+            document.body.classList.add('role-student');
+        }
+    }
+    // --- [END NEW LOGIC] ---
+    
+    if (isLoginPage) {
+        // We are on the login page
+        if (user) {
+            // A user is already logged in, redirect them to their dashboard
+            redirectToDashboard(user.role);
+            return;
+        }
+        // If no user and on login page, proceed to load login/signup logic
+    } else {
+        // We are NOT on the login page
+        if (!user) {
+            // If no user is logged in, boot them to the login page
+            alert('You must be logged in to view this page.');
+            window.location.href = 'login.html';
+            return; // Stop executing script
+        }
+
+        // --- Role-Based Page Protection ---
+        if (bodyClass.contains('admin-page') && user.role !== 'admin') {
+            // Non-admin trying to access an admin page
+            alert('Access Denied: You do not have permission to view this page.');
+            redirectToDashboard(user.role); // Send them to their own dashboard
+            return;
+        }
+        if (bodyClass.contains('faculty-page') && user.role !== 'faculty') {
+            // Non-faculty trying to access faculty page
+            alert('Access Denied.');
+            redirectToDashboard(user.role);
+            return;
+        }
+        if (bodyClass.contains('student-page') && user.role !== 'student') {
+            // Non-student trying to access student page
+            alert('Access Denied.');
+            redirectToDashboard(user.role);
+            return;
+        }
+    }
+    
+    // Helper function to redirect based on role
+    function redirectToDashboard(role) {
+        if (role === 'admin') {
+            window.location.href = 'dashboard.html';
+        } else if (role === 'faculty') {
+            window.location.href = 'faculty-dashboard.html';
+        } else if (role === 'student') {
+            window.location.href = 'student-dashboard.html';
+        } else {
+            // Fallback
+            window.location.href = 'login.html';
+        }
+    }
+
+    // =================================================================
+    // == GLOBAL UI (Sidebar Toggle & Logout)
+    // =================================================================
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    
+    // Check for saved sidebar state
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        document.body.classList.add('sidebar-collapsed');
+    }
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-collapsed');
+            // Save the preference
+            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+        });
+    }
+    
+    // Add click listener for ALL logout buttons
+    document.querySelectorAll('#logoutBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('timetableUser'); // Clear user from storage
+            localStorage.removeItem('sidebarCollapsed'); // Clear layout preference
+            localStorage.removeItem('darkMode'); // Clear theme preference
+            alert('Logged out successfully.');
+            window.location.href = 'login.html';
+        });
+    });
+
+    // =================================================================
+    // == GLOBAL SETTINGS (Dark Mode)
     // =================================================================
     const isDarkModeSaved = localStorage.getItem('darkMode') === 'true';
     if (isDarkModeSaved) {
@@ -24,7 +124,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const generateBtn = document.querySelector('.generate-btn');
     if (generateBtn) {
-        populateTimetable({});
+        // Hide admin buttons for non-admins
+        if (user && user.role !== 'admin') {
+            const headerActions = document.querySelector('.header-actions');
+            const filters = document.querySelector('.filters');
+            if (headerActions) headerActions.style.display = 'none'; // Hide Generate/Publish
+            if (filters) filters.style.display = 'none'; // Hide filters
+        }
+        
+        populateTimetable({}); // Populate with empty/demo data
+        
         generateBtn.addEventListener('click', async () => {
             const originalText = generateBtn.textContent;
             generateBtn.textContent = 'Generating...';
@@ -37,12 +146,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR DASHBOARD PAGE (dashboard.html)
+    // == LOGIC FOR DASHBOARD PAGES (admin, faculty, student)
     // =================================================================
+    
+    // Admin Dashboard (dashboard.html)
     const occupancyChartCanvas = document.getElementById('occupancyChart');
-    let myOccupancyChart = null; 
-
-    if (occupancyChartCanvas) {
+    if (occupancyChartCanvas && user && user.role === 'admin') {
+        if (user.name) {
+            document.querySelector('.dashboard-header h1').textContent = `Welcome, ${user.name.split(' ')[0]}!`;
+        }
+        
+        let myOccupancyChart = null; 
         async function loadDashboardStats() {
             try {
                 const [courses, faculty, rooms] = await Promise.all([
@@ -103,6 +217,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         loadDashboardStats();
     }
+    
+    // Faculty & Student Dashboards
+    const welcomeHeader = document.getElementById('welcomeHeader');
+    if (welcomeHeader && user) {
+        welcomeHeader.textContent = `Welcome, ${user.name.split(' ')[0]}!`;
+        
+        if(bodyClass.contains('student-page')) {
+            // We are on the student dashboard, populate their timetable
+            populateTimetable({}); // We'll customize this later
+        }
+    }
+
 
     // =================================================================
     // == LOGIC FOR COURSES PAGE (courses.html)
@@ -138,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (facultyModal) {
         async function loadAndRenderFaculty() { const faculty = await fetchFaculty(); renderFacultyTable(faculty); }
         loadAndRenderFaculty(); 
-        const addBtn = document.querySelector('body.faculty-page .main-header .publish-btn');
+        const addBtn = document.querySelector('body.faculty-page.admin-page .main-header .publish-btn'); // More specific selector
         const facultyForm = document.getElementById('facultyForm');
         const modalTitle = facultyModal.querySelector('#modalTitle');
         const closeModalBtn = facultyModal.querySelector('.close-button');
@@ -153,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const closeModal = () => { facultyModal.style.display = 'none'; editingRow = null; facultyForm.reset(); document.getElementById('facultyId').readOnly = false; };
         if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
-        const facultyTable = document.querySelector('.faculty-page .data-table');
+        const facultyTable = document.querySelector('body.faculty-page.admin-page .data-table'); // More specific selector
          if (facultyTable) {
             facultyTable.addEventListener('click', async (e) => { 
                 if (e.target.classList.contains('edit')) {
@@ -288,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == LOGIC FOR SECTIONS PAGE (sections.html) --- [UPDATED] ---
+    // == LOGIC FOR SECTIONS PAGE (sections.html)
     // =================================================================
     const sectionModal = document.getElementById('sectionModal');
     if (sectionModal) {
@@ -339,7 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         } catch (error) { console.error("Network error deleting section:", error); alert("Could not connect to server to delete section."); }
                     }
                 } else if (target.classList.contains('assign')) {
-                    // --- NEW: Handle Assign Button Click ---
                     const row = target.closest('tr');
                     const sectionId = row.children[0].textContent;
                     openAssignmentModal(sectionId);
@@ -376,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModalBtn.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == sectionModal) closeModal(); });
     
-        // --- NEW: Assignment Modal Logic ---
         const assignmentModal = document.getElementById('assignmentModal');
         const assignmentForm = document.getElementById('assignmentForm');
         const assignmentList = document.getElementById('assignmentList');
@@ -385,42 +509,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const assignFacultySelect = document.getElementById('assignFacultySelect');
         
         const openAssignmentModal = async (sectionId) => {
-            currentAssignmentSectionId = sectionId; // Store the section ID globally
+            currentAssignmentSectionId = sectionId;
             assignmentModalTitle.textContent = `Manage Assignments for ${sectionId}`;
             assignmentModal.style.display = 'block';
-            
-            // Clear old data
             assignCourseSelect.innerHTML = '<option value="">Loading...</option>';
             assignFacultySelect.innerHTML = '<option value="">Loading...</option>';
             assignmentList.innerHTML = '<li>Loading...</li>';
-
             try {
-                // Fetch courses, faculty, and section data in parallel
                 const [courses, faculty, sectionData] = await Promise.all([
                     fetchCourses(),
                     fetchFaculty(),
-                    fetchSection(sectionId) // New helper function
+                    fetchSection(sectionId)
                 ]);
-
-                // Populate course dropdown
                 assignCourseSelect.innerHTML = '<option value="">Select a course...</option>';
                 if(courses) {
                     courses.forEach(course => {
                         assignCourseSelect.innerHTML += `<option value="${course._id}">${course._id} - ${course.course_name}</option>`;
                     });
                 }
-                
-                // Populate faculty dropdown
                 assignFacultySelect.innerHTML = '<option value="">Select a faculty...</option>';
                 if(faculty) {
                     faculty.forEach(fac => {
                         assignFacultySelect.innerHTML += `<option value="${fac._id}">${fac.name} (${fac.designation})</option>`;
                     });
                 }
-                
-                // Render the list of current assignments
                 renderAssignmentList(sectionData.assignments || []);
-
             } catch (error) {
                 console.error("Error populating assignment modal:", error);
                 assignmentList.innerHTML = '<li>Error loading assignments.</li>';
@@ -432,92 +545,57 @@ document.addEventListener('DOMContentLoaded', () => {
             currentAssignmentSectionId = null;
             assignmentForm.reset();
         };
+        
+        if (assignmentModal) { // Check if modal exists
+            assignmentModal.querySelector('.close-button').addEventListener('click', closeAssignmentModal);
+            window.addEventListener('click', (event) => { if (event.target == assignmentModal) closeAssignmentModal(); });
 
-        assignmentModal.querySelector('.close-button').addEventListener('click', closeAssignmentModal);
-        window.addEventListener('click', (event) => { if (event.target == assignmentModal) closeAssignmentModal(); });
-
-        // Handle NEW assignment form submission
-        assignmentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!currentAssignmentSectionId) return;
-
-            const courseSelect = assignCourseSelect;
-            const facultySelect = assignFacultySelect;
-
-            const courseId = courseSelect.value;
-            const courseName = courseSelect.options[courseSelect.selectedIndex].text;
-            const facultyId = facultySelect.value;
-            const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
-
-            if (!courseId || !facultyId) {
-                alert("Please select both a course and a faculty member.");
-                return;
-            }
-            
-            try {
-                const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/assign`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        courseId, 
-                        facultyId, 
-                        courseName, // Send text for easier display
-                        facultyName // Send text for easier display
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to add assignment');
+            assignmentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentAssignmentSectionId) return;
+                const courseSelect = assignCourseSelect;
+                const facultySelect = assignFacultySelect;
+                const courseId = courseSelect.value;
+                const courseName = courseSelect.options[courseSelect.selectedIndex].text;
+                const facultyId = facultySelect.value;
+                const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
+                if (!courseId || !facultyId) {
+                    alert("Please select both a course and a faculty member.");
+                    return;
                 }
+                try {
+                    const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/assign`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ courseId, facultyId, courseName, facultyName })
+                    });
+                    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Failed to add assignment'); }
+                    const newAssignment = await response.json();
+                    renderAssignmentList([...(document.getElementById('assignmentList')._assignments || []), newAssignment]);
+                    assignmentForm.reset();
+                } catch (error) { console.error("Error adding assignment:", error); alert(`Error: ${error.message}`); }
+            });
 
-                const newAssignment = await response.json();
-                
-                // Add new assignment to the list without a full reload
-                renderAssignmentList([...(document.getElementById('assignmentList')._assignments || []), newAssignment]);
-                assignmentForm.reset();
-
-            } catch (error) {
-                console.error("Error adding assignment:", error);
-                alert(`Error: ${error.message}`);
-            }
-        });
-
-        // Handle DELETING an assignment
-        assignmentList.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('delete-assignment')) {
-                const assignmentId = e.target.dataset.id;
-                if (!currentAssignmentSectionId || !assignmentId) return;
-
-                if (confirm("Are you sure you want to remove this assignment?")) {
-                    try {
-                        const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/unassign`, {
-                            method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ assignmentId })
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.message || 'Failed to delete assignment');
-                        }
-
-                        // Remove from list without reload
-                        e.target.closest('li').remove();
-                        
-                        // Update stored assignments
-                        const currentAssignments = document.getElementById('assignmentList')._assignments || [];
-                        const updatedAssignments = currentAssignments.filter(a => a._id !== assignmentId);
-                        renderAssignmentList(updatedAssignments);
-
-
-                    } catch (error) {
-                         console.error("Error deleting assignment:", error);
-                        alert(`Error: ${error.message}`);
+            assignmentList.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('delete-assignment')) {
+                    const assignmentId = e.target.dataset.id;
+                    if (!currentAssignmentSectionId || !assignmentId) return;
+                    if (confirm("Are you sure you want to remove this assignment?")) {
+                        try {
+                            const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/unassign`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ assignmentId })
+                            });
+                            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Failed to delete assignment'); }
+                            const currentAssignments = document.getElementById('assignmentList')._assignments || [];
+                            const updatedAssignments = currentAssignments.filter(a => a._id !== assignmentId);
+                            renderAssignmentList(updatedAssignments); // Re-render list
+                        } catch (error) { console.error("Error deleting assignment:", error); alert(`Error: ${error.message}`); }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     // =================================================================
@@ -531,9 +609,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const teaStartInput = document.getElementById('teaBreakStart');
         const teaDurationInput = document.getElementById('teaBreakDuration');
         const darkModeToggle = document.getElementById('darkModeToggle');
-        darkModeToggle.addEventListener('change', () => { document.body.classList.toggle('dark-mode'); });
-        const loadSettings = () => { maxHoursInput.value = localStorage.getItem('maxHours') || '3'; lunchStartInput.value = localStorage.getItem('lunchBreakStart') || '12:45'; lunchDurationInput.value = localStorage.getItem('lunchBreakDuration') || '45'; teaStartInput.value = localStorage.getItem('teaBreakStart') || '10:30'; teaDurationInput.value = localStorage.getItem('teaBreakDuration') || '15'; const isDarkMode = localStorage.getItem('darkMode') === 'true'; darkModeToggle.checked = isDarkMode; if (isDarkMode) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode'); };
-        saveBtn.addEventListener('click', () => { localStorage.setItem('maxHours', maxHoursInput.value); localStorage.setItem('lunchBreakStart', lunchStartInput.value); localStorage.setItem('lunchBreakDuration', lunchDurationInput.value); localStorage.setItem('teaBreakStart', teaStartInput.value); localStorage.setItem('teaBreakDuration', teaDurationInput.value); localStorage.setItem('darkMode', darkModeToggle.checked); alert('Settings saved!'); if (darkModeToggle.checked) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode'); });
+        
+        darkModeToggle.addEventListener('change', () => { 
+            document.body.classList.toggle('dark-mode'); 
+        });
+        
+        const loadSettings = () => { 
+            maxHoursInput.value = localStorage.getItem('maxHours') || '3'; 
+            lunchStartInput.value = localStorage.getItem('lunchBreakStart') || '12:45'; 
+            lunchDurationInput.value = localStorage.getItem('lunchBreakDuration') || '45'; 
+            teaStartInput.value = localStorage.getItem('teaBreakStart') || '10:30'; 
+            teaDurationInput.value = localStorage.getItem('teaBreakDuration') || '15'; 
+            
+            const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
+            darkModeToggle.checked = isDarkMode; 
+            if (isDarkMode) document.body.classList.add('dark-mode'); 
+            else document.body.classList.remove('dark-mode'); 
+        };
+        
+        saveBtn.addEventListener('click', () => { 
+            localStorage.setItem('maxHours', maxHoursInput.value); 
+            localStorage.setItem('lunchBreakStart', lunchStartInput.value); 
+            localStorage.setItem('lunchBreakDuration', lunchDurationInput.value); 
+            localStorage.setItem('teaBreakStart', teaStartInput.value); 
+            localStorage.setItem('teaBreakDuration', teaDurationInput.value); 
+            localStorage.setItem('darkMode', darkModeToggle.checked); 
+            
+            alert('Settings saved!'); 
+            
+            if (darkModeToggle.checked) document.body.classList.add('dark-mode'); 
+            else document.body.classList.remove('dark-mode'); 
+        });
+        
         loadSettings();
     }
 
@@ -545,12 +652,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const showSignupLink = document.getElementById('showSignup');
     const showLoginLink = document.getElementById('showLogin');
     const formTitle = document.getElementById('formTitle');
+    const loginToggle = document.getElementById('loginToggle');
+    const signupToggle = document.getElementById('signupToggle');
 
     if (loginForm && signupForm) {
+        
+        // Apply dark mode on login page load
+        if (isDarkModeSaved) {
+            document.body.classList.add('dark-mode');
+        }
+
         const loginErrorEl = document.getElementById('loginError');
         const signupErrorEl = document.getElementById('signupError');
-        showSignupLink.addEventListener('click', (e) => { e.preventDefault(); loginErrorEl.textContent = ''; signupErrorEl.textContent = ''; loginForm.style.display = 'none'; signupForm.style.display = 'block'; formTitle.textContent = 'Sign Up'; });
-        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); loginErrorEl.textContent = ''; signupErrorEl.textContent = ''; signupForm.style.display = 'none'; loginForm.style.display = 'block'; formTitle.textContent = 'Login'; });
+
+        showSignupLink.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            loginErrorEl.textContent = ''; 
+            signupErrorEl.textContent = ''; 
+            loginForm.style.display = 'none'; 
+            signupForm.style.display = 'block'; 
+            formTitle.textContent = 'Sign Up'; 
+            if(loginToggle) loginToggle.style.display = 'none';
+            if(signupToggle) signupToggle.style.display = 'block';
+        });
+        showLoginLink.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            loginErrorEl.textContent = ''; 
+            signupErrorEl.textContent = ''; 
+            signupForm.style.display = 'none'; 
+            loginForm.style.display = 'block'; 
+            formTitle.textContent = 'Login'; 
+            if(loginToggle) loginToggle.style.display = 'block';
+            if(signupToggle) signupToggle.style.display = 'none';
+        });
+        
         loginForm.addEventListener('submit', async (e) => { 
             e.preventDefault();
             loginErrorEl.textContent = '';
@@ -560,11 +695,20 @@ document.addEventListener('DOMContentLoaded', () => {
             loginButton.textContent = 'Logging in...';
             loginButton.disabled = true;
             try {
-                const response = await fetch('http://localhost:3000/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                const response = await fetch('http://localhost:3000/api/login', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ email, password }) 
+                });
                 const data = await response.json();
                 if (!response.ok) { throw new Error(data.message || 'Login failed'); }
-                console.log(data.message);
-                window.location.href = 'dashboard.html'; 
+                
+                // Save user info
+                localStorage.setItem('timetableUser', JSON.stringify(data.user));
+
+                // Redirect to correct dashboard
+                redirectToDashboard(data.user.role);
+
             } catch (error) {
                 loginErrorEl.textContent = error.message;
             } finally {
@@ -572,21 +716,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginButton.disabled = false;
             }
         });
+        
         signupForm.addEventListener('submit', async (e) => { 
             e.preventDefault(); 
             signupErrorEl.textContent = '';
             const name = document.getElementById('signupName').value;
             const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
+            const role = document.getElementById('signupRole').value;
+            
             const signupButton = signupForm.querySelector('.auth-btn');
             signupButton.textContent = 'Signing up...';
             signupButton.disabled = true;
             try {
-                 const response = await fetch('http://localhost:3000/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) });
+                 const response = await fetch('http://localhost:3000/api/signup', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ name, email, password, role }) 
+                });
                 const data = await response.json();
                 if (!response.ok) { throw new Error(data.message || 'Signup failed'); }
+                
                 alert('Signup successful! Please log in.');
                 showLoginLink.click();
+
             } catch (error) {
                 signupErrorEl.textContent = error.message;
             } finally {
@@ -617,7 +770,10 @@ async function fetchTimetableData() {
 }
 
 function populateTimetable(data) {
-    const tbody = document.querySelector('.timetable-grid tbody');
+    const studentTbody = document.getElementById('studentTimetableBody');
+    const adminTbody = document.querySelector('.timetable-page .timetable-grid tbody');
+    const tbody = adminTbody || studentTbody; // Use whichever one exists
+    
     if (!tbody) return;
     const lunchStart = localStorage.getItem('lunchBreakStart') || '12:45';
     const lunchDuration = parseInt(localStorage.getItem('lunchBreakDuration') || '45');
@@ -648,7 +804,12 @@ function populateTimetable(data) {
     }
     tbody.innerHTML = tableHTML;
     const timetableModal = document.getElementById('editModal');
-    if (timetableModal) { const openModal = () => timetableModal.style.display = 'block'; tbody.querySelectorAll('.timetable-slot').forEach(slot => { slot.addEventListener('click', openModal); }); }
+    if (timetableModal) { 
+        const openModal = () => timetableModal.style.display = 'block'; 
+        tbody.querySelectorAll('.timetable-slot').forEach(slot => { 
+            slot.addEventListener('click', openModal); 
+        }); 
+    }
 }
 
 // --- COURSES ---
@@ -660,7 +821,7 @@ async function fetchCourses() {
         return courses;
     } catch (error) {
         console.error("Error fetching courses:", error);
-        if (!document.body.classList.contains('dashboard-page')) { alert("Could not load courses."); }
+        if (document.body.classList.contains('admin-page')) { alert("Could not load courses."); }
         return null;
     }
 }
@@ -693,12 +854,12 @@ async function fetchFaculty() {
         return faculty;
     } catch (error) {
         console.error("Error fetching faculty:", error);
-        if (!document.body.classList.contains('dashboard-page')) { alert("Could not load faculty."); }
+        if (document.body.classList.contains('admin-page')) { alert("Could not load faculty."); }
         return null;
     }
 }
 function renderFacultyTable(facultyMembers) {
-    const tableBody = document.querySelector('.faculty-page .data-table tbody');
+    const tableBody = document.querySelector('body.faculty-page.admin-page .data-table tbody'); // Corrected
     if (!tableBody) return;
     tableBody.innerHTML = ''; 
     if (!facultyMembers || facultyMembers.length === 0) {
@@ -730,12 +891,12 @@ async function fetchRooms() {
         return rooms;
     } catch (error) {
         console.error("Error fetching rooms:", error);
-        if (!document.body.classList.contains('dashboard-page')) { alert("Could not load rooms."); }
+        if (document.body.classList.contains('admin-page')) { alert("Could not load rooms."); }
         return null;
     }
 }
 function renderRoomsTable(rooms) {
-    const tableBody = document.querySelector('.rooms-page .data-table tbody');
+    const tableBody = document.querySelector('.rooms-page .data-table tbody'); // Corrected
     if (!tableBody) return;
     tableBody.innerHTML = ''; 
     if (!rooms || rooms.length === 0) {
@@ -770,7 +931,7 @@ async function fetchSections() {
         return null;
     }
 }
-// NEW Helper: Fetch a SINGLE section
+
 async function fetchSection(sectionId) {
      try {
         const response = await fetch(`http://localhost:3000/api/sections/${sectionId}`); 
@@ -808,12 +969,10 @@ function renderSectionsTable(sections) {
     });
 }
 
-// NEW Helper: Render the list of assignments in the modal
 function renderAssignmentList(assignments) {
     const assignmentList = document.getElementById('assignmentList');
     if (!assignmentList) return;
 
-    // Store assignments on the element for easier access/update
     assignmentList._assignments = assignments; 
     
     if (!assignments || assignments.length === 0) {
@@ -821,7 +980,7 @@ function renderAssignmentList(assignments) {
         return;
     }
 
-    assignmentList.innerHTML = ''; // Clear list
+    assignmentList.innerHTML = '';
     assignments.forEach(assign => {
         assignmentList.innerHTML += `
             <li>

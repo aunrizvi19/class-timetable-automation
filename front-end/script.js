@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const totalHoursStat = document.getElementById('totalHoursStat');
                 if (totalHoursStat) totalHoursStat.textContent = totalHours;
 
-                // [NEW] Find faculty department
+                // Find faculty department
                 if (user.role === 'faculty') {
                     const facultyData = await fetchApi('/api/faculty'); // Fetch all
                     if (facultyData) {
@@ -362,11 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.classList.contains('edit')) {
                 editingRow = e.target.closest('tr');
                 const cells = editingRow.children;
+                // [MODIFIED] Read L-T-P
                 document.getElementById('courseCode').value = cells[0].textContent;
                 document.getElementById('courseName').value = cells[1].textContent;
-                document.getElementById('courseCredits').value = cells[2].textContent;
-                document.getElementById('courseType').value = cells[3].textContent;
-                document.getElementById('courseDuration').value = cells[4].textContent;
+                document.getElementById('courseType').value = cells[2].textContent;
+                document.getElementById('lectures_per_week').value = cells[3].textContent;
+                document.getElementById('tutorials_per_week').value = cells[4].textContent;
+                document.getElementById('practicals_per_week').value = cells[5].textContent;
+                document.getElementById('courseCredits').value = cells[6].textContent;
+                
                 document.getElementById('modalTitle').textContent = 'Edit Course';
                 document.getElementById('courseCode').readOnly = true;
                 courseModal.style.display = 'block';
@@ -381,12 +385,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         courseForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            // [MODIFIED] Send L-T-P
             const data = {
                 course_code: document.getElementById('courseCode').value,
                 course_name: document.getElementById('courseName').value,
                 credits: parseInt(document.getElementById('courseCredits').value),
                 course_type: document.getElementById('courseType').value,
-                duration: parseInt(document.getElementById('courseDuration').value)
+                lectures_per_week: parseInt(document.getElementById('lectures_per_week').value),
+                tutorials_per_week: parseInt(document.getElementById('tutorials_per_week').value),
+                practicals_per_week: parseInt(document.getElementById('practicals_per_week').value)
             };
             const method = editingRow ? 'PUT' : 'POST';
             const url = editingRow ? `http://localhost:3000/api/courses/${data.course_code}` : 'http://localhost:3000/api/courses';
@@ -471,29 +478,31 @@ document.addEventListener('DOMContentLoaded', () => {
             loginModal.style.display = 'block';
         }
         
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const data = {
-                facultyId: document.getElementById('createLoginFacultyId').value,
-                email: document.getElementById('createLoginEmail').value,
-                password: document.getElementById('createLoginPassword').value
-            };
-            
-            try {
-                const res = await fetch('http://localhost:3000/api/users/create-faculty-login', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                if(!res.ok) throw new Error(result.message);
-                alert(result.message);
-                loginModal.style.display = 'none';
-                reloadFaculty();
-            } catch (err) {
-                document.getElementById('createLoginError').textContent = err.message;
-            }
-        });
+        if(loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    facultyId: document.getElementById('createLoginFacultyId').value,
+                    email: document.getElementById('createLoginEmail').value,
+                    password: document.getElementById('createLoginPassword').value
+                };
+                
+                try {
+                    const res = await fetch('http://localhost:3000/api/users/create-faculty-login', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if(!res.ok) throw new Error(result.message);
+                    alert(result.message);
+                    loginModal.style.display = 'none';
+                    reloadFaculty();
+                } catch (err) {
+                    document.getElementById('createLoginError').textContent = err.message;
+                }
+            });
+        }
         
-        document.querySelectorAll('.close-button').forEach(btn => {
+        document.querySelectorAll('.modal .close-button').forEach(btn => {
             btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
         });
     }
@@ -637,49 +646,107 @@ document.addEventListener('DOMContentLoaded', () => {
             assignModal.style.display = 'block';
         }
 
-        assignForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const cSelect = document.getElementById('assignCourseSelect');
-            const fSelect = document.getElementById('assignFacultySelect');
-            const bSelect = document.getElementById('assignBatchSelect');
-            
-            const data = {
-                courseId: cSelect.value,
-                facultyId: fSelect.value,
-                courseName: cSelect.options[cSelect.selectedIndex].text,
-                facultyName: fSelect.options[fSelect.selectedIndex].text,
-                batch: bSelect.value
-            };
-            
-            const res = await fetch(`http://localhost:3000/api/sections/${currentSectionId}/assign`, {
-                method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
-            });
-            if(res.ok) {
-                // Refresh list
-                const section = await fetchSection(currentSectionId);
-                renderAssignmentList(section.assignments);
-                assignForm.reset();
-            }
-        });
-
-        document.getElementById('assignmentList').addEventListener('click', async (e) => {
-            if (e.target.classList.contains('delete-assignment')) {
-                if(confirm("Remove assignment?")) {
-                    await fetch(`http://localhost:3000/api/sections/${currentSectionId}/unassign`, {
-                        method: 'DELETE', headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ assignmentId: e.target.dataset.id })
-                    });
+        if(assignForm) {
+            assignForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const cSelect = document.getElementById('assignCourseSelect');
+                const fSelect = document.getElementById('assignFacultySelect');
+                const bSelect = document.getElementById('assignBatchSelect');
+                
+                const data = {
+                    courseId: cSelect.value,
+                    facultyId: fSelect.value,
+                    courseName: cSelect.options[cSelect.selectedIndex].text,
+                    facultyName: fSelect.options[fSelect.selectedIndex].text,
+                    batch: bSelect.value
+                };
+                
+                const res = await fetch(`http://localhost:3000/api/sections/${currentSectionId}/assign`, {
+                    method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                });
+                if(res.ok) {
+                    // Refresh list
                     const section = await fetchSection(currentSectionId);
                     renderAssignmentList(section.assignments);
+                    assignForm.reset();
                 }
-            }
-        });
+            });
+        }
 
-        document.querySelectorAll('.close-button').forEach(btn => {
+        const assignList = document.getElementById('assignmentList');
+        if(assignList) {
+            assignList.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('delete-assignment')) {
+                    if(confirm("Remove assignment?")) {
+                        await fetch(`http://localhost:3000/api/sections/${currentSectionId}/unassign`, {
+                            method: 'DELETE', headers: {'Content-Type': 'application/json'}, 
+                            body: JSON.stringify({ assignmentId: e.target.dataset.id })
+                        });
+                        const section = await fetchSection(currentSectionId);
+                        renderAssignmentList(section.assignments);
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.modal .close-button').forEach(btn => {
             btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
         });
     }
 
+    // --- [NEW] USERS PAGE ---
+    const usersTableBody = document.getElementById('usersTableBody');
+    if (usersTableBody) {
+        async function loadAndRenderUsers() {
+            const users = await fetchUsers();
+            const tbody = document.getElementById('usersTableBody');
+            if (!tbody) return;
+            
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No users found.</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            users.forEach(u => {
+                html += `
+                    <tr data-email="${u._id}">
+                        <td>${u.name || 'N/A'}</td>
+                        <td>${u.email || u._id}</td>
+                        <td>${u.role}</td>
+                        <td>${u.profileId || 'N/A'}</td>
+                        <td>
+                            <button class="action-btn-table delete delete-user" ${u.role === 'admin' ? 'disabled' : ''}>Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+        
+        usersTableBody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-user')) {
+                const row = e.target.closest('tr');
+                const email = row.dataset.email;
+                const name = row.children[0].textContent;
+                
+                if (confirm(`Are you sure you want to delete the user "${name}" (${email})?`)) {
+                    try {
+                        const res = await fetch(`http://localhost:3000/api/users/${email}`, { method: 'DELETE' });
+                        const result = await res.json();
+                        if (!res.ok) throw new Error(result.message);
+                        alert(result.message);
+                        loadAndRenderUsers(); // Refresh the list
+                    } catch (err) {
+                        alert(`Error: ${err.message}`);
+                    }
+                }
+            }
+        });
+
+        loadAndRenderUsers();
+    }
+    
     // --- SETTINGS PAGE ---
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
     if (saveSettingsBtn) {
@@ -688,13 +755,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Load
         inputs.forEach(id => {
             const val = localStorage.getItem(id);
-            if(val) document.getElementById(id).value = val;
+            if(val && document.getElementById(id)) document.getElementById(id).value = val;
         });
 
         // Save
         saveSettingsBtn.addEventListener('click', () => {
-            inputs.forEach(id => localStorage.setItem(id, document.getElementById(id).value));
-            // Dark mode is saved by its own toggle's event listener
+            inputs.forEach(id => {
+                if(document.getElementById(id)) localStorage.setItem(id, document.getElementById(id).value);
+            });
             localStorage.setItem('darkMode', document.getElementById('darkModeToggle').checked);
             alert('Settings Saved!');
         });
@@ -703,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LOGIN/SIGNUP PAGE ---
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        // [NEW] Apply dark mode on load
+        // [FIX] Apply dark mode on load
         if (isDarkMode) {
             document.body.classList.add('dark-mode');
         }
@@ -861,19 +929,21 @@ function populateTimetable(data) {
     const sortedTimeKeys = [...allTimeKeys].sort();
 
     sortedTimeKeys.forEach(time => {
+        const timeLabel = TIME_SLOTS_MAP[time] || time;
+
         if (time === teaStart) {
-            html += `<tr><td class="time-cell">${TIME_SLOTS_MAP[time] || time}</td><td colspan="6" class="break-slot">Tea Break</td></tr>`;
+            html += `<tr><td class="time-cell">${timeLabel}</td><td colspan="6" class="break-slot">Tea Break</td></tr>`;
             return; // Skip this slot from the main logic
         }
         if (time === lunchStart) {
-            html += `<tr><td class="time-cell">${TIME_SLOTS_MAP[time] || time}</td><td colspan="6" class="break-slot">Lunch Break</td></tr>`;
+            html += `<tr><td class="time-cell">${timeLabel}</td><td colspan="6" class="break-slot">Lunch Break</td></tr>`;
             return; // Skip this slot from the main logic
         }
 
-        // Only render class rows (from the original map)
+        // Only render class rows (from the original map keys)
         if (!TIME_SLOTS_MAP[time]) return; 
 
-        html += `<tr><td class="time-cell">${TIME_SLOTS_MAP[time]}</td>`;
+        html += `<tr><td class="time-cell">${timeLabel}</td>`;
         
         DAYS.forEach(day => {
             let cellContent = '';
@@ -961,12 +1031,17 @@ function openEditSlotModal(slotData, day, time) {
 function renderCoursesTable(data) {
     const html = (data || []).map(c => `
         <tr>
-            <td>${c._id}</td><td>${c.course_name}</td><td>${c.credits}</td>
-            <td>${c.course_type}</td><td>${c.duration}</td>
+            <td>${c._id}</td>
+            <td>${c.course_name}</td>
+            <td>${c.course_type}</td>
+            <td>${c.lectures_per_week || 0}</td>
+            <td>${c.tutorials_per_week || 0}</td>
+            <td>${c.practicals_per_week || 0}</td>
+            <td>${c.credits}</td>
             <td><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td>
         </tr>`).join('');
     const tbody = document.querySelector('.courses-page .data-table tbody');
-    if(tbody) tbody.innerHTML = html || '<tr><td colspan="6">No courses found.</td></tr>';
+    if(tbody) tbody.innerHTML = html || '<tr><td colspan="8">No courses found.</td></tr>';
 }
 
 function renderFacultyTable(data, userSet) {

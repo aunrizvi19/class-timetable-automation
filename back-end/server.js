@@ -117,7 +117,7 @@ connectDB().then(() => {
         try {
           if (!db) return res.status(500).json({ message: "Database not connected" });
           const users = await db.collection('users').find({}, { 
-              projection: { _id: 1, email: 1, role: 1, profileId: 1 } 
+              projection: { _id: 1, name: 1, email: 1, role: 1, profileId: 1 } 
           }).toArray();
           res.json(users);
         } catch (err) {
@@ -128,7 +128,6 @@ connectDB().then(() => {
 
     // Create login for faculty
     app.post('/api/users/create-faculty-login', async (req, res) => {
-        console.log("Received request for POST /api/users/create-faculty-login");
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
             
@@ -137,19 +136,16 @@ connectDB().then(() => {
                 return res.status(400).json({ message: "Missing fields" });
             }
 
-            // 1. Check if email already exists
             const existingUser = await db.collection('users').findOne({ _id: email });
             if (existingUser) {
                 return res.status(409).json({ message: "Email already in use." });
             }
 
-            // 2. Get faculty member's name
             const faculty = await db.collection('faculty').findOne({ _id: facultyId });
             if (!faculty) {
                 return res.status(404).json({ message: "Faculty ID not found." });
             }
 
-            // 3. Create new user
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
             
@@ -159,7 +155,7 @@ connectDB().then(() => {
                 password: hashedPassword,
                 role: 'faculty',
                 _id: email,
-                profileId: facultyId // Link to the faculty document
+                profileId: facultyId 
             };
             
             await db.collection('users').insertOne(newUser);
@@ -168,6 +164,34 @@ connectDB().then(() => {
         } catch (err) {
             console.error("Error creating faculty login:", err);
             res.status(500).json({ message: "Error saving user to database" });
+        }
+    });
+
+    // [NEW] Delete a user
+    app.delete('/api/users/:email', async (req, res) => {
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const email = req.params.email;
+            
+            // Safety check: Don't let the last admin delete themselves
+            const userToDelete = await db.collection('users').findOne({ _id: email });
+            if (userToDelete && userToDelete.role === 'admin') {
+                const adminCount = await db.collection('users').countDocuments({ role: 'admin' });
+                if (adminCount <= 1) {
+                    return res.status(400).json({ message: "Cannot delete the last admin account." });
+                }
+            }
+            
+            const result = await db.collection('users').deleteOne({ _id: email });
+            
+            if (result.deletedCount === 0) {
+                return res.status(404).json({ message: "User not found." });
+            }
+
+            res.status(200).json({ message: "User deleted successfully." });
+        } catch (err) {
+            console.error("Error deleting user:", err);
+            res.status(500).json({ message: "Error deleting user" });
         }
     });
 
@@ -186,7 +210,12 @@ connectDB().then(() => {
             const newCourse = req.body;
             newCourse._id = newCourse.course_code;
             newCourse.credits = parseInt(newCourse.credits);
-            newCourse.duration = parseInt(newCourse.duration);
+            newCourse.lectures_per_week = parseInt(newCourse.lectures_per_week);
+            newCourse.tutorials_per_week = parseInt(newCourse.tutorials_per_week);
+            newCourse.practicals_per_week = parseInt(newCourse.practicals_per_week);
+            
+            delete newCourse.duration; // Remove old field
+
             await db.collection('courses').insertOne(newCourse);
             res.status(201).json(newCourse);
         } catch (err) { res.status(500).json({ message: `Failed to add course: ${err.message}` }); }
@@ -195,10 +224,20 @@ connectDB().then(() => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
             const { code } = req.params;
-            const { course_name, credits, course_type, duration } = req.body;
+            const { course_name, credits, course_type, lectures_per_week, tutorials_per_week, practicals_per_week } = req.body;
+            
             await db.collection('courses').updateOne(
                 { _id: code },
-                { $set: { course_name, credits: parseInt(credits), course_type, duration: parseInt(duration) } }
+                { $set: { 
+                    course_name, 
+                    credits: parseInt(credits), 
+                    course_type, 
+                    lectures_per_week: parseInt(lectures_per_week), 
+                    tutorials_per_week: parseInt(tutorials_per_week), 
+                    practicals_per_week: parseInt(practicals_per_week)
+                  },
+                  $unset: { duration: "" } // Remove the old duration field
+                }
             );
             res.json({ message: "Course updated" });
         } catch (err) { res.status(500).json({ message: `Failed to update: ${err.message}` }); }
@@ -427,7 +466,8 @@ connectDB().then(() => {
                 section: sectionId,
                 facultyId: facultyId,
                 batch: batch,
-                duration: parseInt(course.duration) || 1,
+                // Use L/T/P to determine duration
+                duration: course.practicals_per_week > 0 ? course.practicals_per_week : (course.lectures_per_week || 1),
                 conflict: false // Admin override
             };
 

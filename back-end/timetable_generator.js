@@ -1,279 +1,380 @@
+const { ObjectId } = require('mongodb');
+
 // =================================================================
-// == Class Timetable Generator (using a Genetic Algorithm)
-// == v3 - Supports Multiple Sections per Time Slot (Arrays)
+// == 1. DATA PREPARATION
 // =================================================================
-
-// --- Constants ---
-const POPULATION_SIZE = 50; 
-const NUM_GENERATIONS = 100; 
-const MUTATION_RATE = 0.05; 
-const ELITISM_RATE = 0.1; 
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const TIME_SLOTS = [
-    '08:30', '09:30', 
-    '10:45', '11:45', 
-    '13:30', '14:30', '15:30'
-];
-
-const TIME_SLOT_INDICES = {};
-TIME_SLOTS.forEach((time, index) => TIME_SLOT_INDICES[time] = index);
-
 async function generateAndSaveTimetable(db) {
-    console.log("Starting advanced timetable generation (v3)...");
+    console.log("Starting timetable generation...");
 
-    const inputs = await fetchGenerationInputs(db);
-    if (inputs.allClasses.length === 0) throw new Error("No classes found.");
-    if (inputs.allRooms.length === 0) throw new Error("No rooms found.");
+    // Fetch all necessary data from the database
+    const allCourses = await db.collection('courses').find({}).toArray();
+    const allFaculty = await db.collection('faculty').find({}).toArray();
+    const allRooms = await db.collection('rooms').find({}).toArray();
+    const allSections = await db.collection('sections').find({}).toArray();
 
-    let population = createInitialPopulation(inputs);
-    let bestTimetable = null;
-    let bestFitness = Infinity;
+    const inputs = []; // This will hold all classes that need to be scheduled
 
-    for (let gen = 0; gen < NUM_GENERATIONS; gen++) {
-        const fitnessScores = population.map(timetable => calculateFitness(timetable, inputs));
+    // [MODIFIED] Process assignments based on L-T-P structure
+    allSections.forEach(section => {
+        section.assignments.forEach(assignment => {
+            
+            const course = allCourses.find(c => c._id === assignment.courseId);
+            const faculty = allFaculty.find(f => f._id === assignment.facultyId);
 
-        for (let i = 0; i < population.length; i++) {
-            if (fitnessScores[i] < bestFitness) {
-                bestFitness = fitnessScores[i];
-                bestTimetable = population[i];
+            if (!course || !faculty) {
+                console.warn(`Skipping assignment: Course or Faculty not found. (Course: ${assignment.courseId}, Faculty: ${assignment.facultyId})`);
+                return;
             }
-        }
 
-        if (bestFitness < 10) { 
-            console.log(`Good solution (fitness ${bestFitness}) found at generation ${gen}!`);
-            break;
-        }
+            // --- Logic for Theory/Lecture (L) classes ---
+            const lectures = course.lectures_per_week || 0;
+            if (lectures > 0 && assignment.batch === 'Entire Section') {
+                const theoryRooms = allRooms.filter(r => r.type === 'Theory');
+                if (theoryRooms.length === 0) {
+                    console.warn(`No 'Theory' rooms available for ${course._id}. Skipping lecture.`);
+                    return;
+                }
+                
+                for (let i = 0; i < lectures; i++) {
+                    inputs.push({
+                        id: `${section._id}-${course._id}-L${i+1}`,
+                        course: course.course_name,
+                        courseType: course.course_type,
+                        faculty: faculty.name,
+                        facultyId: faculty._id,
+                        section: section._id,
+                        batch: 'Entire Section',
+                        roomType: 'Theory',
+                        availableRooms: theoryRooms.map(r => r._id), 
+                        duration: 1 // Lectures are 1 hour
+                    });
+                }
+            }
 
-        population = createNextGeneration(population, fitnessScores, inputs);
+            // --- Logic for Practical/Lab (P) classes ---
+            const practicals = course.practicals_per_week || 0;
+            if (practicals > 0 && assignment.batch !== 'Entire Section') {
+                const labRooms = allRooms.filter(r => r.type === 'Lab');
+                if (labRooms.length === 0) {
+                    console.warn(`No 'Lab' rooms available for ${course._id}. Skipping lab.`);
+                    return;
+                }
+
+                // Create *one* class for the *total* duration of the practical
+                // e.g., if P=2, create one 2-hour class.
+                inputs.push({
+                    id: `${section._id}-${course._id}-${assignment.batch}`,
+                    course: course.course_name,
+                    courseType: course.course_type,
+                    faculty: faculty.name,
+                    facultyId: faculty._id,
+                    section: section._id,
+                    batch: assignment.batch,
+                    roomType: 'Lab',
+                    availableRooms: labRooms.map(r => r._id), 
+                    duration: practicals // Lab duration is P (e.g., 2 or 3 hours)
+                });
+            }
+            
+            // Note: Tutorials (T) are not implemented, but could be added here
+        });
+    });
+
+    if (inputs.length === 0) {
+        console.error("No valid class assignments found. Aborting generation.");
+        throw new Error("No valid class assignments found. Check section assignments.");
     }
+    
+    console.log(`Total classes to schedule: ${inputs.length}`);
 
-    const formattedTimetable = formatTimetableForSave(bestTimetable, inputs);
-
-    const timetablesCollection = db.collection('timetables');
-    await timetablesCollection.updateOne(
+    // =================================================================
+    // == 2. GENETIC ALGORITHM
+    // =================================================================
+    const timetable = generate(inputs);
+    const formattedTimetable = formatTimetableForSave(timetable, inputs);
+    
+    // Save to database
+    await db.collection('timetables').updateOne(
         { _id: 'main' },
-        { $set: { 
-            data: formattedTimetable, 
-            generatedAt: new Date(),
-            fitness: bestFitness
-        } },
+        { $set: { data: formattedTimetable, generatedAt: new Date() } },
         { upsert: true }
     );
-
-    console.log("Timetable saved successfully.");
+    
+    console.log("Timetable generation complete and saved.");
     return formattedTimetable;
 }
 
-async function fetchGenerationInputs(db) {
-    const allRooms = await db.collection('rooms').find({}).toArray();
-    const courses = await db.collection('courses').find({}).toArray();
-    const courseMap = new Map();
-    courses.forEach(c => courseMap.set(c._id, c));
+// --- GA Constants ---
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+// All 1-hour slots
+const ALL_TIME_SLOTS = ['08:30', '09:30', '10:30', '10:45', '11:45', '12:45', '13:30', '14:30', '15:30'];
+// Slots that are *not* breaks
+const CLASS_TIME_SLOTS = ['08:30', '09:30', '10:45', '11:45', '13:30', '14:30', '15:30'];
+// Break slots
+const BREAK_SLOTS = ['10:30', '12:45'];
 
-    const sections = await db.collection('sections').find({}).toArray();
-    
-    const allClasses = [];
-    sections.forEach(section => {
-        if (section.assignments) {
-            section.assignments.forEach(assignment => {
-                const course = courseMap.get(assignment.courseId);
-                allClasses.push({
-                    id: assignment._id.toString(),
-                    sectionId: section._id,
-                    courseId: assignment.courseId,
-                    facultyId: assignment.facultyId,
-                    batch: assignment.batch,
-                    duration: course ? parseInt(course.duration) : 1,
-                    courseType: course ? course.course_type : 'Theory',
-                    courseName: assignment.courseName.split(' - ')[0],
-                    facultyName: assignment.facultyName.split(' (')[0]
-                });
-            });
-        }
-    });
+const POPULATION_SIZE = 50;
+const MAX_GENERATIONS = 100;
+const MUTATION_RATE = 0.1;
 
-    return { allRooms, allClasses, courseMap };
-}
+// --- Main GA Function ---
+function generate(inputs) {
+    if (inputs.length === 0) return [];
 
-function createInitialPopulation(inputs) {
-    const population = [];
+    let population = [];
     for (let i = 0; i < POPULATION_SIZE; i++) {
-        const timetable = [];
-        inputs.allClasses.forEach(classGene => {
-            const validTimeSlots = TIME_SLOTS.slice(0, TIME_SLOTS.length - (classGene.duration - 1));
-            const randomDay = DAYS[Math.floor(Math.random() * DAYS.length)];
-            const randomTime = validTimeSlots[Math.floor(Math.random() * validTimeSlots.length)];
-            const randomRoom = inputs.allRooms[Math.floor(Math.random() * inputs.allRooms.length)];
-
-            timetable.push({
-                ...classGene,
-                day: randomDay,
-                time: randomTime,
-                roomId: randomRoom._id
-            });
-        });
-        population.push(timetable);
+        population.push(createChromosome(inputs));
     }
-    return population;
-}
 
-function calculateFitness(timetable, inputs) {
-    let conflicts = 0;
-    const occupied = new Map(); 
-    const facultyLoad = new Map();
-    const sectionLoad = new Map();
+    let bestChromosome = null;
+    let bestFitness = -Infinity;
 
-    timetable.forEach(classGene => {
-        const { day, time, roomId, facultyId, sectionId, batch, duration } = classGene;
-        classGene.conflict = false;
+    for (let gen = 0; gen < MAX_GENERATIONS; gen++) {
+        population = population.map(chromosome => ({
+            chromosome,
+            fitness: calculateFitness(chromosome, inputs)
+        }));
 
-        const startTimeIndex = TIME_SLOT_INDICES[time];
+        population.sort((a, b) => b.fitness - a.fitness);
 
-        for (let i = 0; i < duration; i++) {
-            const currentTimeSlot = TIME_SLOTS[startTimeIndex + i];
-            if (!currentTimeSlot) continue;
-
-            const roomKey = `${day}-${currentTimeSlot}-${roomId}`;
-            if (occupied.has(roomKey)) {
-                conflicts += 10;
-                classGene.conflict = true; 
-            } else {
-                occupied.set(roomKey, true);
-            }
-
-            const facultyKey = `${day}-${currentTimeSlot}-${facultyId}`;
-            if (occupied.has(facultyKey)) {
-                conflicts += 10;
-                classGene.conflict = true;
-            } else {
-                occupied.set(facultyKey, true);
-            }
-
-            const batchKey = `${day}-${currentTimeSlot}-${sectionId}-${batch}`;
-            const entireSectionKey = `${day}-${currentTimeSlot}-${sectionId}-Entire Section`;
-
-            if (batch === 'Entire Section') {
-                for (const key of occupied.keys()) {
-                   if (key.startsWith(`${day}-${currentTimeSlot}-${sectionId}-`)) {
-                       conflicts += 10;
-                       classGene.conflict = true;
-                       break;
-                   }
-                }
-            } else {
-                if (occupied.has(batchKey) || occupied.has(entireSectionKey)) {
-                    conflicts += 10;
-                    classGene.conflict = true;
-                }
-            }
-            occupied.set(batchKey, true);
+        if (population[0].fitness > bestFitness) {
+            bestFitness = population[0].fitness;
+            bestChromosome = population[0].chromosome;
         }
 
-        const facultyLoadKey = `${facultyId}-${day}`;
-        const currentFacultyLoad = (facultyLoad.get(facultyLoadKey) || 0) + duration;
-        facultyLoad.set(facultyLoadKey, currentFacultyLoad);
-        if (currentFacultyLoad > 3) conflicts += 1;
+        // Perfect score
+        if (bestFitness === 0) break;
 
-        const sectionLoadKey = `${sectionId}-${day}`;
-        const currentSectionLoad = (sectionLoad.get(sectionLoadKey) || 0) + duration;
-        sectionLoad.set(sectionLoadKey, currentSectionLoad);
-        if (currentSectionLoad > 4) conflicts += 1;
+        const newPopulation = [population[0].chromosome, population[1].chromosome]; // Elitism
+        
+        while (newPopulation.length < POPULATION_SIZE) {
+            const parent1 = selectParent(population).chromosome;
+            const parent2 = selectParent(population).chromosome;
+            let child = crossover(parent1, parent2);
+            if (Math.random() < MUTATION_RATE) {
+                child = mutate(child, inputs);
+            }
+            newPopulation.push(child);
+        }
+        population = newPopulation;
+    }
+    
+    // Add conflict info to the best chromosome
+    return checkAllConstraints(bestChromosome, inputs).chromosome;
+}
+
+// --- Chromosome Functions ---
+function createChromosome(inputs) {
+    return inputs.map(classInput => {
+        const day = DAYS[Math.floor(Math.random() * DAYS.length)];
+        // [FIXED] Only pick valid start times
+        const time = getRandomValidStartTime(classInput.duration); 
+        const room = classInput.availableRooms[Math.floor(Math.random() * classInput.availableRooms.length)];
+        
+        return {
+            id: classInput.id,
+            day: day,
+            time: time,
+            room: room,
+            duration: classInput.duration,
+            section: classInput.section,
+            batch: classInput.batch,
+            facultyId: classInput.facultyId,
+            conflict: false
+        };
     });
-
-    return conflicts;
 }
 
-function createNextGeneration(population, fitnessScores, inputs) {
-    const newPopulation = [];
-    const eliteCount = Math.floor(POPULATION_SIZE * ELITISM_RATE);
-
-    const scoredPopulation = population.map((timetable, i) => ({
-        timetable: timetable,
-        fitness: fitnessScores[i]
-    })).sort((a, b) => a.fitness - b.fitness);
-
-    for (let i = 0; i < eliteCount; i++) {
-        newPopulation.push(scoredPopulation[i].timetable);
+function selectParent(population) {
+    // Tournament selection
+    const tournamentSize = 3;
+    let best = null;
+    for (let i = 0; i < tournamentSize; i++) {
+        const random = population[Math.floor(Math.random() * population.length)];
+        if (best === null || random.fitness > best.fitness) {
+            best = random;
+        }
     }
-
-    while (newPopulation.length < POPULATION_SIZE) {
-        const parentA = scoredPopulation[Math.floor(Math.random() * eliteCount)].timetable;
-        const parentB = scoredPopulation[Math.floor(Math.random() * eliteCount)].timetable;
-        const child = crossover(parentA, parentB);
-        mutate(child, inputs);
-        newPopulation.push(child);
-    }
-    return newPopulation;
+    return best;
 }
 
-function crossover(parentA, parentB) {
-    const child = [];
-    for (let i = 0; i < parentA.length; i++) {
-        if (Math.random() < 0.5) child.push({ ...parentA[i] });
-        else child.push({ ...parentB[i] });
-    }
+function crossover(parent1, parent2) {
+    const midpoint = Math.floor(Math.random() * parent1.length);
+    const child = parent1.slice(0, midpoint).concat(parent2.slice(midpoint));
     return child;
 }
 
-function mutate(timetable, inputs) {
-    timetable.forEach(classGene => {
-        if (Math.random() < MUTATION_RATE) {
-            const mutationType = Math.floor(Math.random() * 3);
-            switch (mutationType) {
-                case 0: 
-                    classGene.day = DAYS[Math.floor(Math.random() * DAYS.length)];
-                    break;
-                case 1: 
-                    const validTimeSlots = TIME_SLOTS.slice(0, TIME_SLOTS.length - (classGene.duration - 1));
-                    classGene.time = validTimeSlots[Math.floor(Math.random() * validTimeSlots.length)];
-                    break;
-                case 2: 
-                    classGene.roomId = inputs.allRooms[Math.floor(Math.random() * inputs.allRooms.length)]._id;
-                    break;
-            }
-        }
-    });
+function mutate(chromosome, inputs) {
+    const geneIndex = Math.floor(Math.random() * chromosome.length);
+    const classInput = inputs[geneIndex]; // Get the corresponding input data
+    
+    // Mutate one gene
+    chromosome[geneIndex].day = DAYS[Math.floor(Math.random() * DAYS.length)];
+    // [FIXED] Only pick valid start times
+    chromosome[geneIndex].time = getRandomValidStartTime(classInput.duration);
+    chromosome[geneIndex].room = classInput.availableRooms[Math.floor(Math.random() * classInput.availableRooms.length)];
+    
+    return chromosome;
 }
 
-/**
- * [Step 8 - Formatting] [MODIFIED FOR ARRAYS]
- * Saves data as: Data -> Day -> Time -> [Array of Slots]
- */
+// --- Fitness & Constraints ---
+function calculateFitness(chromosome, inputs) {
+    return checkAllConstraints(chromosome, inputs).fitness;
+}
+
+function checkAllConstraints(chromosome, inputs) {
+    let fitness = 0;
+    const newChromosome = JSON.parse(JSON.stringify(chromosome)); // Deep copy
+    newChromosome.forEach(gene => gene.conflict = false); // Reset conflicts
+
+    for (let i = 0; i < newChromosome.length; i++) {
+        for (let j = i + 1; j < newChromosome.length; j++) {
+            const class1 = newChromosome[i];
+            const class2 = newChromosome[j];
+            
+            if (class1.day !== class2.day) continue; // No conflict if on different days
+
+            // [FIXED] Get all 1-hour slots each class occupies
+            const slots1 = getSlots(class1.time, class1.duration);
+            const slots2 = getSlots(class2.time, class2.duration);
+
+            // Check for invalid slot (e.g., crossing a break)
+            if (slots1.includes('INVALID')) {
+                fitness -= 100; // Very high penalty
+                class1.conflict = true;
+            }
+            if (slots2.includes('INVALID')) {
+                fitness -= 100; // Very high penalty
+                class2.conflict = true;
+            }
+            if (slots1.includes('INVALID') || slots2.includes('INVALID')) continue;
+
+
+            // Check for time overlap
+            const timeOverlap = slots1.some(s1 => slots2.includes(s1));
+            if (!timeOverlap) continue; // No conflict if no time overlap
+
+            // --- We now know they are on the same day at overlapping times ---
+
+            // 1. Faculty Conflict
+            if (class1.facultyId === class2.facultyId) {
+                fitness -= 10; 
+                class1.conflict = true;
+                class2.conflict = true;
+            }
+
+            // 2. Room Conflict
+            if (class1.room === class2.room) {
+                fitness -= 10; 
+                class1.conflict = true;
+                class2.conflict = true;
+            }
+
+            // 3. Section/Batch Conflict
+            if (class1.section === class2.section) {
+                if (class1.batch === 'Entire Section' || class2.batch === 'Entire Section' || class1.batch === class2.batch) {
+                    fitness -= 10; 
+                    class1.conflict = true;
+                    class2.conflict = true;
+                }
+            }
+        }
+    }
+    return { fitness, chromosome: newChromosome };
+}
+
+// [REWRITTEN] Helper to get all 1-hour slots a class occupies
+function getSlots(startTime, duration) {
+    const slots = [];
+    let currentIndex = ALL_TIME_SLOTS.indexOf(startTime);
+
+    if (currentIndex === -1 || BREAK_SLOTS.includes(startTime)) {
+        return ['INVALID']; // Start time isn't a valid class start slot
+    }
+
+    for (let i = 0; i < duration; i++) {
+        const slotIndex = currentIndex + i;
+        if (slotIndex >= ALL_TIME_SLOTS.length) {
+            return ['INVALID']; // Runs off the end of the day
+        }
+        
+        const currentSlot = ALL_TIME_SLOTS[slotIndex];
+        
+        // If this isn't the *first* slot, check if it's a break
+        if (i > 0 && BREAK_SLOTS.includes(currentSlot)) {
+            return ['INVALID']; // Class crosses a break
+        }
+        
+        slots.push(currentSlot);
+    }
+    
+    return slots;
+}
+
+// [NEW] Helper to get a random valid start time for a class
+function getRandomValidStartTime(duration) {
+    const validStartTimes = [];
+    for (const time of CLASS_TIME_SLOTS) {
+        const slots = getSlots(time, duration);
+        if (!slots.includes('INVALID')) {
+            validStartTimes.push(time);
+        }
+    }
+    
+    if(validStartTimes.length === 0) {
+        // This is bad, means a duration (e.g., 4) is too long
+        // Default to a simple random slot to avoid crashing
+        console.warn(`No valid start time found for duration ${duration}. Defaulting to random slot.`);
+        return CLASS_TIME_SLOTS[Math.floor(Math.random() * CLASS_TIME_SLOTS.length)];
+    }
+
+    return validStartTimes[Math.floor(Math.random() * validStartTimes.length)];
+}
+
+
+// =================================================================
+// == 3. DATA FORMATTING
+// =================================================================
 function formatTimetableForSave(timetable, inputs) {
     const formatted = {};
-    DAYS.forEach(day => formatted[day] = {});
-
-    calculateFitness(timetable, inputs);
+    DAYS.forEach(day => {
+        formatted[day] = {};
+        // Initialize ALL slots, including breaks
+        ALL_TIME_SLOTS.forEach(time => {
+            formatted[day][time] = []; // Initialize as array
+        });
+    });
 
     timetable.forEach(classGene => {
-        const { day, time, roomId, courseName, facultyName, sectionId, facultyId, batch, duration, conflict } = classGene;
-        
+        // [MODIFIED] A class can occupy multiple slots. We must format this.
+        const occupiedSlots = getSlots(classGene.time, classGene.duration);
+        if (occupiedSlots.includes('INVALID')) return; // Skip invalid class
+
+        const inputData = inputs.find(inp => inp.id === classGene.id);
+        if (!inputData) return; // Skip if input not found
+
         const slotData = {
-            course: courseName,
-            faculty: facultyName,
-            room: roomId,
-            section: sectionId,
-            facultyId: facultyId,
-            batch: batch,
-            duration: duration,
-            conflict: !!conflict
+            _id: new ObjectId(),
+            course: inputData.course,
+            faculty: inputData.faculty,
+            room: classGene.room,
+            section: classGene.section,
+            facultyId: classGene.facultyId,
+            batch: classGene.batch,
+            duration: classGene.duration,
+            conflict: classGene.conflict
         };
 
-        // Initialize array if not exists
-        if (!formatted[day][time]) {
-            formatted[day][time] = [];
-        }
-
-        // Check if this exact slot is already added to prevent duplicates
-        // (though the GA shouldn't produce duplicates, it's safer)
-        const exists = formatted[day][time].some(s => 
-            s.section === sectionId && s.batch === batch && s.course === courseName
-        );
-
-        if (!exists) {
-            formatted[day][time].push(slotData);
-        }
+        // Add the class data to *every* slot it occupies
+        occupiedSlots.forEach(timeSlot => {
+            if (formatted[classGene.day] && formatted[classGene.day][timeSlot]) {
+                // Check to prevent duplicates if a conflict was saved
+                const alreadyExists = formatted[classGene.day][timeSlot].some(s => s.id === slotData.id || (s.section === slotData.section && s.course === slotData.course && s.batch === slotData.batch));
+                if (!alreadyExists) {
+                     formatted[classGene.day][timeSlot].push(slotData);
+                }
+            }
+        });
     });
 
     return formatted;

@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             localStorage.removeItem('timetableUser');
             localStorage.removeItem('sidebarCollapsed');
+            localStorage.removeItem('darkMode');
             alert('Logged out successfully.');
             window.location.href = 'login.html';
         });
@@ -99,13 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isDarkMode) {
         document.body.classList.add('dark-mode');
     }
-
+    
     // 2. Handle Header Toggle Button (for Student/Faculty pages)
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     if (themeToggleBtn) {
-        // Set initial icon
         themeToggleBtn.textContent = isDarkMode ? '☀️' : '🌙';
-        
         themeToggleBtn.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
             const isDark = document.body.classList.contains('dark-mode');
@@ -118,10 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkModeToggleSettings = document.getElementById('darkModeToggle');
     if (darkModeToggleSettings) {
         darkModeToggleSettings.checked = isDarkMode;
-        darkModeToggleSettings.addEventListener('change', () => {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', darkModeToggleSettings.checked);
-        });
+        // The 'save' button handles the saving
     }
 
 
@@ -133,59 +129,66 @@ document.addEventListener('DOMContentLoaded', () => {
         const welcomeHeader = document.getElementById('welcomeHeader');
         if (welcomeHeader) welcomeHeader.textContent = `Welcome back, ${user.name}!`;
         
-        // Display Student Section in Stats
         const studentSectionStat = document.getElementById('studentSectionStat');
         if (studentSectionStat && user.role === 'student') {
             studentSectionStat.textContent = user.profileId || 'N/A';
         }
 
         async function loadPersonalTimetable() {
-            if (!user.profileId) {
-                console.warn("User has no profileId.");
-                return; 
-            }
+            if (!user.profileId) return; 
             
             let url = '';
-            if (user.role === 'student') url = `http://localhost:3000/api/timetable/section/${user.profileId}`;
-            else if (user.role === 'faculty') url = `http://localhost:3000/api/timetable/faculty/${user.profileId}`;
+            if (user.role === 'student') url = `/api/timetable/section/${user.profileId}`;
+            else if (user.role === 'faculty') url = `/api/timetable/faculty/${user.profileId}`;
 
-            try {
-                const response = await fetch(url);
-                if (response.ok) {
-                    const result = await response.json();
-                    
-                    // 1. Populate Grid
-                    populateTimetable(result.data);
+            const result = await fetchApi(url);
+            if (result && result.data) {
+                // 1. Populate Grid
+                populateTimetable(result.data);
 
-                    // 2. Calculate Total Classes for Stats
-                    let totalClasses = 0;
-                    const data = result.data;
-                    for (const day in data) {
-                        for (const time in data[day]) {
-                            const slots = data[day][time];
-                            if (Array.isArray(slots)) {
-                                totalClasses += slots.length;
-                            }
+                // 2. Calculate Stats
+                let totalHours = 0;
+                const data = result.data;
+                for (const day in data) {
+                    for (const time in data[day]) {
+                        const slots = data[day][time] || [];
+                        slots.forEach(slot => {
+                            totalHours += (slot.duration || 1);
+                        });
+                    }
+                }
+                
+                // Populate Stats Cards
+                const totalClassesStat = document.getElementById('totalClassesStat');
+                if (totalClassesStat) totalClassesStat.textContent = totalHours; // Renamed for faculty
+                
+                const totalHoursStat = document.getElementById('totalHoursStat');
+                if (totalHoursStat) totalHoursStat.textContent = totalHours;
+
+                // [NEW] Find faculty department
+                if (user.role === 'faculty') {
+                    const facultyData = await fetchApi('/api/faculty'); // Fetch all
+                    if (facultyData) {
+                        const me = facultyData.find(f => f._id === user.profileId);
+                        if(me) {
+                            const facultyDeptStat = document.getElementById('facultyDeptStat');
+                            if(facultyDeptStat) facultyDeptStat.textContent = me.department || 'N/A';
                         }
                     }
-                    const totalClassesStat = document.getElementById('totalClassesStat');
-                    if (totalClassesStat) totalClassesStat.textContent = totalClasses;
-
                 }
-            } catch (e) { console.error("Personal timetable error:", e); }
+            }
         }
         loadPersonalTimetable();
     }
 
     // =================================================================
-    // == 4. ADMIN TIMETABLE PAGE LOGIC
+    // == 4. ADMIN TIMETABLE PAGE LOGIC (index.html)
     // =================================================================
     
     const generateBtn = document.querySelector('.generate-btn');
     const publishBtn = document.querySelector('.publish-btn');
 
-    if (generateBtn) {
-        // Hide controls if not admin
+    if (generateBtn) { // We are on index.html
         if (user && user.role !== 'admin') {
             const headerActions = document.querySelector('.header-actions');
             if(headerActions) headerActions.style.display = 'none';
@@ -193,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(filters) filters.style.display = 'none';
         }
 
-        // Load Modal Data
         async function loadModalData() {
             try {
                 const [courses, faculty, rooms, sections] = await Promise.all([
@@ -207,13 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         async function loadTimetable() {
-            console.log("Loading timetable...");
             const timetableDoc = await fetchTimetableData();
             if(timetableDoc && timetableDoc.data) {
                 currentTimetableData = timetableDoc.data; 
                 populateTimetable(currentTimetableData);
-                const generatedAt = new Date(timetableDoc.generatedAt).toLocaleString();
-                console.log(`Loaded timetable generated at: ${generatedAt}`);
             } else {
                 currentTimetableData = {};
                 populateTimetable(null);
@@ -224,49 +223,30 @@ document.addEventListener('DOMContentLoaded', () => {
         loadModalData(); 
         loadTimetable();
         
-        // Generate Button
         generateBtn.addEventListener('click', async () => {
             if (!confirm("Generate new timetable? This will overwrite existing data.")) return;
-            const originalText = generateBtn.textContent;
             generateBtn.disabled = true;
             generateBtn.textContent = 'Generating...';
-            
             try {
-                const response = await fetch('http://localhost:3000/api/timetable/generate', { method: 'POST' });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message);
-                
-                alert('New timetable generated successfully!');
+                const res = await fetch('http://localhost:3000/api/timetable/generate', { method: 'POST' });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.message);
+                alert('New timetable generated!');
                 currentTimetableData = result.data;
                 populateTimetable(currentTimetableData);
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.textContent = originalText;
-            }
+            } catch (error) { alert(`Error: ${error.message}`); }
+            finally { generateBtn.disabled = false; generateBtn.textContent = 'Generate New Timetable'; }
         });
 
-        // Publish Button
         if (publishBtn) {
             publishBtn.addEventListener('click', () => {
-                if (!currentTimetableData || Object.keys(currentTimetableData).length === 0) {
-                    alert("No timetable to publish."); return;
-                }
-                if (confirm("Publish timetable? This will notify all users.")) {
-                    const originalText = publishBtn.textContent;
-                    publishBtn.textContent = "Publishing...";
-                    publishBtn.disabled = true;
-                    setTimeout(() => {
-                        alert("✅ Timetable Published!");
-                        publishBtn.textContent = originalText;
-                        publishBtn.disabled = false;
-                    }, 1000);
+                if (!currentTimetableData) { alert("No timetable to publish."); return; }
+                if (confirm("Publish timetable?")) {
+                    alert("✅ Timetable Published!");
                 }
             });
         }
 
-        // Filter Listener
         const sectionSelect = document.getElementById('section-select');
         if (sectionSelect) {
             fetchSections().then(sections => {
@@ -276,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // [MODAL LOGIC FOR EDITING SLOTS]
+    // --- TIMETABLE EDIT MODAL ---
     const timetableModal = document.getElementById('editModal');
     if (timetableModal) {
         const closeButton = timetableModal.querySelector('.close-button');
@@ -344,8 +324,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 new Chart(occupancyChartCanvas.getContext('2d'), { 
                     type: 'bar', 
                     data: { 
-                        labels: Object.keys(roomTypeCounts), 
-                        datasets: [{ label: 'Rooms', data: Object.values(roomTypeCounts), backgroundColor: '#36a2eb' }] 
+                        labels: Object.keys(roomTypeCounts).length ? Object.keys(roomTypeCounts) : ['No Data'],
+                        datasets: [{ 
+                            label: 'Rooms', 
+                            data: Object.values(roomTypeCounts).length ? Object.values(roomTypeCounts) : [0], 
+                            backgroundColor: '#36a2eb' 
+                        }] 
                     } 
                 });
             } catch (e) { console.error(e); }
@@ -400,9 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = {
                 course_code: document.getElementById('courseCode').value,
                 course_name: document.getElementById('courseName').value,
-                credits: document.getElementById('courseCredits').value,
+                credits: parseInt(document.getElementById('courseCredits').value),
                 course_type: document.getElementById('courseType').value,
-                duration: document.getElementById('courseDuration').value
+                duration: parseInt(document.getElementById('courseDuration').value)
             };
             const method = editingRow ? 'PUT' : 'POST';
             const url = editingRow ? `http://localhost:3000/api/courses/${data.course_code}` : 'http://localhost:3000/api/courses';
@@ -554,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const data = {
                 room_number: document.getElementById('roomNumber').value,
-                capacity: document.getElementById('roomCapacity').value,
+                capacity: parseInt(document.getElementById('roomCapacity').value),
                 type: document.getElementById('roomType').value
             };
             const method = editingRow ? 'PUT' : 'POST';
@@ -614,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = {
                 section_id: document.getElementById('sectionId').value,
                 department: document.getElementById('sectionDept').value,
-                semester: document.getElementById('sectionSem').value,
+                semester: parseInt(document.getElementById('sectionSem').value),
                 section_name: document.getElementById('sectionName').value,
                 batches: batches
             };
@@ -671,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
             });
             if(res.ok) {
-                // Refresh list manually or fetch section again
+                // Refresh list
                 const section = await fetchSection(currentSectionId);
                 renderAssignmentList(section.assignments);
                 assignForm.reset();
@@ -696,9 +680,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- SETTINGS PAGE ---
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    if (saveSettingsBtn) {
+        const inputs = ['max-hours', 'lunchBreakStart', 'lunchBreakDuration', 'teaBreakStart', 'teaBreakDuration'];
+        
+        // Load
+        inputs.forEach(id => {
+            const val = localStorage.getItem(id);
+            if(val) document.getElementById(id).value = val;
+        });
+
+        // Save
+        saveSettingsBtn.addEventListener('click', () => {
+            inputs.forEach(id => localStorage.setItem(id, document.getElementById(id).value));
+            // Dark mode is saved by its own toggle's event listener
+            localStorage.setItem('darkMode', document.getElementById('darkModeToggle').checked);
+            alert('Settings Saved!');
+        });
+    }
+
     // --- LOGIN/SIGNUP PAGE ---
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
+        // [NEW] Apply dark mode on load
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+        }
+
         const signupForm = document.getElementById('signupForm');
         const showSignupLink = document.getElementById('showSignup');
         const showLoginLink = document.getElementById('showLogin');
@@ -792,14 +801,16 @@ document.addEventListener('DOMContentLoaded', () => {
 }); // <<< END of DOMContentLoaded
 
 // =================================================================
-// == HELPER FUNCTIONS
+// == 7. HELPER FUNCTIONS
 // =================================================================
 
+// --- API Fetchers ---
 async function fetchApi(url) {
     try {
         const res = await fetch(`http://localhost:3000${url}`);
         if(res.ok) return await res.json();
-    } catch(e) { console.error(e); }
+        else console.error(`Failed to fetch ${url}: ${res.statusText}`);
+    } catch(e) { console.error(`Network error fetching ${url}:`, e); }
     return null;
 }
 async function fetchCourses() { return fetchApi('/api/courses'); }
@@ -810,78 +821,83 @@ async function fetchUsers() { return fetchApi('/api/users'); }
 async function fetchSection(id) { return fetchApi(`/api/sections/${id}`); }
 async function fetchTimetableData() { return fetchApi('/api/timetable'); }
 
+
+// --- TIMETABLE RENDERER ---
 function populateTimetable(data) {
     const tbody = document.querySelector('.timetable-grid tbody');
-    if (!tbody) return;
-    if (!data) { tbody.innerHTML = '<tr><td colspan="7">No data available.</td></tr>'; return; }
+    if (!tbody) return; // Exit if no grid found
+    if (!data || Object.keys(data).length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="7">No timetable data available.</td></tr>'; 
+        return; 
+    }
 
     const sectionFilter = document.getElementById('section-select');
+    // If no filter exists (e.g., student/faculty page), 'all' will show all data given
     const selectedSection = sectionFilter ? sectionFilter.value : 'all';
     
-    // Get schedule settings from local storage
-    const lunchStart = localStorage.getItem('lunchBreakStart') || '12:45';
-    const teaStart = localStorage.getItem('teaBreakStart') || '10:30';
-
-    const TIME_SLOTS = ['08:30', '09:30', '10:45', '11:45', '13:30', '14:30', '15:30'];
-    const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    
-    let html = '';
-    
-    // Map time slots to display names (e.g., to insert breaks)
-    const displaySlots = {
+    // [NEW] Time Column Logic
+    const TIME_SLOTS_MAP = {
         '08:30': '08:30 - 09:30',
         '09:30': '09:30 - 10:30',
-        '10:30': '10:30 - 10:45', // Tea Break
+        '10:30': '10:30 - 10:45', // Tea Break Placeholder
         '10:45': '10:45 - 11:45',
         '11:45': '11:45 - 12:45',
-        '12:45': '12:45 - 13:30', // Lunch Break
+        '12:45': '12:45 - 13:30', // Lunch Break Placeholder
         '13:30': '13:30 - 14:30',
         '14:30': '14:30 - 15:30',
         '15:30': '15:30 - 16:30'
     };
+    // Get actual break times from settings
+    const lunchStart = localStorage.getItem('lunchBreakStart') || '12:45';
+    const teaStart = localStorage.getItem('teaBreakStart') || '10:30';
     
-    // We need to add the break times into the loop
-    const allTimeKeys = [...TIME_SLOTS];
-    if (!allTimeKeys.includes(teaStart)) allTimeKeys.push(teaStart);
-    if (!allTimeKeys.includes(lunchStart)) allTimeKeys.push(lunchStart);
-    allTimeKeys.sort(); // Puts them in order: 08:30, 09:30, 10:30, 10:45...
+    const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let html = '';
+    
+    // Create sorted list of time keys, including breaks
+    const allTimeKeys = new Set(Object.keys(TIME_SLOTS_MAP));
+    allTimeKeys.add(lunchStart);
+    allTimeKeys.add(teaStart);
+    const sortedTimeKeys = [...allTimeKeys].sort();
 
-    allTimeKeys.forEach(time => {
+    sortedTimeKeys.forEach(time => {
         if (time === teaStart) {
-            html += `<tr><td class="time-cell">10:30</td><td colspan="6" class="break-slot">Tea Break</td></tr>`;
-            return;
+            html += `<tr><td class="time-cell">${TIME_SLOTS_MAP[time] || time}</td><td colspan="6" class="break-slot">Tea Break</td></tr>`;
+            return; // Skip this slot from the main logic
         }
         if (time === lunchStart) {
-            html += `<tr><td class="time-cell">12:45</td><td colspan="6" class="break-slot">Lunch Break</td></tr>`;
-            return;
+            html += `<tr><td class="time-cell">${TIME_SLOTS_MAP[time] || time}</td><td colspan="6" class="break-slot">Lunch Break</td></tr>`;
+            return; // Skip this slot from the main logic
         }
 
-        html += `<tr><td class="time-cell">${displaySlots[time] || time}</td>`;
+        // Only render class rows (from the original map)
+        if (!TIME_SLOTS_MAP[time]) return; 
+
+        html += `<tr><td class="time-cell">${TIME_SLOTS_MAP[time]}</td>`;
         
         DAYS.forEach(day => {
             let cellContent = '';
+            // [FIXED] Data is now { day: { time: [Array of Slots] } }
             if (data[day] && data[day][time]) {
                 let slots = data[day][time] || []; // Array
                 
-                // Filter if specific section selected
+                // Filter by section if one is selected
                 if (selectedSection !== 'all') {
                     slots = slots.filter(s => s.section === selectedSection);
                 }
 
-                if (slots.length > 0) {
-                    // Render all matching slots (stacked)
-                    slots.forEach(slot => {
-                        const batch = (slot.batch && slot.batch !== 'Entire Section') ? `(${slot.batch})` : '';
-                        cellContent += `
-                            <div class="timetable-slot ${slot.conflict ? 'conflict' : ''}"
-                                 data-day="${day}" data-time="${time}" data-section="${slot.section}">
-                                <strong>${slot.course} ${batch}</strong>
-                                <span>${slot.faculty}</span>
-                                <em>${slot.room} (${slot.section})</em>
-                            </div>
-                        `;
-                    });
-                }
+                // Render all matching slots (stacked)
+                slots.forEach(slot => {
+                    const batch = (slot.batch && slot.batch !== 'Entire Section') ? `(${slot.batch})` : '';
+                    cellContent += `
+                        <div class="timetable-slot ${slot.conflict ? 'conflict' : ''}"
+                             data-day="${day}" data-time="${time}" data-section="${slot.section}">
+                            <strong>${slot.course} ${batch}</strong>
+                            <span>${slot.faculty}</span>
+                            <em>${slot.room} (${slot.section})</em>
+                        </div>
+                    `;
+                });
             }
             html += `<td>${cellContent}</td>`;
         });
@@ -889,7 +905,7 @@ function populateTimetable(data) {
     });
     tbody.innerHTML = html;
 
-    // Edit Click Handler (Admin Only)
+    // Add click handlers *only* for admin
     if (document.body.classList.contains('role-admin')) {
         tbody.querySelectorAll('.timetable-slot').forEach(el => {
             el.addEventListener('click', (e) => {
@@ -898,7 +914,8 @@ function populateTimetable(data) {
                 const time = el.dataset.time;
                 const section = el.dataset.section;
                 
-                const allSlots = currentTimetableData[day][time];
+                // Find the specific slot data from the cache
+                const allSlots = currentTimetableData[day][time] || [];
                 const slotData = allSlots.find(s => s.section === section);
                 
                 if (slotData) openEditSlotModal(slotData, day, time);
@@ -907,6 +924,7 @@ function populateTimetable(data) {
     }
 }
 
+// --- MODAL POPULATOR ---
 function openEditSlotModal(slotData, day, time) {
     const modal = document.getElementById('editModal');
     if (!modal) return;
@@ -915,7 +933,7 @@ function openEditSlotModal(slotData, day, time) {
     document.getElementById('editSlotTime').value = time;
     document.getElementById('editSlotSectionId').value = slotData.section;
     
-    // Populate Dropdowns (Assuming global caches are populated)
+    // Populate Dropdowns
     const cSelect = document.getElementById('editCourse');
     cSelect.innerHTML = '';
     allCourses.forEach(c => cSelect.innerHTML += `<option value="${c._id}" ${c.course_name === slotData.course ? 'selected' : ''}>${c.course_name}</option>`);
@@ -934,7 +952,7 @@ function openEditSlotModal(slotData, day, time) {
     if(section && section.batches) {
         section.batches.forEach(b => bSelect.innerHTML += `<option value="${b}" ${b === slotData.batch ? 'selected' : ''}>${b}</option>`);
     }
-    bSelect.value = slotData.batch;
+    bSelect.value = slotData.batch; // Set the selected batch
 
     modal.style.display = 'block';
 }

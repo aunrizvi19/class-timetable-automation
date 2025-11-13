@@ -3,34 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses | TimeTable Pro</title>
+    <title>Courses | Academa</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="courses-page admin-page shared-page"> <div class="container">
+<body class="courses-page admin-page shared-page">
+    <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>TimeTable Pro</h2>
+                <h2>Academa</h2>
             </div>
             <nav class="sidebar-nav">
-                <ul>
-                    <li class="nav-item-admin"><a href="dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-admin"><a href="courses.html" class="active-courses">📚 <span>Courses</span></a></li>
-                    <li class="nav-item-admin"><a href="faculty.html" class="active-faculty">👨‍🏫 <span>Faculty</span></a></li>
-                    <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🚪 <span>Rooms</span></a></li>
-                    <li class="nav-item-admin"><a href="sections.html" class="active-sections">Class <span>Sections</span></a></li>
-                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
-                    
-                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+    <ul>
+        <li class="nav-item-admin">
+            <a href="dashboard.html" class="active-dashboard">
+                🏠 <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item-faculty">
+            <a href="faculty-dashboard.html" class="active-dashboard">
+                🏠 <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item-student">
+            <a href="student-dashboard.html" class="active-dashboard">
+                🏠 <span>Dashboard</span>
+            </a>
+        </li>
 
-                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                    
-                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
-                </ul>
-                <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-                </ul>
-            </nav>
+        <li class="nav-item-shared">
+            <a href="index.html" class="active-timetable">
+                📅 <span>Timetable</span>
+            </a>
+        </li>
+
+        <li class="nav-item-admin nav-divider"></li> 
+
+        <li class="nav-item-admin">
+            <a href="courses.html" class="active-courses">
+                📚 <span>Courses</span>
+            </a>
+        </li>
+        <li class="nav-item-admin">
+            <a href="faculty.html" class="active-faculty">
+                👨‍🏫 <span>Faculty</span>
+            </a>
+        </li>
+        <li class="nav-item-admin">
+            <a href="sections.html" class="active-sections">
+                👥 <span>Class Sections</span>
+            </a>
+        </li>
+        <li class="nav-item-admin">
+            <a href="rooms.html" class="active-rooms">
+                🚪 <span>Rooms</span>
+            </a>
+        </li>
+
+        <li class="nav-item-admin nav-divider"></li>
+
+        <li class="nav-item-admin">
+            <a href="settings.html" class="active-settings">
+                ⚙️ <span>Settings</span>
+            </a>
+        </li>
+    </ul>
+
+    <ul class="logout-ul">
+        <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
+    </ul>
+</nav>
         </aside>
 
         <main class="main-content">
@@ -49,7 +91,9 @@
                             <th>Course Code</th>
                             <th>Course Name</th>
                             <th>Credits</th>
-                            <th>Type</th> <th>Duration (hrs)</th> <th>Actions</th>
+                            <th>Type</th>
+                            <th>Duration (hrs)</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -66,32 +110,45 @@
             <form id="courseForm">
                 <div class="form-group">
                     <label for="courseCode">Course Code</label>
-                    <input type="text" id="courseCode" required>
+                    <input type="text" id="courseCode" required placeholder="e.g., 23CST501">
                 </div>
                 <div class="form-group">
                     <label for="courseName">Course Name</label>
-                    <input type="text" id="courseName" required>
+                    <input type="text" id="courseName" required placeholder="e.g., Computer Networks">
                 </div>
                 <div class="form-group">
                     <label for="courseCredits">Credits</label>
-                    <input type="number" id="courseCredits" required>
+                    <input type="number" id="courseCredits" required min="1" max="10">
                 </div>
                 
                 <div class="form-group">
                     <label for="courseType">Course Type</label>
                     <select id="courseType" required>
-                        <option value="Theory">Theory</option>
-                        <option value="Lab">Lab</option>
-                        <option value="Other">Other</option>
+                        <option value="">Select Type...</option>
+                        <option value="PCC">PCC - Professional Core</option>
+                        <option value="IPCC">IPCC - Integrated Professional Core</option>
+                        <option value="PCCL">PCCL - Professional Core Lab</option>
+                        <option value="PEC">PEC - Professional Elective</option>
+                        <option value="OEC">OEC - Open Elective</option>
+                        <option value="ETC">ETC - Emerging Technology</option>
+                        <option value="AEC">AEC - Ability Enhancement</option>
+                        <option value="HSMC">HSMC - Humanities & Social Sciences</option>
+                        <option value="BSC">BSC - Basic Science</option>
+                        <option value="ESC">ESC - Engineering Science</option>
+                        <option value="NCMC">NCMC - Non-Credit Mandatory</option>
+                        <option value="PRJ">PRJ - Project Work</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="courseDuration">Duration (in hours)</label>
                     <input type="number" id="courseDuration" value="1" min="1" max="4" required>
+                    <small style="color: var(--color-gray); font-size: 0.85rem;">Labs (PCCL/IPCC) are usually 2-3 hours.</small>
                 </div>
 
-                <button type="submit" class="action-btn publish-btn">Save Course</button>
+                <div class="form-actions">
+                    <button type="submit" class="action-btn publish-btn">Save Course</button>
+                </div>
             </form>
         </div>
     </div>

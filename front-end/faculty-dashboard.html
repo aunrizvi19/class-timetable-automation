@@ -3,66 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Dashboard | TimeTable Pro</title> 
+    <title>Dashboard | Academa</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="faculty-page"> <div class="container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>TimeTable Pro</h2>
-            </div>
-            <nav class="sidebar-nav">
-                 <ul>
-                    <li class="nav-item-admin"><a href="dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-admin"><a href="courses.html" class="active-courses">📚 <span>Courses</span></a></li>
-                    <li class="nav-item-admin"><a href="faculty.html" class="active-faculty">👨‍🏫 <span>Faculty</span></a></li>
-                    <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🚪 <span>Rooms</span></a></li>
-                    <li class="nav-item-admin"><a href="sections.html" class="active-sections">Class <span>Sections</span></a></li>
-                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
-                    
-                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+<body class="hold-transition sidebar-mini faculty-page shared-page">
+<div class="container">
 
-                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                    
-                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
-                </ul>
-                <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-                </ul>
-            </nav>
-        </aside>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Academa</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="nav-item-admin">
+                    <a href="dashboard.html" class="active-dashboard">
+                        🏠 <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item-faculty">
+                    <a href="faculty-dashboard.html" class="active-dashboard">
+                        🏠 <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item-student">
+                    <a href="student-dashboard.html" class="active-dashboard">
+                        🏠 <span>Dashboard</span>
+                    </a>
+                </li>
 
-       <main class="main-content">
-            <header class="dashboard-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1 id="welcomeHeader">Faculty Dashboard</h1>
-                <div class="header-tools">
-                    <img src="https://i.imgur.com/7D7I6dI.png" alt="User Profile" class="profile-pic">
-                </div>
-            </header>
+                <li class="nav-item-shared">
+                    <a href="index.html" class="active-timetable">
+                        📅 <span>Timetable</span>
+                    </a>
+                </li>
+
+                <li class="nav-item-admin nav-divider"></li> 
+
+                <li class="nav-item-admin">
+                    <a href="courses.html" class="active-courses">
+                        📚 <span>Courses</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin">
+                    <a href="faculty.html" class="active-faculty">
+                        👨‍🏫 <span>Faculty</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin">
+                    <a href="sections.html" class="active-sections">
+                        👥 <span>Class Sections</span>
+                    </a>
+                </li>
+                <li class="nav-item-admin">
+                    <a href="rooms.html" class="active-rooms">
+                        🚪 <span>Rooms</span>
+                    </a>
+                </li>
+
+                <li class="nav-item-admin nav-divider"></li>
+
+                <li class="nav-item-admin">
+                    <a href="settings.html" class="active-settings">
+                        ⚙️ <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        
+            <ul class="logout-ul">
+                <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="main-header">
+            <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
             
-            <section class="dashboard-main">
-                <div class="todays-schedule-container" style="grid-column: 1 / -1;">
-                    <h2>Your Schedule for Today</h2>
-                    <ul class="schedule-list">
-                        <li>
-                            <span class="time">09:00</span>
-                            <p><strong>CS-201</strong> with Section 3-A <em>(Room 301)</em></p>
-                        </li>
-                        <li>
-                            <span class="time">10:00</span>
-                            <p><strong>CS-405</strong> with Section 7-B <em>(Lab 4)</em></p>
-                        </li>
-                        <li class="break">
-                            <span class="time">11:00</span>
-                            <p><strong>Break</strong></p>
-                        </li>
-                    </ul>
-                </div>
-            </section>
-        </main>
-    </div>
-    <script src="script.js"></script>
+            <div class="header-title-group">
+                <h1>Faculty Dashboard</h1>
+                <p id="welcomeHeader" style="color: var(--color-gray); font-size: 0.9rem;">Welcome back!</p>
+            </div>
+
+            <div class="header-actions">
+                <button class="action-btn theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark Mode">
+                    🌙
+                </button>
+            </div>
+        </header>
+
+        <section class="stats-container">
+            <div class="stat-card">
+                <h3>Total Weekly Hours</h3>
+                <p id="totalHoursStat">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Department</h3>
+                <p id="facultyDeptStat" style="font-size: 1.5rem; color: var(--color-text);">--</p>
+            </div>
+            <div class="stat-card">
+                <h3>Status</h3>
+                <p style="color: var(--color-success); font-size: 1.2rem;">Active</p>
+            </div>
+        </section>
+
+        <section class="timetable-container">
+            <div style="padding: 10px 0;">
+                <h3 style="margin: 0;">My Weekly Schedule</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="timetable-grid">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                            <th>Saturday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTimetableBody">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

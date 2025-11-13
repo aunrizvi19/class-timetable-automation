@@ -275,7 +275,7 @@ body.role-student .nav-item-student { display: block; }
     margin-right: 5px; color: white;
 }
 .action-btn-table.edit, .action-btn-table.assign, .action-btn-table.create-login { background-color: var(--color-primary); }
-.action-btn-table.delete { background-color: var(--color-danger); }
+.action-btn-table.delete, .action-btn-table.delete-assignment { background-color: var(--color-danger); }
 .action-btn-table:disabled { background-color: var(--color-gray); cursor: not-allowed; }
 
 /* =================================================================

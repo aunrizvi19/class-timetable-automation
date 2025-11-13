@@ -180,9 +180,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         loadPersonalTimetable();
     }
+    
+    // =================================================================
+    // == 4. [MOVED] GLOBAL TIMETABLE LOADER
+    // =================================================================
+    
+    // This function is now globally scoped so the modal can call it.
+    async function loadTimetable() {
+        const timetableDoc = await fetchTimetableData();
+        if(timetableDoc && timetableDoc.data) {
+            currentTimetableData = timetableDoc.data; 
+            populateTimetable(currentTimetableData);
+        } else {
+            currentTimetableData = {};
+            populateTimetable(null);
+            // Only show alert on admin page
+            if (document.querySelector('.generate-btn') && user && user.role === 'admin') {
+                alert("No timetable found. Please generate one.");
+            }
+        }
+    }
+
 
     // =================================================================
-    // == 4. ADMIN TIMETABLE PAGE LOGIC (index.html)
+    // == 5. ADMIN TIMETABLE PAGE LOGIC (index.html)
     // =================================================================
     
     const generateBtn = document.querySelector('.generate-btn');
@@ -208,17 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) { console.error("Error loading modal data:", e); }
         }
         
-        async function loadTimetable() {
-            const timetableDoc = await fetchTimetableData();
-            if(timetableDoc && timetableDoc.data) {
-                currentTimetableData = timetableDoc.data; 
-                populateTimetable(currentTimetableData);
-            } else {
-                currentTimetableData = {};
-                populateTimetable(null);
-                if (user.role === 'admin') alert("No timetable found. Please generate one.");
-            }
-        }
+        // async function loadTimetable() { ... } // <-- This was moved up
 
         loadModalData(); 
         loadTimetable();
@@ -281,7 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(slotData)
                 });
                 if(!res.ok) throw new Error((await res.json()).message);
-                alert('Updated!'); closeModal(); loadTimetable();
+                alert('Updated!'); closeModal(); 
+                loadTimetable(); // <-- [FIXED] Now has access
             } catch(e) { alert(e.message); }
         });
 
@@ -298,14 +310,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(slotData)
                 });
                 if(!res.ok) throw new Error((await res.json()).message);
-                alert('Deleted!'); closeModal(); loadTimetable();
+                alert('Deleted!'); closeModal(); 
+                loadTimetable(); // <-- [FIXED] Now has access
             } catch(e) { alert(e.message); }
         });
     }
 
 
     // =================================================================
-    // == 5. ADMIN DASHBOARD STATS
+    // == 6. ADMIN DASHBOARD STATS
     // =================================================================
     const occupancyChartCanvas = document.getElementById('occupancyChart');
     if (occupancyChartCanvas && user && user.role === 'admin') {
@@ -338,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // == 6. ADMIN DATA PAGES (CRUD)
+    // == 7. ADMIN DATA PAGES (CRUD)
     // =================================================================
 
     // --- COURSES PAGE ---
@@ -362,7 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.classList.contains('edit')) {
                 editingRow = e.target.closest('tr');
                 const cells = editingRow.children;
-                // [MODIFIED] Read L-T-P
                 document.getElementById('courseCode').value = cells[0].textContent;
                 document.getElementById('courseName').value = cells[1].textContent;
                 document.getElementById('courseType').value = cells[2].textContent;
@@ -385,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         courseForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // [MODIFIED] Send L-T-P
             const data = {
                 course_code: document.getElementById('courseCode').value,
                 course_name: document.getElementById('courseName').value,
@@ -694,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- [NEW] USERS PAGE ---
+    // --- USERS PAGE ---
     const usersTableBody = document.getElementById('usersTableBody');
     if (usersTableBody) {
         async function loadAndRenderUsers() {
@@ -869,7 +880,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }); // <<< END of DOMContentLoaded
 
 // =================================================================
-// == 7. HELPER FUNCTIONS
+// == 8. HELPER FUNCTIONS
 // =================================================================
 
 // --- API Fetchers ---

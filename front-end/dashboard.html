@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | TimeTable Pro</title> 
+    <title>Dashboard | TimeTable Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="dashboard-page admin-page"> <div class="container">
+<body class="admin-page shared-page">
+    <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>TimeTable Pro</h2>
-            </div>
+            <div class="sidebar-header"><h2>TimeTable Pro</h2></div>
             <nav class="sidebar-nav">
                  <ul>
                     <li class="nav-item-admin"><a href="dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
@@ -20,84 +19,38 @@
                     <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🚪 <span>Rooms</span></a></li>
                     <li class="nav-item-admin"><a href="sections.html" class="active-sections">Class <span>Sections</span></a></li>
                     <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
-                    
-                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-
-                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                    
                     <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
                 </ul>
-                <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
             </nav>
         </aside>
 
-       <main class="main-content">
-            <header class="dashboard-header">
+        <main class="main-content">
+            <header class="main-header">
                 <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>Admin Dashboard</h1>
-                <div class="header-tools">
-                    <input type="text" placeholder="Search...">
-                    <img src="https://i.imgur.com/7D7I6dI.png" alt="User Profile" class="profile-pic">
-                </div>
+                <h1 class="dashboard-header">Welcome!</h1>
             </header>
 
-            <section class="cards">
+            <div class="stats-container">
                 <div class="stat-card">
-                    <div class="icon icon-courses">📚</div>
-                    <div class="info">
-                        <h3 id="totalCoursesStat">0</h3>
-                        <p>Total Courses</p>
-                    </div>
+                    <h3>Total Courses</h3>
+                    <p id="totalCoursesStat">0</p>
                 </div>
                 <div class="stat-card">
-                    <div class="icon icon-faculty">👨‍🏫</div>
-                    <div class="info">
-                        <h3 id="totalFacultyStat">0</h3>
-                        <p>Total Faculty</p>
-                    </div>
+                    <h3>Total Faculty</h3>
+                    <p id="totalFacultyStat">0</p>
                 </div>
                 <div class="stat-card">
-                    <div class="icon icon-rooms">🚪</div>
-                    <div class="info">
-                        <h3 id="totalRoomsStat">0</h3>
-                        <p>Total Rooms</p>
-                    </div>
+                    <h3>Total Rooms</h3>
+                    <p id="totalRoomsStat">0</p>
                 </div>
-            </section>
-            
-            <section class="dashboard-main">
-                <div class="chart-container">
-                    <h2>Room Occupancy</h2>
-                    <canvas id="occupancyChart"></canvas>
-                </div>
+            </div>
 
-                <div class="todays-schedule-container">
-                    <h2>Today's Schedule (All)</h2>
-                    <ul class="schedule-list">
-                        <li>
-                            <span class="time">09:00</span>
-                            <p><strong>CS-101</strong> with Section 1-A <em>(Room 101)</em></p>
-                        </li>
-                        <li>
-                            <span class="time">09:00</span>
-                            <p><strong>PHY-201</strong> with Section 1-B <em>(Room 202)</em></p>
-                        </li>
-                        <li class="break">
-                            <span class="time">10:30</span>
-                            <p><strong>Tea Break</strong></p>
-                        </li>
-                        <li>
-                            <span class="time">11:00</span>
-                            <p><strong>MATH-105</strong> with Section 1-A <em>(Room 101)</em></p>
-                        </li>
-                    </ul>
-                </div>
-            </section>
+            <div class="chart-container">
+                <canvas id="occupancyChart"></canvas>
+            </div>
         </main>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>

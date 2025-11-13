@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="timetable-page shared-page"> <div class="container">
+<body class="timetable-page shared-page">
+    <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TimeTable Pro</h2>
@@ -22,7 +23,6 @@
                     <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
                     
                     <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-
                     <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
                     
                     <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
@@ -45,32 +45,14 @@
 
             <section class="filters">
                 <div class="filter-group">
-                    <label for="dept-select">Department:</label>
-                    <select id="dept-select">
-                        <option value="all">All Departments</option>
-                        <option value="cs">Computer Science</option>
-                        <option value="ee">Electrical Engineering</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="sem-select">Semester:</label>
-                    <select id="sem-select">
-                        <option value="all">All Semesters</option>
-                        <option value="1">1st</option>
-                        <option value="3">3rd</option>
-                        <option value="5">5th</option>
-                        <option value="7">7th</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="section-select">Section:</label>
+                    <label for="section-select">Filter by Section:</label>
                     <select id="section-select">
                         <option value="all">All Sections</option>
                         <option value="a">A</option>
                         <option value="b">B</option>
                     </select>
                 </div>
-            </section>
+                </section>
 
             <section class="timetable-container">
                 <table class="timetable-grid">
@@ -97,29 +79,28 @@
             <span class="close-button">&times;</span>
             <h2>Edit Timetable Slot</h2>
             <form id="editSlotForm">
+                <input type="hidden" id="editSlotDay">
+                <input type="hidden" id="editSlotTime">
+                <input type="hidden" id="editSlotSectionId">
+
                 <div class="form-group">
                     <label for="editCourse">Course:</label>
-                    <select id="editCourse">
-                        <option value="cs101">CS-101 - Intro to Programming</option>
-                        <option value="ma210">MA-210 - Calculus II</option>
-                        </select>
+                    <select id="editCourse" required></select>
                 </div>
                 <div class="form-group">
                     <label for="editFaculty">Faculty:</label>
-                    <select id="editFaculty">
-                        <option value="dr_grant">Dr. Grant</option>
-                        <option value="dr_malcolm">Dr. Malcolm</option>
-                        </select>
+                    <select id="editFaculty" required></select>
                 </div>
                 <div class="form-group">
                     <label for="editRoom">Room:</label>
-                    <select id="editRoom">
-                        <option value="301">301 (Lab)</option>
-                        <option value="205">205 (Lecture Hall)</option>
-                        </select>
+                    <select id="editRoom" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="editBatch">Batch:</label>
+                    <select id="editBatch" required></select>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="action-btn delete-btn">Delete Slot</button>
+                    <button type="button" class="action-btn delete-btn" id="deleteSlotBtn">Delete Slot</button>
                     <button type="submit" class="action-btn publish-btn">Save Changes</button>
                 </div>
             </form>

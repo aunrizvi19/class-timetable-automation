@@ -1,751 +1,791 @@
-// ... (global variable at the top)
+// =================================================================
+// == GLOBAL VARIABLES & CACHE
+// =================================================================
+let allCourses = [];
+let allFaculty = [];
+let allRooms = [];
+let allSections = [];
+let currentTimetableData = {}; // Holds the raw data from the server
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // =================================================================
-    // == GLOBAL AUTH & PAGE PROTECTION
+    // == 1. AUTHENTICATION & PAGE PROTECTION
     // =================================================================
     const user = JSON.parse(localStorage.getItem('timetableUser'));
     const bodyClass = document.body.classList;
     const isLoginPage = bodyClass.contains('login-page');
 
-    // --- [NEW ROLE-BASED UI LOGIC] ---
-    // Add role class to body for CSS styling
+    // --- Apply Role-Based CSS Classes ---
     if (user && !isLoginPage) {
-        if (user.role === 'admin') {
-            document.body.classList.add('role-admin');
-        } else if (user.role === 'faculty') {
-            document.body.classList.add('role-faculty');
-        } else if (user.role === 'student') {
-            document.body.classList.add('role-student');
-        }
+        if (user.role === 'admin') document.body.classList.add('role-admin');
+        else if (user.role === 'faculty') document.body.classList.add('role-faculty');
+        else if (user.role === 'student') document.body.classList.add('role-student');
     }
-    // --- [END NEW LOGIC] ---
     
+    // --- Redirect Logic ---
     if (isLoginPage) {
-        // We are on the login page
         if (user) {
-            // A user is already logged in, redirect them to their dashboard
             redirectToDashboard(user.role);
             return;
         }
-        // If no user and on login page, proceed to load login/signup logic
     } else {
-        // We are NOT on the login page
+        // Protect private pages
         if (!user) {
-            // If no user is logged in, boot them to the login page
             alert('You must be logged in to view this page.');
             window.location.href = 'login.html';
-            return; // Stop executing script
+            return;
         }
 
-        // --- Role-Based Page Protection ---
+        // Admin Page Protection
         if (bodyClass.contains('admin-page') && user.role !== 'admin') {
-            // Non-admin trying to access an admin page
-            alert('Access Denied: You do not have permission to view this page.');
-            redirectToDashboard(user.role); // Send them to their own dashboard
+            alert('Access Denied: Admins only.');
+            redirectToDashboard(user.role);
             return;
         }
-        if (bodyClass.contains('faculty-page') && user.role !== 'faculty') {
-            // Non-faculty trying to access faculty page
+        
+        // Faculty Page Protection (Admins allowed)
+        if (bodyClass.contains('faculty-page') && user.role !== 'faculty' && user.role !== 'admin') {
             alert('Access Denied.');
             redirectToDashboard(user.role);
             return;
         }
-        if (bodyClass.contains('student-page') && user.role !== 'student') {
-            // Non-student trying to access student page
+
+        // Student Page Protection (Admins allowed)
+        if (bodyClass.contains('student-page') && user.role !== 'student' && user.role !== 'admin') {
             alert('Access Denied.');
             redirectToDashboard(user.role);
             return;
         }
     }
     
-    // Helper function to redirect based on role
     function redirectToDashboard(role) {
-        if (role === 'admin') {
-            window.location.href = 'dashboard.html';
-        } else if (role === 'faculty') {
-            window.location.href = 'faculty-dashboard.html';
-        } else if (role === 'student') {
-            window.location.href = 'student-dashboard.html';
-        } else {
-            // Fallback
-            window.location.href = 'login.html';
-        }
+        if (role === 'admin') window.location.href = 'dashboard.html';
+        else if (role === 'faculty') window.location.href = 'faculty-dashboard.html';
+        else if (role === 'student') window.location.href = 'student-dashboard.html';
+        else window.location.href = 'login.html';
     }
 
     // =================================================================
-    // == GLOBAL UI (Sidebar Toggle & Logout)
+    // == 2. GLOBAL UI (Sidebar, Logout, Theme)
     // =================================================================
-    const sidebarToggleBtn = document.getElementById('sidebarToggle');
     
-    // Check for saved sidebar state
+    // Sidebar Toggle
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
         document.body.classList.add('sidebar-collapsed');
     }
     if (sidebarToggleBtn) {
         sidebarToggleBtn.addEventListener('click', () => {
             document.body.classList.toggle('sidebar-collapsed');
-            // Save the preference
             localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
         });
     }
     
-    // Add click listener for ALL logout buttons
+    // Logout
     document.querySelectorAll('#logoutBtn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            localStorage.removeItem('timetableUser'); // Clear user from storage
-            localStorage.removeItem('sidebarCollapsed'); // Clear layout preference
-            localStorage.removeItem('darkMode'); // Clear theme preference
+            localStorage.removeItem('timetableUser');
+            localStorage.removeItem('sidebarCollapsed');
             alert('Logged out successfully.');
             window.location.href = 'login.html';
         });
     });
 
-    // =================================================================
-    // == GLOBAL SETTINGS (Dark Mode)
-    // =================================================================
-    const isDarkModeSaved = localStorage.getItem('darkMode') === 'true';
-    if (isDarkModeSaved) {
+    // --- THEME TOGGLE LOGIC ---
+    // 1. Apply theme on load
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (isDarkMode) {
         document.body.classList.add('dark-mode');
     }
 
+    // 2. Handle Header Toggle Button (for Student/Faculty pages)
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+        // Set initial icon
+        themeToggleBtn.textContent = isDarkMode ? '☀️' : '🌙';
+        
+        themeToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
+        });
+    }
+
+    // 3. Handle Settings Page Toggle (Admin)
+    const darkModeToggleSettings = document.getElementById('darkModeToggle');
+    if (darkModeToggleSettings) {
+        darkModeToggleSettings.checked = isDarkMode;
+        darkModeToggleSettings.addEventListener('change', () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', darkModeToggleSettings.checked);
+        });
+    }
+
+
     // =================================================================
-    // == LOGIC FOR TIMETABLE PAGE (index.html)
+    // == 3. STUDENT & FACULTY DASHBOARD LOGIC
     // =================================================================
+    
+    if (user && (bodyClass.contains('student-page') || bodyClass.contains('faculty-page'))) {
+        const welcomeHeader = document.getElementById('welcomeHeader');
+        if (welcomeHeader) welcomeHeader.textContent = `Welcome back, ${user.name}!`;
+        
+        // Display Student Section in Stats
+        const studentSectionStat = document.getElementById('studentSectionStat');
+        if (studentSectionStat && user.role === 'student') {
+            studentSectionStat.textContent = user.profileId || 'N/A';
+        }
+
+        async function loadPersonalTimetable() {
+            if (!user.profileId) {
+                console.warn("User has no profileId.");
+                return; 
+            }
+            
+            let url = '';
+            if (user.role === 'student') url = `http://localhost:3000/api/timetable/section/${user.profileId}`;
+            else if (user.role === 'faculty') url = `http://localhost:3000/api/timetable/faculty/${user.profileId}`;
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // 1. Populate Grid
+                    populateTimetable(result.data);
+
+                    // 2. Calculate Total Classes for Stats
+                    let totalClasses = 0;
+                    const data = result.data;
+                    for (const day in data) {
+                        for (const time in data[day]) {
+                            const slots = data[day][time];
+                            if (Array.isArray(slots)) {
+                                totalClasses += slots.length;
+                            }
+                        }
+                    }
+                    const totalClassesStat = document.getElementById('totalClassesStat');
+                    if (totalClassesStat) totalClassesStat.textContent = totalClasses;
+
+                }
+            } catch (e) { console.error("Personal timetable error:", e); }
+        }
+        loadPersonalTimetable();
+    }
+
+    // =================================================================
+    // == 4. ADMIN TIMETABLE PAGE LOGIC
+    // =================================================================
+    
+    const generateBtn = document.querySelector('.generate-btn');
+    const publishBtn = document.querySelector('.publish-btn');
+
+    if (generateBtn) {
+        // Hide controls if not admin
+        if (user && user.role !== 'admin') {
+            const headerActions = document.querySelector('.header-actions');
+            if(headerActions) headerActions.style.display = 'none';
+            const filters = document.querySelector('.filters');
+            if(filters) filters.style.display = 'none';
+        }
+
+        // Load Modal Data
+        async function loadModalData() {
+            try {
+                const [courses, faculty, rooms, sections] = await Promise.all([
+                    fetchCourses(), fetchFaculty(), fetchRooms(), fetchSections()
+                ]);
+                allCourses = courses || [];
+                allFaculty = faculty || [];
+                allRooms = rooms || [];
+                allSections = sections || [];
+            } catch (e) { console.error("Error loading modal data:", e); }
+        }
+        
+        async function loadTimetable() {
+            console.log("Loading timetable...");
+            const timetableDoc = await fetchTimetableData();
+            if(timetableDoc && timetableDoc.data) {
+                currentTimetableData = timetableDoc.data; 
+                populateTimetable(currentTimetableData);
+                const generatedAt = new Date(timetableDoc.generatedAt).toLocaleString();
+                console.log(`Loaded timetable generated at: ${generatedAt}`);
+            } else {
+                currentTimetableData = {};
+                populateTimetable(null);
+                if (user.role === 'admin') alert("No timetable found. Please generate one.");
+            }
+        }
+
+        loadModalData(); 
+        loadTimetable();
+        
+        // Generate Button
+        generateBtn.addEventListener('click', async () => {
+            if (!confirm("Generate new timetable? This will overwrite existing data.")) return;
+            const originalText = generateBtn.textContent;
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/timetable/generate', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                
+                alert('New timetable generated successfully!');
+                currentTimetableData = result.data;
+                populateTimetable(currentTimetableData);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = originalText;
+            }
+        });
+
+        // Publish Button
+        if (publishBtn) {
+            publishBtn.addEventListener('click', () => {
+                if (!currentTimetableData || Object.keys(currentTimetableData).length === 0) {
+                    alert("No timetable to publish."); return;
+                }
+                if (confirm("Publish timetable? This will notify all users.")) {
+                    const originalText = publishBtn.textContent;
+                    publishBtn.textContent = "Publishing...";
+                    publishBtn.disabled = true;
+                    setTimeout(() => {
+                        alert("✅ Timetable Published!");
+                        publishBtn.textContent = originalText;
+                        publishBtn.disabled = false;
+                    }, 1000);
+                }
+            });
+        }
+
+        // Filter Listener
+        const sectionSelect = document.getElementById('section-select');
+        if (sectionSelect) {
+            fetchSections().then(sections => {
+                if(sections) sections.forEach(s => sectionSelect.innerHTML += `<option value="${s._id}">${s._id}</option>`);
+            });
+            sectionSelect.addEventListener('change', () => populateTimetable(currentTimetableData));
+        }
+    }
+
+    // [MODAL LOGIC FOR EDITING SLOTS]
     const timetableModal = document.getElementById('editModal');
     if (timetableModal) {
         const closeButton = timetableModal.querySelector('.close-button');
-        const openModal = () => timetableModal.style.display = 'block';
         const closeModal = () => timetableModal.style.display = 'none';
         closeButton.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => { if (event.target == timetableModal) closeModal(); });
-    }
-    const generateBtn = document.querySelector('.generate-btn');
-    if (generateBtn) {
-        // Hide admin buttons for non-admins
-        if (user && user.role !== 'admin') {
-            const headerActions = document.querySelector('.header-actions');
-            const filters = document.querySelector('.filters');
-            if (headerActions) headerActions.style.display = 'none'; // Hide Generate/Publish
-            if (filters) filters.style.display = 'none'; // Hide filters
-        }
         
-        populateTimetable({}); // Populate with empty/demo data
-        
-        generateBtn.addEventListener('click', async () => {
-            const originalText = generateBtn.textContent;
-            generateBtn.textContent = 'Generating...';
-            generateBtn.disabled = true;
-            const timetableData = await fetchTimetableData();
-            populateTimetable(timetableData);
-            generateBtn.textContent = originalText;
-            generateBtn.disabled = false;
+        const editSlotForm = document.getElementById('editSlotForm');
+        editSlotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const slotData = {
+                day: document.getElementById('editSlotDay').value,
+                time: document.getElementById('editSlotTime').value,
+                sectionId: document.getElementById('editSlotSectionId').value,
+                courseId: document.getElementById('editCourse').value,
+                facultyId: document.getElementById('editFaculty').value,
+                roomId: document.getElementById('editRoom').value,
+                batch: document.getElementById('editBatch').value
+            };
+            try {
+                const res = await fetch('http://localhost:3000/api/timetable/update-slot', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(slotData)
+                });
+                if(!res.ok) throw new Error((await res.json()).message);
+                alert('Updated!'); closeModal(); loadTimetable();
+            } catch(e) { alert(e.message); }
+        });
+
+        const deleteSlotBtn = document.getElementById('deleteSlotBtn');
+        deleteSlotBtn.addEventListener('click', async () => {
+            if(!confirm("Delete slot?")) return;
+            const slotData = {
+                day: document.getElementById('editSlotDay').value,
+                time: document.getElementById('editSlotTime').value,
+                sectionId: document.getElementById('editSlotSectionId').value
+            };
+            try {
+                const res = await fetch('http://localhost:3000/api/timetable/delete-slot', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(slotData)
+                });
+                if(!res.ok) throw new Error((await res.json()).message);
+                alert('Deleted!'); closeModal(); loadTimetable();
+            } catch(e) { alert(e.message); }
         });
     }
 
+
     // =================================================================
-    // == LOGIC FOR DASHBOARD PAGES (admin, faculty, student)
+    // == 5. ADMIN DASHBOARD STATS
     // =================================================================
-    
-    // Admin Dashboard (dashboard.html)
     const occupancyChartCanvas = document.getElementById('occupancyChart');
     if (occupancyChartCanvas && user && user.role === 'admin') {
-        if (user.name) {
-            document.querySelector('.dashboard-header h1').textContent = `Welcome, ${user.name.split(' ')[0]}!`;
-        }
-        
-        let myOccupancyChart = null; 
+        if(user.name) document.querySelector('.dashboard-header').textContent = `Welcome, ${user.name}!`;
+
         async function loadDashboardStats() {
             try {
-                const [courses, faculty, rooms] = await Promise.all([
-                    fetchCourses(), 
-                    fetchFaculty(), 
-                    fetchRooms()
-                ]);
-
-                if (courses) {
-                    document.getElementById('totalCoursesStat').textContent = courses.length;
-                }
-                if (faculty) {
-                    document.getElementById('totalFacultyStat').textContent = faculty.length;
-                }
-                if (rooms) {
-                    document.getElementById('totalRoomsStat').textContent = rooms.length;
-                }
-
-                const roomTypeCounts = {};
-                if (rooms) {
-                    for (const room of rooms) {
-                        const type = room.type || 'Unknown';
-                        roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
-                    }
-                }
-
-                const chartLabels = Object.keys(roomTypeCounts);
-                const chartData = Object.values(roomTypeCounts);
-                const backgroundColors = chartLabels.map((_, index) => `rgba(${index * 60 % 255}, ${index * 100 % 255}, ${index * 40 % 255}, 0.6)`);
-                const borderColors = chartLabels.map((_, index) => `rgba(${index * 60 % 255}, ${index * 100 % 255}, ${index * 40 % 255}, 1)`);
-                const ctx = occupancyChartCanvas.getContext('2d');
+                const [courses, faculty, rooms] = await Promise.all([fetchCourses(), fetchFaculty(), fetchRooms()]);
+                if (courses) document.getElementById('totalCoursesStat').textContent = courses.length;
+                if (faculty) document.getElementById('totalFacultyStat').textContent = faculty.length;
+                if (rooms) document.getElementById('totalRoomsStat').textContent = rooms.length;
                 
-                if (myOccupancyChart) {
-                    myOccupancyChart.destroy();
-                }
-
-                myOccupancyChart = new Chart(ctx, { 
+                const roomTypeCounts = {};
+                if (rooms) rooms.forEach(r => roomTypeCounts[r.type] = (roomTypeCounts[r.type] || 0) + 1);
+                
+                new Chart(occupancyChartCanvas.getContext('2d'), { 
                     type: 'bar', 
                     data: { 
-                        labels: chartLabels.length > 0 ? chartLabels : ['No Data'], 
-                        datasets: [{ 
-                            label: 'Room Count', 
-                            data: chartData.length > 0 ? chartData : [0], 
-                            backgroundColor: chartLabels.length > 0 ? backgroundColors : ['rgba(200, 200, 200, 0.6)'], 
-                            borderColor: chartLabels.length > 0 ? borderColors : ['rgba(200, 200, 200, 1)'], 
-                            borderWidth: 1 
-                        }] 
-                    }, 
-                    options: { 
-                        responsive: true, 
-                        scales: { y: { beginAtZero: true } } 
+                        labels: Object.keys(roomTypeCounts), 
+                        datasets: [{ label: 'Rooms', data: Object.values(roomTypeCounts), backgroundColor: '#36a2eb' }] 
                     } 
                 });
-
-            } catch (error) {
-                console.error("Error loading dashboard data:", error);
-            }
+            } catch (e) { console.error(e); }
         }
         loadDashboardStats();
     }
-    
-    // Faculty & Student Dashboards
-    const welcomeHeader = document.getElementById('welcomeHeader');
-    if (welcomeHeader && user) {
-        welcomeHeader.textContent = `Welcome, ${user.name.split(' ')[0]}!`;
-        
-        if(bodyClass.contains('student-page')) {
-            // We are on the student dashboard, populate their timetable
-            populateTimetable({}); // We'll customize this later
-        }
-    }
-
 
     // =================================================================
-    // == LOGIC FOR COURSES PAGE (courses.html)
+    // == 6. ADMIN DATA PAGES (CRUD)
     // =================================================================
+
+    // --- COURSES PAGE ---
     const courseModal = document.getElementById('courseModal');
     if (courseModal) {
-        async function loadAndRenderCourses() { const courses = await fetchCourses(); renderCoursesTable(courses); }
-        loadAndRenderCourses();
-        const addCourseBtn = document.querySelector('body.courses-page .main-header .publish-btn');
+        async function reloadCourses() { const data = await fetchCourses(); renderCoursesTable(data); }
+        reloadCourses();
+        
         const courseForm = document.getElementById('courseForm');
-        const modalTitle = courseModal.querySelector('#modalTitle');
-        const closeModalBtn = courseModal.querySelector('.close-button');
         let editingRow = null;
-        const openModal = () => { if (!editingRow) { modalTitle.textContent = 'Add New Course'; document.getElementById('courseCode').readOnly = false; courseForm.reset(); } courseModal.style.display = 'block'; }
-        const closeModal = () => { courseModal.style.display = 'none'; editingRow = null; courseForm.reset(); document.getElementById('courseCode').readOnly = false; };
-        if(addCourseBtn) addCourseBtn.addEventListener('click', () => { editingRow = null; openModal(); });
-        const courseTable = document.querySelector('.courses-page .data-table');
-        if (courseTable) {
-             courseTable.addEventListener('click', async (e) => {
-                 if (e.target.classList.contains('edit')) { editingRow = e.target.closest('tr'); const cells = editingRow.children; document.getElementById('courseCode').value = cells[0].textContent; document.getElementById('courseName').value = cells[1].textContent; document.getElementById('courseCredits').value = cells[2].textContent; modalTitle.textContent = 'Edit Course'; document.getElementById('courseCode').readOnly = true; openModal(); }
-                 else if (e.target.classList.contains('delete')) { const rowToDelete = e.target.closest('tr'); const courseCodeToDelete = rowToDelete.children[0].textContent; if (confirm(`Are you sure you want to delete course ${courseCodeToDelete}?`)) { try { const response = await fetch(`http://localhost:3000/api/courses/${courseCodeToDelete}`, { method: 'DELETE', }); if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting course:", response.status, errorMsg); alert(`Error deleting course: ${errorMsg}`); return; } console.log(`Course ${courseCodeToDelete} deleted successfully via API`); loadAndRenderCourses(); } catch (error) { console.error("Network error deleting course:", error); alert("Could not connect to the server to delete the course."); } } }
-             });
-        }
-        courseForm.addEventListener('submit', async (e) => { e.preventDefault(); const code = document.getElementById('courseCode').value; const name = document.getElementById('courseName').value; const credits = parseInt(document.getElementById('courseCredits').value); const courseData = { course_name: name, credits: credits }; let url = 'http://localhost:3000/api/courses'; let method = 'POST'; if (editingRow) { const originalCode = code; url = `http://localhost:3000/api/courses/${originalCode}`; method = 'PUT'; if (!name || isNaN(credits)) { alert("Course Name and Credits cannot be empty when editing."); return; } } else { courseData.course_code = code; if (!code || !name || isNaN(credits)) { alert("Please fill in all fields correctly for the new course."); return; } } try { const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(courseData), }); if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} course:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} course: ${errorData.message || response.statusText}`); return; } console.log(`Course ${editingRow ? 'updated' : 'added'} successfully via API`); closeModal(); loadAndRenderCourses(); } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} course:`, error); alert(`Could not connect to the server to ${editingRow ? 'update' : 'add'} the course.`); } });
-        closeModalBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (event) => { if (event.target == courseModal) closeModal(); });
+        
+        document.querySelector('.publish-btn').addEventListener('click', () => {
+            editingRow = null;
+            document.getElementById('modalTitle').textContent = 'Add New Course';
+            document.getElementById('courseCode').readOnly = false;
+            courseForm.reset();
+            courseModal.style.display = 'block';
+        });
+
+        document.querySelector('.data-table').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit')) {
+                editingRow = e.target.closest('tr');
+                const cells = editingRow.children;
+                document.getElementById('courseCode').value = cells[0].textContent;
+                document.getElementById('courseName').value = cells[1].textContent;
+                document.getElementById('courseCredits').value = cells[2].textContent;
+                document.getElementById('courseType').value = cells[3].textContent;
+                document.getElementById('courseDuration').value = cells[4].textContent;
+                document.getElementById('modalTitle').textContent = 'Edit Course';
+                document.getElementById('courseCode').readOnly = true;
+                courseModal.style.display = 'block';
+            } else if (e.target.classList.contains('delete')) {
+                const code = e.target.closest('tr').children[0].textContent;
+                if (confirm(`Delete course ${code}?`)) {
+                    await fetch(`http://localhost:3000/api/courses/${code}`, { method: 'DELETE' });
+                    reloadCourses();
+                }
+            }
+        });
+
+        courseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                course_code: document.getElementById('courseCode').value,
+                course_name: document.getElementById('courseName').value,
+                credits: document.getElementById('courseCredits').value,
+                course_type: document.getElementById('courseType').value,
+                duration: document.getElementById('courseDuration').value
+            };
+            const method = editingRow ? 'PUT' : 'POST';
+            const url = editingRow ? `http://localhost:3000/api/courses/${data.course_code}` : 'http://localhost:3000/api/courses';
+            
+            await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            courseModal.style.display = 'none';
+            reloadCourses();
+        });
+        
+        courseModal.querySelector('.close-button').addEventListener('click', () => courseModal.style.display = 'none');
     }
 
-    // =================================================================
-    // == LOGIC FOR FACULTY PAGE (faculty.html)
-    // =================================================================
+    // --- FACULTY PAGE ---
     const facultyModal = document.getElementById('facultyModal');
     if (facultyModal) {
-        async function loadAndRenderFaculty() { const faculty = await fetchFaculty(); renderFacultyTable(faculty); }
-        loadAndRenderFaculty(); 
-        const addBtn = document.querySelector('body.faculty-page.admin-page .main-header .publish-btn'); // More specific selector
-        const facultyForm = document.getElementById('facultyForm');
-        const modalTitle = facultyModal.querySelector('#modalTitle');
-        const closeModalBtn = facultyModal.querySelector('.close-button');
-        let editingRow = null; 
-        const openModal = () => {
-             if (!editingRow) {
-                modalTitle.textContent = 'Add New Faculty';
-                document.getElementById('facultyId').readOnly = false; 
-                facultyForm.reset();
-             }
-             facultyModal.style.display = 'block';
+        async function reloadFaculty() {
+            const [faculty, users] = await Promise.all([fetchFaculty(), fetchUsers()]);
+            const userSet = new Set(users ? users.map(u => u.profileId) : []);
+            renderFacultyTable(faculty, userSet);
         }
-        const closeModal = () => { facultyModal.style.display = 'none'; editingRow = null; facultyForm.reset(); document.getElementById('facultyId').readOnly = false; };
-        if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
-        const facultyTable = document.querySelector('body.faculty-page.admin-page .data-table'); // More specific selector
-         if (facultyTable) {
-            facultyTable.addEventListener('click', async (e) => { 
-                if (e.target.classList.contains('edit')) {
-                    editingRow = e.target.closest('tr');
-                    const cells = editingRow.children;
-                    document.getElementById('facultyId').value = cells[0].textContent; 
-                    document.getElementById('facultyName').value = cells[1].textContent;
-                    document.getElementById('facultyDept').value = cells[2].textContent;
-                    document.getElementById('facultyDesignation').value = cells[3].textContent;
-                    modalTitle.textContent = 'Edit Faculty';
-                    document.getElementById('facultyId').readOnly = true; 
-                    openModal();
-                } else if (e.target.classList.contains('delete')) {
-                    const rowToDelete = e.target.closest('tr');
-                    const facultyIdToDelete = rowToDelete.children[0].textContent;
-                    if (confirm(`Are you sure you want to delete faculty member ${facultyIdToDelete}?`)) {
-                        try {
-                            const response = await fetch(`http://localhost:3000/api/faculty/${facultyIdToDelete}`, { method: 'DELETE', });
-                            if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting faculty:", response.status, errorMsg); alert(`Error deleting faculty: ${errorMsg}`); return; }
-                            console.log(`Faculty ${facultyIdToDelete} deleted successfully`);
-                            loadAndRenderFaculty();
-                        } catch (error) { console.error("Network error deleting faculty:", error); alert("Could not connect to server to delete faculty."); }
-                    }
+        reloadFaculty();
+
+        const facultyForm = document.getElementById('facultyForm');
+        let editingRow = null;
+
+        document.querySelector('.publish-btn').addEventListener('click', () => {
+            editingRow = null;
+            document.getElementById('modalTitle').textContent = 'Add New Faculty';
+            document.getElementById('facultyId').readOnly = false;
+            facultyForm.reset();
+            facultyModal.style.display = 'block';
+        });
+
+        document.querySelector('.data-table').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit')) {
+                editingRow = e.target.closest('tr');
+                const cells = editingRow.children;
+                document.getElementById('facultyId').value = cells[0].textContent;
+                document.getElementById('facultyName').value = cells[1].textContent;
+                document.getElementById('facultyDept').value = cells[2].textContent;
+                document.getElementById('facultyDesignation').value = cells[3].textContent;
+                document.getElementById('modalTitle').textContent = 'Edit Faculty';
+                document.getElementById('facultyId').readOnly = true;
+                facultyModal.style.display = 'block';
+            } else if (e.target.classList.contains('delete')) {
+                const id = e.target.closest('tr').children[0].textContent;
+                if (confirm(`Delete faculty ${id}?`)) {
+                    await fetch(`http://localhost:3000/api/faculty/${id}`, { method: 'DELETE' });
+                    reloadFaculty();
                 }
-            });
-         }
+            } else if (e.target.classList.contains('create-login') && !e.target.disabled) {
+                const row = e.target.closest('tr');
+                openCreateLoginModal(row.children[0].textContent, row.children[1].textContent);
+            }
+        });
+
         facultyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('facultyId').value;
-            const name = document.getElementById('facultyName').value;
-            const dept = document.getElementById('facultyDept').value;
-            const designation = document.getElementById('facultyDesignation').value;
-            const facultyData = { name: name, department: dept, designation: designation };
-            let url = 'http://localhost:3000/api/faculty';
-            let method = 'POST';
-            if (editingRow) {
-                const originalId = id; 
-                url = `http://localhost:3000/api/faculty/${originalId}`;
-                method = 'PUT';
-                if (!name || !dept || !designation) { alert("Name, Department, and Designation cannot be empty when editing."); return; }
-            } else {
-                facultyData.faculty_id = id;
-                if (!id || !name || !dept || !designation) { alert("Please fill in all fields for the new faculty member."); return; }
-            }
-            try {
-                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(facultyData), });
-                if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} faculty:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} faculty: ${errorData.message || response.statusText}`); return; }
-                console.log(`Faculty ${editingRow ? 'updated' : 'added'} successfully`);
-                closeModal();
-                loadAndRenderFaculty();
-            } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} faculty:`, error); alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} faculty.`); }
+            const data = {
+                faculty_id: document.getElementById('facultyId').value,
+                name: document.getElementById('facultyName').value,
+                department: document.getElementById('facultyDept').value,
+                designation: document.getElementById('facultyDesignation').value
+            };
+            const method = editingRow ? 'PUT' : 'POST';
+            const url = editingRow ? `http://localhost:3000/api/faculty/${data.faculty_id}` : 'http://localhost:3000/api/faculty';
+            
+            await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            facultyModal.style.display = 'none';
+            reloadFaculty();
         });
-        closeModalBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (event) => { if (event.target == facultyModal) closeModal(); });
+
+        // Create Login Modal Logic
+        const loginModal = document.getElementById('createLoginModal');
+        const loginForm = document.getElementById('createLoginForm');
+        
+        function openCreateLoginModal(id, name) {
+            document.getElementById('createLoginFacultyId').value = id;
+            document.getElementById('createLoginFacultyName').value = name;
+            loginForm.reset();
+            document.getElementById('createLoginError').textContent = '';
+            loginModal.style.display = 'block';
+        }
+        
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                facultyId: document.getElementById('createLoginFacultyId').value,
+                email: document.getElementById('createLoginEmail').value,
+                password: document.getElementById('createLoginPassword').value
+            };
+            
+            try {
+                const res = await fetch('http://localhost:3000/api/users/create-faculty-login', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if(!res.ok) throw new Error(result.message);
+                alert(result.message);
+                loginModal.style.display = 'none';
+                reloadFaculty();
+            } catch (err) {
+                document.getElementById('createLoginError').textContent = err.message;
+            }
+        });
+        
+        document.querySelectorAll('.close-button').forEach(btn => {
+            btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
+        });
     }
 
-    // =================================================================
-    // == LOGIC FOR ROOMS PAGE (rooms.html)
-    // =================================================================
+    // --- ROOMS PAGE ---
     const roomModal = document.getElementById('roomModal');
     if (roomModal) {
-        async function loadAndRenderRooms() { const rooms = await fetchRooms(); renderRoomsTable(rooms); }
-        loadAndRenderRooms();
-        const addBtn = document.querySelector('body.rooms-page .main-header .publish-btn');
+        async function reloadRooms() { const data = await fetchRooms(); renderRoomsTable(data); }
+        reloadRooms();
+        
         const roomForm = document.getElementById('roomForm');
-        const modalTitle = roomModal.querySelector('#modalTitle');
-        const closeModalBtn = roomModal.querySelector('.close-button');
         let editingRow = null;
-        const openModal = () => {
-             if (!editingRow) {
-                modalTitle.textContent = 'Add New Room';
-                document.getElementById('roomNumber').readOnly = false;
-                roomForm.reset();
-             }
-             roomModal.style.display = 'block';
-        }
-        const closeModal = () => { roomModal.style.display = 'none'; editingRow = null; roomForm.reset(); document.getElementById('roomNumber').readOnly = false; };
-        if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
-        const roomTable = document.querySelector('.rooms-page .data-table');
-        if(roomTable) {
-            roomTable.addEventListener('click', async (e) => {
-                if (e.target.classList.contains('edit')) {
-                    editingRow = e.target.closest('tr'); 
-                    const cells = editingRow.children; 
-                    document.getElementById('roomNumber').value = cells[0].textContent; 
-                    document.getElementById('roomCapacity').value = cells[1].textContent; 
-                    document.getElementById('roomType').value = cells[2].textContent; 
-                    modalTitle.textContent = 'Edit Room'; 
-                    document.getElementById('roomNumber').readOnly = true;
-                    openModal();
-                } else if (e.target.classList.contains('delete')) {
-                    const rowToDelete = e.target.closest('tr');
-                    const roomNumberToDelete = rowToDelete.children[0].textContent;
-                    if (confirm(`Are you sure you want to delete room ${roomNumberToDelete}?`)) {
-                        try {
-                            const response = await fetch(`http://localhost:3000/api/rooms/${roomNumberToDelete}`, { method: 'DELETE', });
-                            if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting room:", response.status, errorMsg); alert(`Error deleting room: ${errorMsg}`); return; }
-                            console.log(`Room ${roomNumberToDelete} deleted successfully`);
-                            loadAndRenderRooms();
-                        } catch (error) { console.error("Network error deleting room:", error); alert("Could not connect to server to delete room."); }
-                    }
-                }
-            });
-        }
-        roomForm.addEventListener('submit', async (e) => { 
-            e.preventDefault(); 
-            const number = document.getElementById('roomNumber').value; 
-            const capacity = parseInt(document.getElementById('roomCapacity').value); 
-            const type = document.getElementById('roomType').value;
-            const roomData = { capacity: capacity, type: type };
-            let url = 'http://localhost:3000/api/rooms';
-            let method = 'POST';
-            if (editingRow) {
-                const originalNumber = number;
-                url = `http://localhost:3000/api/rooms/${originalNumber}`;
-                method = 'PUT';
-                if (isNaN(capacity) || !type) { alert("Capacity and Type cannot be empty when editing."); return; }
-            } else {
-                roomData.room_number = number;
-                if (!number || isNaN(capacity) || !type) { alert("Please fill in all fields correctly for the new room."); return; }
-            }
-            try {
-                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roomData), });
-                if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} room:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} room: ${errorData.message || response.statusText}`); return; }
-                console.log(`Room ${editingRow ? 'updated' : 'added'} successfully`);
-                closeModal();
-                loadAndRenderRooms();
-            } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} room:`, error); alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} room.`); }
+
+        document.querySelector('.publish-btn').addEventListener('click', () => {
+            editingRow = null;
+            document.getElementById('modalTitle').textContent = 'Add New Room';
+            document.getElementById('roomNumber').readOnly = false;
+            roomForm.reset();
+            roomModal.style.display = 'block';
         });
-        closeModalBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (event) => { if (event.target == roomModal) closeModal(); });
+
+        document.querySelector('.data-table').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit')) {
+                editingRow = e.target.closest('tr');
+                const cells = editingRow.children;
+                document.getElementById('roomNumber').value = cells[0].textContent;
+                document.getElementById('roomCapacity').value = cells[1].textContent;
+                document.getElementById('roomType').value = cells[2].textContent;
+                document.getElementById('modalTitle').textContent = 'Edit Room';
+                document.getElementById('roomNumber').readOnly = true;
+                roomModal.style.display = 'block';
+            } else if (e.target.classList.contains('delete')) {
+                const id = e.target.closest('tr').children[0].textContent;
+                if (confirm(`Delete room ${id}?`)) {
+                    await fetch(`http://localhost:3000/api/rooms/${id}`, { method: 'DELETE' });
+                    reloadRooms();
+                }
+            }
+        });
+
+        roomForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                room_number: document.getElementById('roomNumber').value,
+                capacity: document.getElementById('roomCapacity').value,
+                type: document.getElementById('roomType').value
+            };
+            const method = editingRow ? 'PUT' : 'POST';
+            const url = editingRow ? `http://localhost:3000/api/rooms/${data.room_number}` : 'http://localhost:3000/api/rooms';
+            
+            await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            roomModal.style.display = 'none';
+            reloadRooms();
+        });
+        
+        roomModal.querySelector('.close-button').addEventListener('click', () => roomModal.style.display = 'none');
     }
 
-    // =================================================================
-    // == LOGIC FOR SECTIONS PAGE (sections.html)
-    // =================================================================
+    // --- SECTIONS PAGE ---
     const sectionModal = document.getElementById('sectionModal');
     if (sectionModal) {
-        async function loadAndRenderSections() { const sections = await fetchSections(); renderSectionsTable(sections); }
-        loadAndRenderSections();
+        async function reloadSections() { const data = await fetchSections(); renderSectionsTable(data); }
+        reloadSections();
 
-        const addBtn = document.getElementById('addNewSectionBtn');
         const sectionForm = document.getElementById('sectionForm');
-        const modalTitle = sectionModal.querySelector('#sectionModalTitle');
-        const closeModalBtn = sectionModal.querySelector('.close-button');
         let editingRow = null;
 
-        const openModal = () => {
-             if (!editingRow) {
-                modalTitle.textContent = 'Add New Section';
-                document.getElementById('sectionId').readOnly = false;
-                sectionForm.reset();
-             }
-             sectionModal.style.display = 'block';
-        }
-        const closeModal = () => { sectionModal.style.display = 'none'; editingRow = null; sectionForm.reset(); document.getElementById('sectionId').readOnly = false; };
+        document.getElementById('addNewSectionBtn').addEventListener('click', () => {
+            editingRow = null;
+            document.getElementById('sectionModalTitle').textContent = 'Add New Section';
+            document.getElementById('sectionId').readOnly = false;
+            sectionForm.reset();
+            sectionModal.style.display = 'block';
+        });
 
-        if(addBtn) addBtn.addEventListener('click', () => { editingRow = null; openModal(); });
-
-        const sectionTableBody = document.getElementById('sectionsTableBody');
-        if(sectionTableBody) {
-            sectionTableBody.addEventListener('click', async (e) => {
-                const target = e.target;
-                if (target.classList.contains('edit')) {
-                    editingRow = target.closest('tr'); 
-                    const cells = editingRow.children; 
-                    document.getElementById('sectionId').value = cells[0].textContent; 
-                    document.getElementById('sectionDept').value = cells[1].textContent; 
-                    document.getElementById('sectionSem').value = cells[2].textContent;
-                    document.getElementById('sectionName').value = cells[3].textContent; 
-                    modalTitle.textContent = 'Edit Section'; 
-                    document.getElementById('sectionId').readOnly = true;
-                    openModal();
-                } else if (target.classList.contains('delete')) {
-                    const rowToDelete = target.closest('tr');
-                    const sectionIdToDelete = rowToDelete.children[0].textContent;
-                    if (confirm(`Are you sure you want to delete section ${sectionIdToDelete}?`)) {
-                        try {
-                            const response = await fetch(`http://localhost:3000/api/sections/${sectionIdToDelete}`, { method: 'DELETE', });
-                            if (!response.ok) { let errorMsg = response.statusText; try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (jsonError) { /* ignore */ } console.error("Error deleting section:", response.status, errorMsg); alert(`Error deleting section: ${errorMsg}`); return; }
-                            console.log(`Section ${sectionIdToDelete} deleted successfully`);
-                            loadAndRenderSections();
-                        } catch (error) { console.error("Network error deleting section:", error); alert("Could not connect to server to delete section."); }
-                    }
-                } else if (target.classList.contains('assign')) {
-                    const row = target.closest('tr');
-                    const sectionId = row.children[0].textContent;
-                    openAssignmentModal(sectionId);
+        document.getElementById('sectionsTableBody').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit')) {
+                editingRow = e.target.closest('tr');
+                const cells = editingRow.children;
+                document.getElementById('sectionId').value = cells[0].textContent;
+                document.getElementById('sectionDept').value = cells[1].textContent;
+                document.getElementById('sectionSem').value = cells[2].textContent;
+                document.getElementById('sectionName').value = cells[3].textContent;
+                document.getElementById('sectionBatches').value = cells[4].textContent;
+                document.getElementById('sectionModalTitle').textContent = 'Edit Section';
+                document.getElementById('sectionId').readOnly = true;
+                sectionModal.style.display = 'block';
+            } else if (e.target.classList.contains('delete')) {
+                const id = e.target.closest('tr').children[0].textContent;
+                if (confirm(`Delete section ${id}?`)) {
+                    await fetch(`http://localhost:3000/api/sections/${id}`, { method: 'DELETE' });
+                    reloadSections();
                 }
-            });
-        }
-
-        sectionForm.addEventListener('submit', async (e) => { 
-            e.preventDefault(); 
-            const id = document.getElementById('sectionId').value;
-            const dept = document.getElementById('sectionDept').value;
-            const sem = parseInt(document.getElementById('sectionSem').value); 
-            const name = document.getElementById('sectionName').value;
-            const sectionData = { department: dept, semester: sem, section_name: name };
-            let url = 'http://localhost:3000/api/sections';
-            let method = 'POST';
-            if (editingRow) {
-                const originalId = id;
-                url = `http://localhost:3000/api/sections/${originalId}`;
-                method = 'PUT';
-                if (!dept || isNaN(sem) || !name) { alert("All fields must be filled correctly when editing."); return; }
-            } else {
-                sectionData.section_id = id;
-                if (!id || !dept || isNaN(sem) || !name) { alert("Please fill in all fields correctly for the new section."); return; }
+            } else if (e.target.classList.contains('assign')) {
+                openAssignmentModal(e.target.closest('tr').children[0].textContent);
             }
-            try {
-                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sectionData), });
-                if (!response.ok) { const errorData = await response.json(); console.error(`Error ${editingRow ? 'updating' : 'adding'} section:`, response.status, errorData); alert(`Error ${editingRow ? 'updating' : 'adding'} section: ${errorData.message || response.statusText}`); return; }
-                console.log(`Section ${editingRow ? 'updated' : 'added'} successfully`);
-                closeModal();
-                loadAndRenderSections();
-            } catch (error) { console.error(`Network error ${editingRow ? 'updating' : 'adding'} section:`, error); alert(`Could not connect to server to ${editingRow ? 'update' : 'add'} section.`); }
         });
-        closeModalBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (event) => { if (event.target == sectionModal) closeModal(); });
-    
-        const assignmentModal = document.getElementById('assignmentModal');
-        const assignmentForm = document.getElementById('assignmentForm');
-        const assignmentList = document.getElementById('assignmentList');
-        const assignmentModalTitle = document.getElementById('assignmentModalTitle');
-        const assignCourseSelect = document.getElementById('assignCourseSelect');
-        const assignFacultySelect = document.getElementById('assignFacultySelect');
-        
-        const openAssignmentModal = async (sectionId) => {
-            currentAssignmentSectionId = sectionId;
-            assignmentModalTitle.textContent = `Manage Assignments for ${sectionId}`;
-            assignmentModal.style.display = 'block';
-            assignCourseSelect.innerHTML = '<option value="">Loading...</option>';
-            assignFacultySelect.innerHTML = '<option value="">Loading...</option>';
-            assignmentList.innerHTML = '<li>Loading...</li>';
-            try {
-                const [courses, faculty, sectionData] = await Promise.all([
-                    fetchCourses(),
-                    fetchFaculty(),
-                    fetchSection(sectionId)
-                ]);
-                assignCourseSelect.innerHTML = '<option value="">Select a course...</option>';
-                if(courses) {
-                    courses.forEach(course => {
-                        assignCourseSelect.innerHTML += `<option value="${course._id}">${course._id} - ${course.course_name}</option>`;
-                    });
-                }
-                assignFacultySelect.innerHTML = '<option value="">Select a faculty...</option>';
-                if(faculty) {
-                    faculty.forEach(fac => {
-                        assignFacultySelect.innerHTML += `<option value="${fac._id}">${fac.name} (${fac.designation})</option>`;
-                    });
-                }
-                renderAssignmentList(sectionData.assignments || []);
-            } catch (error) {
-                console.error("Error populating assignment modal:", error);
-                assignmentList.innerHTML = '<li>Error loading assignments.</li>';
-            }
-        };
 
-        const closeAssignmentModal = () => {
-            assignmentModal.style.display = 'none';
-            currentAssignmentSectionId = null;
-            assignmentForm.reset();
-        };
-        
-        if (assignmentModal) { // Check if modal exists
-            assignmentModal.querySelector('.close-button').addEventListener('click', closeAssignmentModal);
-            window.addEventListener('click', (event) => { if (event.target == assignmentModal) closeAssignmentModal(); });
-
-            assignmentForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!currentAssignmentSectionId) return;
-                const courseSelect = assignCourseSelect;
-                const facultySelect = assignFacultySelect;
-                const courseId = courseSelect.value;
-                const courseName = courseSelect.options[courseSelect.selectedIndex].text;
-                const facultyId = facultySelect.value;
-                const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
-                if (!courseId || !facultyId) {
-                    alert("Please select both a course and a faculty member.");
-                    return;
-                }
-                try {
-                    const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/assign`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ courseId, facultyId, courseName, facultyName })
-                    });
-                    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Failed to add assignment'); }
-                    const newAssignment = await response.json();
-                    renderAssignmentList([...(document.getElementById('assignmentList')._assignments || []), newAssignment]);
-                    assignmentForm.reset();
-                } catch (error) { console.error("Error adding assignment:", error); alert(`Error: ${error.message}`); }
-            });
-
-            assignmentList.addEventListener('click', async (e) => {
-                if (e.target.classList.contains('delete-assignment')) {
-                    const assignmentId = e.target.dataset.id;
-                    if (!currentAssignmentSectionId || !assignmentId) return;
-                    if (confirm("Are you sure you want to remove this assignment?")) {
-                        try {
-                            const response = await fetch(`http://localhost:3000/api/sections/${currentAssignmentSectionId}/unassign`, {
-                                method: 'DELETE',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ assignmentId })
-                            });
-                            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Failed to delete assignment'); }
-                            const currentAssignments = document.getElementById('assignmentList')._assignments || [];
-                            const updatedAssignments = currentAssignments.filter(a => a._id !== assignmentId);
-                            renderAssignmentList(updatedAssignments); // Re-render list
-                        } catch (error) { console.error("Error deleting assignment:", error); alert(`Error: ${error.message}`); }
-                    }
-                }
-            });
-        }
-    }
-
-    // =================================================================
-    // == LOGIC FOR SETTINGS PAGE (settings.html)
-    // =================================================================
-    const saveBtn = document.getElementById('saveSettingsBtn');
-    if (saveBtn) {
-        const maxHoursInput = document.getElementById('max-hours');
-        const lunchStartInput = document.getElementById('lunchBreakStart');
-        const lunchDurationInput = document.getElementById('lunchBreakDuration');
-        const teaStartInput = document.getElementById('teaBreakStart');
-        const teaDurationInput = document.getElementById('teaBreakDuration');
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        
-        darkModeToggle.addEventListener('change', () => { 
-            document.body.classList.toggle('dark-mode'); 
-        });
-        
-        const loadSettings = () => { 
-            maxHoursInput.value = localStorage.getItem('maxHours') || '3'; 
-            lunchStartInput.value = localStorage.getItem('lunchBreakStart') || '12:45'; 
-            lunchDurationInput.value = localStorage.getItem('lunchBreakDuration') || '45'; 
-            teaStartInput.value = localStorage.getItem('teaBreakStart') || '10:30'; 
-            teaDurationInput.value = localStorage.getItem('teaBreakDuration') || '15'; 
-            
-            const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
-            darkModeToggle.checked = isDarkMode; 
-            if (isDarkMode) document.body.classList.add('dark-mode'); 
-            else document.body.classList.remove('dark-mode'); 
-        };
-        
-        saveBtn.addEventListener('click', () => { 
-            localStorage.setItem('maxHours', maxHoursInput.value); 
-            localStorage.setItem('lunchBreakStart', lunchStartInput.value); 
-            localStorage.setItem('lunchBreakDuration', lunchDurationInput.value); 
-            localStorage.setItem('teaBreakStart', teaStartInput.value); 
-            localStorage.setItem('teaBreakDuration', teaDurationInput.value); 
-            localStorage.setItem('darkMode', darkModeToggle.checked); 
-            
-            alert('Settings saved!'); 
-            
-            if (darkModeToggle.checked) document.body.classList.add('dark-mode'); 
-            else document.body.classList.remove('dark-mode'); 
-        });
-        
-        loadSettings();
-    }
-
-    // =================================================================
-    // == LOGIC FOR LOGIN/SIGNUP PAGE (login.html)
-    // =================================================================
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    const showSignupLink = document.getElementById('showSignup');
-    const showLoginLink = document.getElementById('showLogin');
-    const formTitle = document.getElementById('formTitle');
-    const loginToggle = document.getElementById('loginToggle');
-    const signupToggle = document.getElementById('signupToggle');
-
-    if (loginForm && signupForm) {
-        
-        // Apply dark mode on login page load
-        if (isDarkModeSaved) {
-            document.body.classList.add('dark-mode');
-        }
-
-        const loginErrorEl = document.getElementById('loginError');
-        const signupErrorEl = document.getElementById('signupError');
-
-        showSignupLink.addEventListener('click', (e) => { 
-            e.preventDefault(); 
-            loginErrorEl.textContent = ''; 
-            signupErrorEl.textContent = ''; 
-            loginForm.style.display = 'none'; 
-            signupForm.style.display = 'block'; 
-            formTitle.textContent = 'Sign Up'; 
-            if(loginToggle) loginToggle.style.display = 'none';
-            if(signupToggle) signupToggle.style.display = 'block';
-        });
-        showLoginLink.addEventListener('click', (e) => { 
-            e.preventDefault(); 
-            loginErrorEl.textContent = ''; 
-            signupErrorEl.textContent = ''; 
-            signupForm.style.display = 'none'; 
-            loginForm.style.display = 'block'; 
-            formTitle.textContent = 'Login'; 
-            if(loginToggle) loginToggle.style.display = 'block';
-            if(signupToggle) signupToggle.style.display = 'none';
-        });
-        
-        loginForm.addEventListener('submit', async (e) => { 
+        sectionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            loginErrorEl.textContent = '';
+            const batches = document.getElementById('sectionBatches').value.split(',').map(b => b.trim()).filter(b => b);
+            const data = {
+                section_id: document.getElementById('sectionId').value,
+                department: document.getElementById('sectionDept').value,
+                semester: document.getElementById('sectionSem').value,
+                section_name: document.getElementById('sectionName').value,
+                batches: batches
+            };
+            const method = editingRow ? 'PUT' : 'POST';
+            const url = editingRow ? `http://localhost:3000/api/sections/${data.section_id}` : 'http://localhost:3000/api/sections';
+            
+            await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            sectionModal.style.display = 'none';
+            reloadSections();
+        });
+
+        // Assignments Logic
+        const assignModal = document.getElementById('assignmentModal');
+        const assignForm = document.getElementById('assignmentForm');
+        let currentSectionId = null;
+
+        async function openAssignmentModal(sectionId) {
+            currentSectionId = sectionId;
+            document.getElementById('assignmentModalTitle').textContent = `Assign to ${sectionId}`;
+            
+            const [courses, faculty, section] = await Promise.all([fetchCourses(), fetchFaculty(), fetchSection(sectionId)]);
+            
+            const cSelect = document.getElementById('assignCourseSelect');
+            cSelect.innerHTML = '<option value="">Select Course...</option>';
+            courses.forEach(c => cSelect.innerHTML += `<option value="${c._id}">${c.course_name} (${c.course_type})</option>`);
+            
+            const fSelect = document.getElementById('assignFacultySelect');
+            fSelect.innerHTML = '<option value="">Select Faculty...</option>';
+            faculty.forEach(f => fSelect.innerHTML += `<option value="${f._id}">${f.name}</option>`);
+            
+            const bSelect = document.getElementById('assignBatchSelect');
+            bSelect.innerHTML = '<option value="Entire Section">Entire Section</option>';
+            (section.batches || []).forEach(b => bSelect.innerHTML += `<option value="${b}">${b}</option>`);
+            
+            renderAssignmentList(section.assignments || []);
+            assignModal.style.display = 'block';
+        }
+
+        assignForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cSelect = document.getElementById('assignCourseSelect');
+            const fSelect = document.getElementById('assignFacultySelect');
+            const bSelect = document.getElementById('assignBatchSelect');
+            
+            const data = {
+                courseId: cSelect.value,
+                facultyId: fSelect.value,
+                courseName: cSelect.options[cSelect.selectedIndex].text,
+                facultyName: fSelect.options[fSelect.selectedIndex].text,
+                batch: bSelect.value
+            };
+            
+            const res = await fetch(`http://localhost:3000/api/sections/${currentSectionId}/assign`, {
+                method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+            });
+            if(res.ok) {
+                // Refresh list manually or fetch section again
+                const section = await fetchSection(currentSectionId);
+                renderAssignmentList(section.assignments);
+                assignForm.reset();
+            }
+        });
+
+        document.getElementById('assignmentList').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-assignment')) {
+                if(confirm("Remove assignment?")) {
+                    await fetch(`http://localhost:3000/api/sections/${currentSectionId}/unassign`, {
+                        method: 'DELETE', headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ assignmentId: e.target.dataset.id })
+                    });
+                    const section = await fetchSection(currentSectionId);
+                    renderAssignmentList(section.assignments);
+                }
+            }
+        });
+
+        document.querySelectorAll('.close-button').forEach(btn => {
+            btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
+        });
+    }
+
+    // --- LOGIN/SIGNUP PAGE ---
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        const signupForm = document.getElementById('signupForm');
+        const showSignupLink = document.getElementById('showSignup');
+        const showLoginLink = document.getElementById('showLogin');
+        const loginToggle = document.getElementById('loginToggle');
+        const signupToggle = document.getElementById('signupToggle');
+        const formTitle = document.getElementById('formTitle');
+
+        const showLogin = () => {
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+            loginToggle.classList.add('active');
+            signupToggle.classList.remove('active');
+            formTitle.textContent = 'Login';
+        };
+
+        const showSignup = () => {
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+            loginToggle.classList.remove('active');
+            signupToggle.classList.add('active');
+            formTitle.textContent = 'Sign Up';
+        };
+
+        // Click handlers
+        loginToggle.addEventListener('click', showLogin);
+        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
+        signupToggle.addEventListener('click', showSignup);
+        showSignupLink.addEventListener('click', (e) => { e.preventDefault(); showSignup(); });
+
+
+        const signupRole = document.getElementById('signupRole');
+        signupRole.addEventListener('change', () => {
+            const group = document.getElementById('profileIdGroup');
+            const label = document.getElementById('profileIdLabel');
+            const input = document.getElementById('signupProfileId');
+            
+            if (signupRole.value === 'student') {
+                group.style.display = 'block';
+                label.textContent = 'Section ID';
+                input.placeholder = 'e.g., CS-A';
+            } else {
+                group.style.display = 'none';
+            }
+        });
+
+        // Form Submit Handlers
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            const loginButton = loginForm.querySelector('.auth-btn');
-            loginButton.textContent = 'Logging in...';
-            loginButton.disabled = true;
+            const errorEl = document.getElementById('loginError');
+            errorEl.textContent = '';
             try {
-                const response = await fetch('http://localhost:3000/api/login', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ email, password }) 
+                const res = await fetch('http://localhost:3000/api/login', { 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) 
                 });
-                const data = await response.json();
-                if (!response.ok) { throw new Error(data.message || 'Login failed'); }
-                
-                // Save user info
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.message);
                 localStorage.setItem('timetableUser', JSON.stringify(data.user));
-
-                // Redirect to correct dashboard
                 redirectToDashboard(data.user.role);
-
-            } catch (error) {
-                loginErrorEl.textContent = error.message;
-            } finally {
-                loginButton.textContent = 'Login';
-                loginButton.disabled = false;
-            }
+            } catch(err) { errorEl.textContent = err.message; }
         });
-        
-        signupForm.addEventListener('submit', async (e) => { 
-            e.preventDefault(); 
-            signupErrorEl.textContent = '';
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             const name = document.getElementById('signupName').value;
             const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
             const role = document.getElementById('signupRole').value;
+            const profileId = document.getElementById('signupProfileId').value;
+            const errorEl = document.getElementById('signupError');
+            errorEl.textContent = '';
             
-            const signupButton = signupForm.querySelector('.auth-btn');
-            signupButton.textContent = 'Signing up...';
-            signupButton.disabled = true;
-            try {
-                 const response = await fetch('http://localhost:3000/api/signup', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ name, email, password, role }) 
-                });
-                const data = await response.json();
-                if (!response.ok) { throw new Error(data.message || 'Signup failed'); }
-                
-                alert('Signup successful! Please log in.');
-                showLoginLink.click();
-
-            } catch (error) {
-                signupErrorEl.textContent = error.message;
-            } finally {
-                signupButton.textContent = 'Sign Up';
-                signupButton.disabled = false;
+            if (role === 'student' && !profileId) {
+                errorEl.textContent = 'Please provide your Section ID.';
+                return;
             }
+            
+            try {
+                const res = await fetch('http://localhost:3000/api/signup', { 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, email, password, role, profileId }) 
+                });
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.message);
+                alert("Signup successful! Please log in.");
+                showLogin(); // Flip to login form
+            } catch(err) { errorEl.textContent = err.message; }
         });
     }
 
@@ -755,241 +795,203 @@ document.addEventListener('DOMContentLoaded', () => {
 // == HELPER FUNCTIONS
 // =================================================================
 
-// --- TIMETABLE ---
-async function fetchTimetableData() {
-    console.log("Requesting new timetable from backend...");
-    const courses = [{ course: "CS-101", faculty: "Dr. Grant", room: "301" },{ course: "MA-210", faculty: "Dr. Malcolm", room: "205" },{ course: "BIO-150", faculty: "Dr. Sattler", room: "Lab 2" },{ course: "PHY-300", faculty: "Dr. Wu", room: "104" }];
-    const timeSlots = ["08:30", "09:30", "11:00", "12:00", "13:30", "14:30", "15:30"];
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    let generatedTimetable = {};
-    const classCount = Math.floor(Math.random() * 3) + 5;
-    for (let i = 0; i < classCount; i++) { const course = courses[Math.floor(Math.random() * courses.length)]; const day = days[Math.floor(Math.random() * days.length)]; const time = timeSlots[Math.floor(Math.random() * timeSlots.length)]; if (!generatedTimetable[day]) { generatedTimetable[day] = {}; } generatedTimetable[day][time] = { ...course, conflict: Math.random() > 0.8 }; }
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log("Data received!", generatedTimetable);
-    return generatedTimetable;
+async function fetchApi(url) {
+    try {
+        const res = await fetch(`http://localhost:3000${url}`);
+        if(res.ok) return await res.json();
+    } catch(e) { console.error(e); }
+    return null;
 }
+async function fetchCourses() { return fetchApi('/api/courses'); }
+async function fetchFaculty() { return fetchApi('/api/faculty'); }
+async function fetchRooms() { return fetchApi('/api/rooms'); }
+async function fetchSections() { return fetchApi('/api/sections'); }
+async function fetchUsers() { return fetchApi('/api/users'); }
+async function fetchSection(id) { return fetchApi(`/api/sections/${id}`); }
+async function fetchTimetableData() { return fetchApi('/api/timetable'); }
 
 function populateTimetable(data) {
-    const studentTbody = document.getElementById('studentTimetableBody');
-    const adminTbody = document.querySelector('.timetable-page .timetable-grid tbody');
-    const tbody = adminTbody || studentTbody; // Use whichever one exists
-    
+    const tbody = document.querySelector('.timetable-grid tbody');
     if (!tbody) return;
+    if (!data) { tbody.innerHTML = '<tr><td colspan="7">No data available.</td></tr>'; return; }
+
+    const sectionFilter = document.getElementById('section-select');
+    const selectedSection = sectionFilter ? sectionFilter.value : 'all';
+    
+    // Get schedule settings from local storage
     const lunchStart = localStorage.getItem('lunchBreakStart') || '12:45';
-    const lunchDuration = parseInt(localStorage.getItem('lunchBreakDuration') || '45');
     const teaStart = localStorage.getItem('teaBreakStart') || '10:30';
-    const teaDuration = parseInt(localStorage.getItem('teaBreakDuration') || '15');
-    const startTime = 8 * 60 + 30; const endTime = 16 * 60 + 30; const interval = 15;
-    let tableHTML = '';
-    const dayMap = { "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5 };
-    const dayNames = Object.keys(dayMap);
-    let occupiedSlots = {};
-    for (let min = startTime; min < endTime; min += interval) {
-        const hour = Math.floor(min / 60).toString().padStart(2, '0');
-        const minute = (min % 60).toString().padStart(2, '0');
-        const currentTime = `${hour}:${minute}`;
-        if (occupiedSlots[`break-${min}`]) { continue; }
-        const timeLabel = (minute === '00' || minute === '30') ? currentTime : '';
-        if (currentTime === lunchStart) { const rowspan = lunchDuration / interval; const validRowspan = Math.max(1, Math.round(rowspan)); tableHTML += `<tr><td class="time-cell">${timeLabel}</td><td colspan="6" rowspan="${validRowspan}" class="break-slot">Lunch Break</td></tr>`; for (let i = 1; i < validRowspan; i++) { occupiedSlots[`break-${min + i * interval}`] = true; } continue; }
-        if (currentTime === teaStart) { const rowspan = teaDuration / interval; const validRowspan = Math.max(1, Math.round(rowspan)); tableHTML += `<tr><td class="time-cell">${timeLabel}</td><td colspan="6" rowspan="${validRowspan}" class="break-slot">Tea Break</td></tr>`; for (let i = 1; i < validRowspan; i++) { occupiedSlots[`break-${min + i * interval}`] = true; } continue; }
-        tableHTML += `<tr><td class="time-cell">${timeLabel}</td>`;
-        for (let dayIndex = 0; dayIndex < 6; dayIndex++) {
-            if (occupiedSlots[`${dayIndex}-${min}`]) { continue; }
-            let cellContent = ''; let rowspan = 1; const dayName = dayNames[dayIndex];
-            if (data[dayName] && data[dayName][currentTime]) { rowspan = 60 / interval; const slotData = data[dayName][currentTime]; cellContent = `<td rowspan="${rowspan}" class="timetable-slot ${slotData.conflict ? 'conflict' : ''}"><strong>${slotData.course}</strong><span>${slotData.faculty}</span><em>${slotData.room}</em></td>`; } else { cellContent = '<td></td>'; }
-            tableHTML += cellContent;
-            if (rowspan > 1) { const validRowspan = Math.max(1, Math.round(rowspan)); for (let i = 1; i < validRowspan; i++) { occupiedSlots[`${dayIndex}-${min + i * interval}`] = true; } }
+
+    const TIME_SLOTS = ['08:30', '09:30', '10:45', '11:45', '13:30', '14:30', '15:30'];
+    const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    
+    let html = '';
+    
+    // Map time slots to display names (e.g., to insert breaks)
+    const displaySlots = {
+        '08:30': '08:30 - 09:30',
+        '09:30': '09:30 - 10:30',
+        '10:30': '10:30 - 10:45', // Tea Break
+        '10:45': '10:45 - 11:45',
+        '11:45': '11:45 - 12:45',
+        '12:45': '12:45 - 13:30', // Lunch Break
+        '13:30': '13:30 - 14:30',
+        '14:30': '14:30 - 15:30',
+        '15:30': '15:30 - 16:30'
+    };
+    
+    // We need to add the break times into the loop
+    const allTimeKeys = [...TIME_SLOTS];
+    if (!allTimeKeys.includes(teaStart)) allTimeKeys.push(teaStart);
+    if (!allTimeKeys.includes(lunchStart)) allTimeKeys.push(lunchStart);
+    allTimeKeys.sort(); // Puts them in order: 08:30, 09:30, 10:30, 10:45...
+
+    allTimeKeys.forEach(time => {
+        if (time === teaStart) {
+            html += `<tr><td class="time-cell">10:30</td><td colspan="6" class="break-slot">Tea Break</td></tr>`;
+            return;
         }
-        tableHTML += '</tr>';
-    }
-    tbody.innerHTML = tableHTML;
-    const timetableModal = document.getElementById('editModal');
-    if (timetableModal) { 
-        const openModal = () => timetableModal.style.display = 'block'; 
-        tbody.querySelectorAll('.timetable-slot').forEach(slot => { 
-            slot.addEventListener('click', openModal); 
-        }); 
-    }
-}
+        if (time === lunchStart) {
+            html += `<tr><td class="time-cell">12:45</td><td colspan="6" class="break-slot">Lunch Break</td></tr>`;
+            return;
+        }
 
-// --- COURSES ---
-async function fetchCourses() {
-    try {
-        const response = await fetch('http://localhost:3000/api/courses');
-        if (!response.ok) { throw new Error(response.statusText); }
-        const courses = await response.json();
-        return courses;
-    } catch (error) {
-        console.error("Error fetching courses:", error);
-        if (document.body.classList.contains('admin-page')) { alert("Could not load courses."); }
-        return null;
-    }
-}
-function renderCoursesTable(courses) {
-    const tableBody = document.querySelector('.courses-page .data-table tbody'); 
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
-    if (!courses || courses.length === 0) { tableBody.innerHTML = '<tr><td colspan="4">No courses found.</td></tr>'; return; }
-    courses.forEach(course => {
-        tableBody.innerHTML += `
-            <tr>
-                <td>${course.course_code || course._id}</td>
-                <td>${course.course_name}</td>
-                <td>${course.credits}</td>
-                <td>
-                    <button class="action-btn-table edit">Edit</button>
-                    <button class="action-btn-table delete">Delete</button>
-                </td>
-            </tr>
-        `;
+        html += `<tr><td class="time-cell">${displaySlots[time] || time}</td>`;
+        
+        DAYS.forEach(day => {
+            let cellContent = '';
+            if (data[day] && data[day][time]) {
+                let slots = data[day][time] || []; // Array
+                
+                // Filter if specific section selected
+                if (selectedSection !== 'all') {
+                    slots = slots.filter(s => s.section === selectedSection);
+                }
+
+                if (slots.length > 0) {
+                    // Render all matching slots (stacked)
+                    slots.forEach(slot => {
+                        const batch = (slot.batch && slot.batch !== 'Entire Section') ? `(${slot.batch})` : '';
+                        cellContent += `
+                            <div class="timetable-slot ${slot.conflict ? 'conflict' : ''}"
+                                 data-day="${day}" data-time="${time}" data-section="${slot.section}">
+                                <strong>${slot.course} ${batch}</strong>
+                                <span>${slot.faculty}</span>
+                                <em>${slot.room} (${slot.section})</em>
+                            </div>
+                        `;
+                    });
+                }
+            }
+            html += `<td>${cellContent}</td>`;
+        });
+        html += '</tr>';
     });
-}
+    tbody.innerHTML = html;
 
-// --- FACULTY ---
-async function fetchFaculty() {
-    try {
-        const response = await fetch('http://localhost:3000/api/faculty'); 
-        if (!response.ok) { throw new Error(response.statusText); }
-        const faculty = await response.json();
-        return faculty;
-    } catch (error) {
-        console.error("Error fetching faculty:", error);
-        if (document.body.classList.contains('admin-page')) { alert("Could not load faculty."); }
-        return null;
-    }
-}
-function renderFacultyTable(facultyMembers) {
-    const tableBody = document.querySelector('body.faculty-page.admin-page .data-table tbody'); // Corrected
-    if (!tableBody) return;
-    tableBody.innerHTML = ''; 
-    if (!facultyMembers || facultyMembers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">No faculty members found.</td></tr>';
-        return;
-    }
-    facultyMembers.forEach(faculty => {
-        tableBody.innerHTML += `
-            <tr>
-                <td>${faculty.faculty_id || faculty._id}</td>
-                <td>${faculty.name}</td>
-                <td>${faculty.department}</td>
-                <td>${faculty.designation}</td>
-                <td>
-                    <button class="action-btn-table edit">Edit</button>
-                    <button class="action-btn-table delete">Delete</button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-// --- ROOMS ---
-async function fetchRooms() {
-    try {
-        const response = await fetch('http://localhost:3000/api/rooms'); 
-        if (!response.ok) { throw new Error(response.statusText); }
-        const rooms = await response.json();
-        return rooms;
-    } catch (error) {
-        console.error("Error fetching rooms:", error);
-        if (document.body.classList.contains('admin-page')) { alert("Could not load rooms."); }
-        return null;
-    }
-}
-function renderRoomsTable(rooms) {
-    const tableBody = document.querySelector('.rooms-page .data-table tbody'); // Corrected
-    if (!tableBody) return;
-    tableBody.innerHTML = ''; 
-    if (!rooms || rooms.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4">No rooms found.</td></tr>';
-        return;
-    }
-    rooms.forEach(room => {
-        tableBody.innerHTML += `
-            <tr>
-                <td>${room.room_number || room._id}</td>
-                <td>${room.capacity}</td>
-                <td>${room.type}</td>
-                <td>
-                    <button class="action-btn-table edit">Edit</button>
-                    <button class="action-btn-table delete">Delete</button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-// --- SECTIONS ---
-async function fetchSections() {
-    try {
-        const response = await fetch('http://localhost:3000/api/sections'); 
-        if (!response.ok) { throw new Error(response.statusText); }
-        const sections = await response.json();
-        return sections;
-    } catch (error) {
-        console.error("Error fetching sections:", error);
-        alert("Could not load sections.");
-        return null;
+    // Edit Click Handler (Admin Only)
+    if (document.body.classList.contains('role-admin')) {
+        tbody.querySelectorAll('.timetable-slot').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const day = el.dataset.day;
+                const time = el.dataset.time;
+                const section = el.dataset.section;
+                
+                const allSlots = currentTimetableData[day][time];
+                const slotData = allSlots.find(s => s.section === section);
+                
+                if (slotData) openEditSlotModal(slotData, day, time);
+            });
+        });
     }
 }
 
-async function fetchSection(sectionId) {
-     try {
-        const response = await fetch(`http://localhost:3000/api/sections/${sectionId}`); 
-        if (!response.ok) { throw new Error(response.statusText); }
-        const section = await response.json();
-        return section;
-    } catch (error) {
-        console.error(`Error fetching section ${sectionId}:`, error);
-        alert(`Could not load data for section ${sectionId}.`);
-        return null;
+function openEditSlotModal(slotData, day, time) {
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+
+    document.getElementById('editSlotDay').value = day;
+    document.getElementById('editSlotTime').value = time;
+    document.getElementById('editSlotSectionId').value = slotData.section;
+    
+    // Populate Dropdowns (Assuming global caches are populated)
+    const cSelect = document.getElementById('editCourse');
+    cSelect.innerHTML = '';
+    allCourses.forEach(c => cSelect.innerHTML += `<option value="${c._id}" ${c.course_name === slotData.course ? 'selected' : ''}>${c.course_name}</option>`);
+    
+    const fSelect = document.getElementById('editFaculty');
+    fSelect.innerHTML = '';
+    allFaculty.forEach(f => fSelect.innerHTML += `<option value="${f._id}" ${f._id === slotData.facultyId ? 'selected' : ''}>${f.name}</option>`);
+    
+    const rSelect = document.getElementById('editRoom');
+    rSelect.innerHTML = '';
+    allRooms.forEach(r => rSelect.innerHTML += `<option value="${r._id}" ${r._id === slotData.room ? 'selected' : ''}>${r._id}</option>`);
+    
+    const bSelect = document.getElementById('editBatch');
+    bSelect.innerHTML = '<option value="Entire Section">Entire Section</option>';
+    const section = allSections.find(s => s._id === slotData.section);
+    if(section && section.batches) {
+        section.batches.forEach(b => bSelect.innerHTML += `<option value="${b}" ${b === slotData.batch ? 'selected' : ''}>${b}</option>`);
     }
+    bSelect.value = slotData.batch;
+
+    modal.style.display = 'block';
 }
-function renderSectionsTable(sections) {
-    const tableBody = document.getElementById('sectionsTableBody');
-    if (!tableBody) return;
-    tableBody.innerHTML = ''; 
-    if (!sections || sections.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">No sections found.</td></tr>';
-        return;
-    }
-    sections.forEach(section => {
-        tableBody.innerHTML += `
-            <tr>
-                <td>${section.section_id || section._id}</td>
-                <td>${section.department}</td>
-                <td>${section.semester}</td>
-                <td>${section.section_name}</td>
-                <td>
-                    <button class="action-btn-table assign">Assign</button>
-                    <button class="action-btn-table edit">Edit</button>
-                    <button class="action-btn-table delete">Delete</button>
-                </td>
-            </tr>
-        `;
-    });
+
+// --- ADMIN PAGE RENDERERS ---
+function renderCoursesTable(data) {
+    const html = (data || []).map(c => `
+        <tr>
+            <td>${c._id}</td><td>${c.course_name}</td><td>${c.credits}</td>
+            <td>${c.course_type}</td><td>${c.duration}</td>
+            <td><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td>
+        </tr>`).join('');
+    const tbody = document.querySelector('.courses-page .data-table tbody');
+    if(tbody) tbody.innerHTML = html || '<tr><td colspan="6">No courses found.</td></tr>';
+}
+
+function renderFacultyTable(data, userSet) {
+    const html = (data || []).map(f => {
+        const hasLogin = userSet.has(f._id);
+        return `
+        <tr>
+            <td>${f._id}</td><td>${f.name}</td><td>${f.department}</td><td>${f.designation}</td>
+            <td><button class="action-btn-table create-login" ${hasLogin ? 'disabled' : ''}>${hasLogin ? 'Account Exists' : 'Create Login'}</button></td>
+            <td><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td>
+        </tr>`;
+    }).join('');
+    const tbody = document.querySelector('.faculty-page .data-table tbody');
+    if(tbody) tbody.innerHTML = html || '<tr><td colspan="6">No faculty found.</td></tr>';
+}
+
+function renderRoomsTable(data) {
+    const html = (data || []).map(r => `
+        <tr>
+            <td>${r._id}</td><td>${r.capacity}</td><td>${r.type}</td>
+            <td><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td>
+        </tr>`).join('');
+    const tbody = document.querySelector('.rooms-page .data-table tbody');
+    if(tbody) tbody.innerHTML = html || '<tr><td colspan="4">No rooms found.</td></tr>';
+}
+
+function renderSectionsTable(data) {
+    const html = (data || []).map(s => `
+        <tr>
+            <td>${s._id}</td><td>${s.department}</td><td>${s.semester}</td><td>${s.section_name}</td>
+            <td>${(s.batches||[]).join(', ')}</td>
+            <td><button class="action-btn-table assign">Assign</button><button class="action-btn-table edit">Edit</button><button class="action-btn-table delete">Delete</button></td>
+        </tr>`).join('');
+    const tbody = document.querySelector('.sections-page .data-table tbody');
+    if(tbody) tbody.innerHTML = html || '<tr><td colspan="6">No sections found.</td></tr>';
 }
 
 function renderAssignmentList(assignments) {
-    const assignmentList = document.getElementById('assignmentList');
-    if (!assignmentList) return;
-
-    assignmentList._assignments = assignments; 
-    
-    if (!assignments || assignments.length === 0) {
-        assignmentList.innerHTML = '<li>No courses assigned yet.</li>';
-        return;
-    }
-
-    assignmentList.innerHTML = '';
-    assignments.forEach(assign => {
-        assignmentList.innerHTML += `
-            <li>
-                <div class="info">
-                    <strong>${assign.courseName}</strong>
-                    <span>${assign.facultyName}</span>
-                </div>
-                <button class="action-btn-table delete-assignment" data-id="${assign._id}">Remove</button>
-            </li>
-        `;
-    });
+    const list = document.getElementById('assignmentList');
+    if(!list) return;
+    list.innerHTML = (assignments && assignments.length) ? assignments.map(a => `
+        <li>
+            <div class="info"><strong>${a.courseName} (${a.batch||'Entire Section'})</strong><span>${a.facultyName}</span></div>
+            <button class="action-btn-table delete-assignment" data-id="${a._id}">Remove</button>
+        </li>`).join('') : '<li>No assignments yet.</li>';
 }

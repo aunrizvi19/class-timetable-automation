@@ -2,8 +2,9 @@ const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb'); 
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const path = require('path'); // Required for serving frontend files
 
-// Import our generator logic
+// Import the updated generator logic
 const { generateAndSaveTimetable } = require('./timetable_generator'); 
 
 const app = express();
@@ -12,7 +13,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// [USER URI - DO NOT CHANGE THIS LINE]
+// [CONNECTION STRING]
 const uri = "mongodb+srv://mohammadaunrizvi19_db_user:305YJ8h9IsNVu9Ad@cluster0.khbsgco.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 const client = new MongoClient(uri, {
@@ -21,7 +22,6 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
-  // [FIXED] Added tlsInsecure: true to bypass network/SSL negotiation issues
   tlsInsecure: true 
 });
 
@@ -40,20 +40,57 @@ async function connectDB() {
 }
 
 connectDB().then(() => {
-    // ================== AUTHENTICATION ==================
+
+    // =================================================================
+    // 1. AUTHENTICATION (Login & Signup)
+    // =================================================================
+    
+    app.post('/api/login', async (req, res) => {
+        try {
+            if (!db) return res.status(500).json({ message: "Database not connected" });
+            const { email, password } = req.body;
+            
+            // Look up by 'email' field
+            const user = await db.collection('users').findOne({ email: email });
+            
+            if (!user) {
+                return res.status(404).json({ message: "Invalid email or password." });
+            }
+            
+            // Check password
+            const isMatch = await bcrypt.compare(password, user.password || user.passwordHash);
+            if (!isMatch) {
+                return res.status(401).json({ message: "Invalid email or password." });
+            }
+            
+            res.status(200).json({ 
+                message: "Login successful!", 
+                user: { 
+                    name: user.name, 
+                    email: user.email,
+                    role: user.role, 
+                    profileId: user.profileId || user._id 
+                } 
+            });
+        } catch (err) {
+            console.error("Login Error:", err);
+            res.status(500).json({ message: "Error logging in" });
+        }
+    });
+
+    // [FIX] Re-added Signup for Students
     app.post('/api/signup', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
             
             const { name, email, password, role, profileId } = req.body;
+            
+            // Basic Validation
             if (!name || !email || !password || !role) {
                 return res.status(400).json({ message: "Missing required fields" });
             }
             if (role === 'student' && !profileId) {
-                return res.status(400).json({ message: "Missing Section ID" });
-            }
-            if (!['admin', 'student'].includes(role)) {
-                return res.status(400).json({ message: "Invalid role for public signup." });
+                return res.status(400).json({ message: "Missing Section ID for student." });
             }
 
             const usersCollection = db.collection('users');
@@ -61,16 +98,20 @@ connectDB().then(() => {
             if (existingUser) {
                 return res.status(409).json({ message: "Email already in use." });
             }
+
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
 
             const newUser = {
+                _id: email, // Use email as ID for consistency with seed data
                 name: name,
                 email: email,
-                password: hashedPassword,
+                password: hashedPassword, // Use 'password' field for new signups to match login check logic
+                // Store hash in both fields to be safe given schema differences
+                passwordHash: hashedPassword, 
                 role: role,
-                _id: email,
-                profileId: role === 'admin' ? null : profileId
+                profileId: role === 'admin' ? null : profileId,
+                verified: true 
             };
             
             await usersCollection.insertOne(newUser);
@@ -82,214 +123,47 @@ connectDB().then(() => {
         }
     });
 
-    app.post('/api/login', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { email, password } = req.body;
-            if (!email || !password) {
-                return res.status(400).json({ message: "Missing email or password" });
-            }
-            
-            const user = await db.collection('users').findOne({ _id: email });
-            if (!user) {
-                return res.status(404).json({ message: "Invalid email or password." });
-            }
-            
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
-                return res.status(401).json({ message: "Invalid email or password." });
-            }
-            
-            res.status(200).json({ 
-                message: "Login successful!", 
-                user: { 
-                    name: user.name, 
-                    email: user.email,
-                    role: user.role, 
-                    profileId: user.profileId 
-                } 
-            });
-        } catch (err) {
-            console.error("Error logging in user:", err);
-            res.status(500).json({ message: "Error logging in" });
-        }
-    });
-
-    // Get all users (for admin panel)
     app.get('/api/users', async (req, res) => {
         try {
           if (!db) return res.status(500).json({ message: "Database not connected" });
-          const users = await db.collection('users').find({}, { 
-              projection: { _id: 1, name: 1, email: 1, role: 1, profileId: 1 } // Added name
-          }).toArray();
+          const users = await db.collection('users').find({}).toArray();
           res.json(users);
-        } catch (err) {
-          console.error("Error fetching users:", err);
-          res.status(500).json({ message: "Error fetching user data" });
-        }
-    });
-
-    // Create login for faculty
-    app.post('/api/users/create-faculty-login', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            
-            const { email, password, facultyId } = req.body;
-            if (!email || !password || !facultyId) {
-                return res.status(400).json({ message: "Missing fields" });
-            }
-
-            const existingUser = await db.collection('users').findOne({ _id: email });
-            if (existingUser) {
-                return res.status(409).json({ message: "Email already in use." });
-            }
-
-            const faculty = await db.collection('faculty').findOne({ _id: facultyId });
-            if (!faculty) {
-                return res.status(404).json({ message: "Faculty ID not found." });
-            }
-
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
-            
-            const newUser = {
-                name: faculty.name,
-                email: email,
-                password: hashedPassword,
-                role: 'faculty',
-                _id: email,
-                profileId: facultyId 
-            };
-            
-            await db.collection('users').insertOne(newUser);
-            res.status(201).json({ message: `Login for ${faculty.name} created!` });
-
-        } catch (err) {
-            console.error("Error creating faculty login:", err);
-            res.status(500).json({ message: "Error saving user to database" });
-        }
-    });
-
-    // Delete a user
-    app.delete('/api/users/:email', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const email = req.params.email;
-            
-            // Safety check: Don't let the last admin delete themselves
-            const userToDelete = await db.collection('users').findOne({ _id: email });
-            if (userToDelete && userToDelete.role === 'admin') {
-                const adminCount = await db.collection('users').countDocuments({ role: 'admin' });
-                if (adminCount <= 1) {
-                    return res.status(400).json({ message: "Cannot delete the last admin account." });
-                }
-            }
-            
-            const result = await db.collection('users').deleteOne({ _id: email });
-            
-            if (result.deletedCount === 0) {
-                return res.status(404).json({ message: "User not found." });
-            }
-
-            res.status(200).json({ message: "User deleted successfully." });
-        } catch (err) {
-            console.error("Error deleting user:", err);
-            res.status(500).json({ message: "Error deleting user" });
-        }
+        } catch (err) { res.status(500).json({ message: "Error fetching users" }); }
     });
 
 
-    // ================== COURSES ==================
+    // =================================================================
+    // 2. DATA MAPPING ENDPOINTS
+    // =================================================================
+
+    // GET COURSES -> Maps from 'subjects' collection
     app.get('/api/courses', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-            const courses = await db.collection('courses').find({}).toArray();
-            res.json(courses);
+            const subjects = await db.collection('subjects').find({}).toArray();
+            
+            const mappedCourses = subjects.map(s => ({
+                _id: s.subjectCode,
+                course_name: s.name,
+                course_type: s.type.charAt(0).toUpperCase() + s.type.slice(1),
+                credits: s.credits,
+                lectures_per_week: s.type === 'theory' ? s.weeklyHours : 0,
+                practicals_per_week: s.type === 'lab' ? s.weeklyHours : 0,
+                tutorials_per_week: 0
+            }));
+
+            res.json(mappedCourses);
         } catch (err) { res.status(500).json({ message: "Error fetching courses" }); }
     });
-    app.post('/api/courses', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const newCourse = req.body;
-            newCourse._id = newCourse.course_code;
-            newCourse.credits = parseInt(newCourse.credits);
-            newCourse.lectures_per_week = parseInt(newCourse.lectures_per_week);
-            newCourse.tutorials_per_week = parseInt(newCourse.tutorials_per_week);
-            newCourse.practicals_per_week = parseInt(newCourse.practicals_per_week);
-            
-            delete newCourse.duration; // Remove old field
 
-            await db.collection('courses').insertOne(newCourse);
-            res.status(201).json(newCourse);
-        } catch (err) { res.status(500).json({ message: `Failed to add course: ${err.message}` }); }
-    });
-    app.put('/api/courses/:code', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { code } = req.params;
-            const { course_name, credits, course_type, lectures_per_week, tutorials_per_week, practicals_per_week } = req.body;
-            
-            await db.collection('courses').updateOne(
-                { _id: code },
-                { $set: { 
-                    course_name, 
-                    credits: parseInt(credits), 
-                    course_type, 
-                    lectures_per_week: parseInt(lectures_per_week), 
-                    tutorials_per_week: parseInt(tutorials_per_week), 
-                    practicals_per_week: parseInt(practicals_per_week)
-                  },
-                  $unset: { duration: "" } // Remove the old duration field
-                }
-            );
-            res.json({ message: "Course updated" });
-        } catch (err) { res.status(500).json({ message: `Failed to update: ${err.message}` }); }
-    });
-    app.delete('/api/courses/:code', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            await db.collection('courses').deleteOne({ _id: req.params.code });
-            res.status(204).send();
-        } catch (err) { res.status(500).json({ message: `Failed to delete: ${err.message}` }); }
-    });
-
-    // ================== FACULTY ==================
     app.get('/api/faculty', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-            const faculty = await db.collection('faculty').find({}).toArray();
+            const faculty = await db.collection('users').find({ role: 'faculty' }).toArray();
             res.json(faculty);
         } catch (err) { res.status(500).json({ message: "Error fetching faculty" }); }
     });
-    app.post('/api/faculty', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const newFaculty = req.body;
-            newFaculty._id = newFaculty.faculty_id;
-            await db.collection('faculty').insertOne(newFaculty);
-            res.status(201).json(newFaculty);
-        } catch (err) { res.status(500).json({ message: `Failed to add faculty: ${err.message}` }); }
-    });
-    app.put('/api/faculty/:id', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { name, department, designation } = req.body;
-            await db.collection('faculty').updateOne(
-                { _id: req.params.id },
-                { $set: { name, department, designation } }
-            );
-            res.json({ message: "Faculty updated" });
-        } catch (err) { res.status(500).json({ message: `Failed to update: ${err.message}` }); }
-    });
-    app.delete('/api/faculty/:id', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            await db.collection('faculty').deleteOne({ _id: req.params.id });
-            res.status(204).send();
-        } catch (err) { res.status(500).json({ message: `Failed to delete: ${err.message}` }); }
-    });
 
-    // ================== ROOMS ==================
     app.get('/api/rooms', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
@@ -297,105 +171,55 @@ connectDB().then(() => {
             res.json(rooms);
         } catch (err) { res.status(500).json({ message: "Error fetching rooms" }); }
     });
-    app.post('/api/rooms', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const newRoom = req.body;
-            newRoom._id = newRoom.room_number;
-            newRoom.capacity = parseInt(newRoom.capacity);
-            await db.collection('rooms').insertOne(newRoom);
-            res.status(201).json(newRoom);
-        } catch (err) { res.status(500).json({ message: `Failed to add room: ${err.message}` }); }
-    });
-    app.put('/api/rooms/:number', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { capacity, type } = req.body;
-            await db.collection('rooms').updateOne(
-                { _id: req.params.number },
-                { $set: { capacity: parseInt(capacity), type } }
-            );
-            res.json({ message: "Room updated" });
-        } catch (err) { res.status(500).json({ message: `Failed to update: ${err.message}` }); }
-    });
-    app.delete('/api/rooms/:number', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            await db.collection('rooms').deleteOne({ _id: req.params.number });
-            res.status(204).send();
-        } catch (err) { res.status(500).json({ message: `Failed to delete: ${err.message}` }); }
-    });
     
-    // ================== SECTIONS ==================
+    // GET SECTIONS -> Maps from 'batches' collection
     app.get('/api/sections', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-            const sections = await db.collection('sections').find({}).toArray();
-            res.json(sections);
+            const batches = await db.collection('batches').find({}).toArray();
+            
+            const mappedSections = batches.map(b => ({
+                _id: b.name,
+                section_name: b.name,
+                department: b.department,
+                semester: b.semester,
+                size: b.size,
+                batches: [b.name],
+                assignments: [] 
+            }));
+
+            res.json(mappedSections);
         } catch (err) { res.status(500).json({ message: "Error fetching sections" }); }
     });
+    
     app.get('/api/sections/:id', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-            const section = await db.collection('sections').findOne({ _id: req.params.id });
-            res.json(section);
+            let batch = await db.collection('batches').findOne({ name: req.params.id });
+            if (!batch) {
+                batch = await db.collection('batches').findOne({ _id: req.params.id });
+            }
+            
+            if (batch) {
+                 res.json({
+                    _id: batch.name,
+                    section_name: batch.name,
+                    department: batch.department,
+                    semester: batch.semester,
+                    batches: [batch.name],
+                    assignments: []
+                 });
+            } else {
+                res.status(404).json({ message: "Section not found" });
+            }
         } catch (err) { res.status(500).json({ message: `Error fetching section: ${err.message}` }); }
     });
-    app.post('/api/sections', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const newSection = req.body;
-            newSection._id = newSection.section_id;
-            newSection.assignments = [];
-            newSection.batches = Array.isArray(newSection.batches) ? newSection.batches : [];
-            await db.collection('sections').insertOne(newSection);
-            res.status(201).json(newSection);
-        } catch (err) { res.status(500).json({ message: `Failed to add section: ${err.message}` }); }
-    });
-    app.put('/api/sections/:id', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { department, semester, section_name, batches } = req.body;
-            await db.collection('sections').updateOne(
-                { _id: req.params.id },
-                { $set: { department, semester: parseInt(semester), section_name, batches } }
-            );
-            res.json({ message: "Section updated" });
-        } catch (err) { res.status(500).json({ message: `Failed to update: ${err.message}` }); }
-    });
-    app.delete('/api/sections/:id', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            await db.collection('sections').deleteOne({ _id: req.params.id });
-            res.status(204).send();
-        } catch (err) { res.status(500).json({ message: `Failed to delete: ${err.message}` }); }
-    });
 
-    app.put('/api/sections/:id/assign', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { courseId, facultyId, courseName, facultyName, batch } = req.body;
-            const newAssignment = { _id: new ObjectId(), courseId, facultyId, courseName, facultyName, batch };
-            await db.collection('sections').updateOne(
-                { _id: req.params.id },
-                { $push: { assignments: newAssignment } }
-            );
-            res.status(201).json(newAssignment);
-        } catch (err) { res.status(500).json({ message: `Failed to assign: ${err.message}` }); }
-    });
-    app.delete('/api/sections/:id/unassign', async (req, res) => {
-        try {
-            if (!db) return res.status(500).json({ message: "Database not connected" });
-            const { assignmentId } = req.body;
-            await db.collection('sections').updateOne(
-                { _id: req.params.id },
-                { $pull: { assignments: { _id: new ObjectId(assignmentId) } } }
-            );
-            res.status(204).send();
-        } catch (err) { res.status(500).json({ message: `Failed to unassign: ${err.message}` }); }
-    });
 
-    // ================== TIMETABLE ==================
+    // =================================================================
+    // 3. TIMETABLE OPERATIONS
+    // =================================================================
+
     app.post('/api/timetable/generate', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
@@ -406,6 +230,7 @@ connectDB().then(() => {
             res.status(500).json({ message: `Failed to generate: ${err.message}` }); 
         }
     });
+
     app.get('/api/timetable', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
@@ -426,8 +251,8 @@ connectDB().then(() => {
                 filtered[day] = {};
                 for (const time in main.data[day]) {
                     const slots = main.data[day][time] || [];
-                    const match = slots.find(s => s.section === req.params.sectionId);
-                    if (match) filtered[day][time] = [match]; // Send as array
+                    const match = slots.find(s => s.section === req.params.sectionId || s.batch === req.params.sectionId);
+                    if (match) filtered[day][time] = [match];
                 }
             }
             res.json({ data: filtered, generatedAt: main.generatedAt });
@@ -441,37 +266,43 @@ connectDB().then(() => {
             if (!main) return res.status(404).json({ message: "No timetable found." });
 
             const filtered = {};
+            const facultyUser = await db.collection('users').findOne({ _id: req.params.facultyId });
+            const facultyName = facultyUser ? facultyUser.name : req.params.facultyId;
+
             for (const day in main.data) {
                 filtered[day] = {};
                 for (const time in main.data[day]) {
                     const slots = main.data[day][time] || [];
-                    const match = slots.find(s => s.facultyId === req.params.facultyId);
-                    if (match) filtered[day][time] = [match]; // Send as array
+                    const match = slots.find(s => 
+                        s.facultyId === req.params.facultyId || 
+                        s.faculty === facultyName
+                    );
+                    if (match) filtered[day][time] = [match]; 
                 }
             }
             res.json({ data: filtered, generatedAt: main.generatedAt });
         } catch (err) { res.status(500).json({ message: `Failed to filter: ${err.message}` }); }
     });
 
+    // Manual Edit (Admin)
     app.post('/api/timetable/update-slot', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
             const { day, time, courseId, facultyId, roomId, sectionId, batch } = req.body;
             
-            const course = await db.collection('courses').findOne({ _id: courseId });
-            const faculty = await db.collection('faculty').findOne({ _id: facultyId });
-            if (!course || !faculty) return res.status(404).json({ message: "Course or Faculty not found" });
-
+            const course = await db.collection('subjects').findOne({ subjectCode: courseId });
+            const faculty = await db.collection('users').findOne({ _id: facultyId });
+            
             const newSlotData = {
-                course: course.course_name,
-                faculty: faculty.name,
+                id: new ObjectId(),
+                course: course ? course.name : courseId,
+                faculty: faculty ? faculty.name : facultyId,
                 room: roomId,
                 section: sectionId,
                 facultyId: facultyId,
                 batch: batch,
-                // Use L/T/P to determine duration
-                duration: course.practicals_per_week > 0 ? course.practicals_per_week : (course.lectures_per_week || 1),
-                conflict: false // Admin override
+                duration: (course && course.type === 'lab') ? 2 : 1,
+                conflict: false 
             };
 
             const mainDoc = await db.collection('timetables').findOne({ _id: 'main' });
@@ -479,7 +310,7 @@ connectDB().then(() => {
 
             let currentSlots = (mainDoc.data[day] && mainDoc.data[day][time]) ? mainDoc.data[day][time] : [];
             
-            // Remove old slot for this section, then add the new one
+            // Remove old slot for this section, add new
             currentSlots = currentSlots.filter(slot => slot.section !== sectionId);
             currentSlots.push(newSlotData);
 
@@ -500,18 +331,13 @@ connectDB().then(() => {
     app.post('/api/timetable/delete-slot', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });
-
-            const { day, time, sectionId } = req.body; // sectionId is crucial
-            if (!day || !time || !sectionId) {
-                return res.status(400).json({ message: "Missing day, time, or sectionId." });
-            }
+            const { day, time, sectionId } = req.body;
 
             const mainDoc = await db.collection('timetables').findOne({ _id: 'main' });
             if (!mainDoc) return res.status(404).json({ message: "Timetable not found." });
 
             let currentSlots = (mainDoc.data[day] && mainDoc.data[day][time]) ? mainDoc.data[day][time] : [];
             
-            // Remove the slot for this section
             const newSlots = currentSlots.filter(slot => slot.section !== sectionId);
 
             const updateKey = `data.${day}.${time}`;
@@ -521,11 +347,22 @@ connectDB().then(() => {
             );
 
             res.status(200).json({ message: "Slot deleted!" });
-
         } catch (err) {
             console.error("Error deleting slot:", err);
             res.status(500).json({ message: "Error updating database" });
         }
+    });
+
+    // =================================================================
+    // 4. STATIC FILE SERVING (Fix for 404s)
+    // =================================================================
+    
+    // Point to the 'front-end' folder relative to 'back-end'
+    app.use(express.static(path.join(__dirname, '../front-end')));
+
+    // Catch-all handler to serve index.html for any unknown routes (optional for SPA behavior)
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../front-end/index.html'));
     });
 
     // --- Start Server ---

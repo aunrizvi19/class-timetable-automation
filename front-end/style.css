@@ -475,3 +475,58 @@ body.role-student .nav-item-student { display: block; }
     .timetable-slot { border: 1px solid #ccc; print-color-adjust: exact; }
     .timetable-slot.conflict { border-color: red !important; }
 }
+/* =================================================================
+   == DASHBOARD LIVE STATUS WIDGET
+   ================================================================= */
+.live-status-container {
+    background: var(--color-bg-content);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: var(--color-shadow);
+    border: 1px solid var(--color-border);
+}
+
+.live-status-container h3 {
+    margin-top: 0;
+    color: var(--color-primary);
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+#activeFacultyList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.status-badge:hover {
+    transform: translateY(-2px);
+}
+
+/* Active (Green) */
+.status-badge.status-active {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Dark Mode Adjustments for Widget */
+body.dark-mode .status-badge.status-active {
+    background-color: #1e4620;
+    color: #d4edda;
+    border-color: #2f6f33;
+}

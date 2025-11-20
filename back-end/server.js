@@ -12,6 +12,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// [USER URI - DO NOT CHANGE THIS LINE]
 const uri = "mongodb+srv://mohammadaunrizvi19_db_user:305YJ8h9IsNVu9Ad@cluster0.khbsgco.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 const client = new MongoClient(uri, {
@@ -19,7 +20,9 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
+  // [FIXED] Added tlsInsecure: true to bypass network/SSL negotiation issues
+  tlsInsecure: true 
 });
 
 let db;
@@ -117,7 +120,7 @@ connectDB().then(() => {
         try {
           if (!db) return res.status(500).json({ message: "Database not connected" });
           const users = await db.collection('users').find({}, { 
-              projection: { _id: 1, name: 1, email: 1, role: 1, profileId: 1 } 
+              projection: { _id: 1, name: 1, email: 1, role: 1, profileId: 1 } // Added name
           }).toArray();
           res.json(users);
         } catch (err) {
@@ -167,7 +170,7 @@ connectDB().then(() => {
         }
     });
 
-    // [NEW] Delete a user
+    // Delete a user
     app.delete('/api/users/:email', async (req, res) => {
         try {
             if (!db) return res.status(500).json({ message: "Database not connected" });

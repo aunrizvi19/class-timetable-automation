@@ -95,13 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- THEME TOGGLE LOGIC ---
-    // 1. Apply theme on load
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
     if (isDarkMode) {
         document.body.classList.add('dark-mode');
     }
     
-    // 2. Handle Header Toggle Button (for Student/Faculty pages)
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     if (themeToggleBtn) {
         themeToggleBtn.textContent = isDarkMode ? '☀️' : '🌙';
@@ -113,11 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Handle Settings Page Toggle (Admin)
     const darkModeToggleSettings = document.getElementById('darkModeToggle');
     if (darkModeToggleSettings) {
         darkModeToggleSettings.checked = isDarkMode;
-        // The 'save' button handles the saving
     }
 
 
@@ -185,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // == 4. [MOVED] GLOBAL TIMETABLE LOADER
     // =================================================================
     
-    // This function is now globally scoped so the modal can call it.
     async function loadTimetable() {
         const timetableDoc = await fetchTimetableData();
         if(timetableDoc && timetableDoc.data) {
@@ -229,8 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) { console.error("Error loading modal data:", e); }
         }
         
-        // async function loadTimetable() { ... } // <-- This was moved up
-
         loadModalData(); 
         loadTimetable();
         
@@ -293,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if(!res.ok) throw new Error((await res.json()).message);
                 alert('Updated!'); closeModal(); 
-                loadTimetable(); // <-- [FIXED] Now has access
+                loadTimetable(); // <-- uses global loader
             } catch(e) { alert(e.message); }
         });
 
@@ -311,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if(!res.ok) throw new Error((await res.json()).message);
                 alert('Deleted!'); closeModal(); 
-                loadTimetable(); // <-- [FIXED] Now has access
+                loadTimetable(); // <-- uses global loader
             } catch(e) { alert(e.message); }
         });
     }
@@ -964,23 +957,27 @@ function populateTimetable(data) {
                 
                 // Filter by section if one is selected
                 if (selectedSection !== 'all') {
-                    slots = slots.filter(s => s.section === selectedSection);
+                    slots = slots.filter(s => String(s.section) === String(selectedSection));
                 }
 
                 // Render all matching slots (stacked)
                 slots.forEach(slot => {
-                    const batch = (slot.batch && slot.batch !== 'Entire Section') ? `(${slot.batch})` : '';
+                    // batch shown only if present (labs). Section is always shown per Option B.
+                    const batchText = slot.batch ? ` (${slot.batch})` : '';
+                    // Keep room + (section) always
+                    const sectionText = slot.section ? ` (${slot.section})` : '';
                     cellContent += `
                         <div class="timetable-slot ${slot.conflict ? 'conflict' : ''}"
                              data-day="${day}" data-time="${time}" data-section="${slot.section}">
-                            <strong>${slot.course} ${batch}</strong>
+                            <strong>${slot.course}${slot.batch ? ` ${batchText}` : ''}</strong>
                             <span>${slot.faculty}</span>
-                            <em>${slot.room} (${slot.section})</em>
+                            <em>${slot.room}${sectionText}</em>
                         </div>
                     `;
                 });
             }
-            html += `<td>${cellContent}</td>`;
+            // If no classes → show "Free"
+            html += `<td>${cellContent || '<div class="free-slot">Free</div>'}</td>`;
         });
         html += '</tr>';
     });
@@ -996,8 +993,8 @@ function populateTimetable(data) {
                 const section = el.dataset.section;
                 
                 // Find the specific slot data from the cache
-                const allSlots = currentTimetableData[day][time] || [];
-                const slotData = allSlots.find(s => s.section === section);
+                const allSlots = (currentTimetableData && currentTimetableData[day] && currentTimetableData[day][time]) ? currentTimetableData[day][time] : [];
+                const slotData = allSlots.find(s => String(s.section) === String(section));
                 
                 if (slotData) openEditSlotModal(slotData, day, time);
             });
@@ -1021,19 +1018,20 @@ function openEditSlotModal(slotData, day, time) {
     
     const fSelect = document.getElementById('editFaculty');
     fSelect.innerHTML = '';
-    allFaculty.forEach(f => fSelect.innerHTML += `<option value="${f._id}" ${f._id === slotData.facultyId ? 'selected' : ''}>${f.name}</option>`);
+    allFaculty.forEach(f => fSelect.innerHTML += `<option value="${f._id}" ${String(f._id) === String(slotData.facultyId) ? 'selected' : ''}>${f.name}</option>`);
     
     const rSelect = document.getElementById('editRoom');
     rSelect.innerHTML = '';
-    allRooms.forEach(r => rSelect.innerHTML += `<option value="${r._id}" ${r._id === slotData.room ? 'selected' : ''}>${r._id}</option>`);
+    allRooms.forEach(r => rSelect.innerHTML += `<option value="${r._id}" ${String(r._id) === String(slotData.room) ? 'selected' : ''}>${r._id}</option>`);
     
     const bSelect = document.getElementById('editBatch');
     bSelect.innerHTML = '<option value="Entire Section">Entire Section</option>';
-    const section = allSections.find(s => s._id === slotData.section);
+    const section = allSections.find(s => String(s._id) === String(slotData.section));
     if(section && section.batches) {
         section.batches.forEach(b => bSelect.innerHTML += `<option value="${b}" ${b === slotData.batch ? 'selected' : ''}>${b}</option>`);
     }
-    bSelect.value = slotData.batch; // Set the selected batch
+    // If slotData.batch is null, set select to Entire Section
+    bSelect.value = slotData.batch || 'Entire Section';
 
     modal.style.display = 'block';
 }

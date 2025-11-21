@@ -7,102 +7,44 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="sections-page admin-page shared-page">
+<body>
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Academa</h2>
-            </div>
+            <div class="sidebar-header"><h2>Academa</h2></div>
             <nav class="sidebar-nav">
-    <ul>
-        <li class="nav-item-admin">
-            <a href="dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item-faculty">
-            <a href="faculty-dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item-student">
-            <a href="student-dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-
-        <li class="nav-item-shared">
-            <a href="index.html" class="active-timetable">
-                📅 <span>Timetable</span>
-            </a>
-        </li>
-
-        <li class="nav-item-admin nav-divider"></li> 
-
-        <li class="nav-item-admin">
-            <a href="courses.html" class="active-courses">
-                📚 <span>Courses</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="faculty.html" class="active-faculty">
-                👨‍🏫 <span>Faculty</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="sections.html" class="active-sections">
-                👥 <span>Class Sections</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="rooms.html" class="active-rooms">
-                🚪 <span>Rooms</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="users.html" class="active-users">
-                👤 <span>Users</span>
-            </a>
-        </li>
-
-        <li class="nav-item-admin nav-divider"></li>
-
-        <li class="nav-item-admin">
-            <a href="settings.html" class="active-settings">
-                ⚙️ <span>Settings</span>
-            </a>
-        </li>
-    </ul>
-
-    <ul class="logout-ul">
-        <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-    </ul>
-</nav>
+                <ul>
+                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html" class="active-sections">👥 <span>Sections</span></a></li>
+                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+            </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>Manage Sections</h1>
-                <div class="header-actions">
-                    <button class="action-btn publish-btn" id="addNewSectionBtn">Add New Section</button>
-                </div>
+                <h1 class="dashboard-header">Manage Sections</h1>
             </header>
 
             <section class="content-table">
+                <div class="action-header">
+                    <button onclick="document.getElementById('sectionModal').style.display='block'" class="action-btn publish-btn">Add New Section</button>
+                </div>
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Section ID</th>
-                            <th>Department</th>
-                            <th>Semester</th>
-                            <th>Section Name</th>
-                            <th>Batches</th>
+                            <th>Name</th>
+                            <th>Dept</th>
+                            <th>Sem</th>
+                            <th>Size</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="sectionsTableBody">
-                        </tbody>
+                    <tbody></tbody>
                 </table>
             </section>
         </main>
@@ -110,72 +52,30 @@
 
     <div id="sectionModal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="sectionModalTitle">Add New Section</h2>
+            <span class="close-button" onclick="document.getElementById('sectionModal').style.display='none'">&times;</span>
+            <h2>Add Section / Batch</h2>
             <form id="sectionForm">
                 <div class="form-group">
-                    <label for="sectionId">Section ID</label>
-                    <input type="text" id="sectionId" placeholder="e.g., CS-B" required>
+                    <label>Section Name (e.g. CSE-5A)</label>
+                    <input type="text" id="sectionName" required>
                 </div>
                 <div class="form-group">
-                    <label for="sectionDept">Department</label>
-                    <input type="text" id="sectionDept" placeholder="e.g., Computer Science" required>
+                    <label>Department</label>
+                    <input type="text" id="sectionDept" value="CSE" required>
                 </div>
                 <div class="form-group">
-                    <label for="sectionSem">Semester</label>
-                    <input type="number" id="sectionSem" placeholder="e.g., 5" required>
+                    <label>Semester</label>
+                    <input type="number" id="sectionSem" required>
                 </div>
                 <div class="form-group">
-                    <label for="sectionName">Section Name</label>
-                    <input type="text" id="sectionName" placeholder="e.g., B" required>
+                    <label>Batch Size</label>
+                    <input type="number" id="sectionSize" value="60">
                 </div>
-                <div class="form-group">
-                    <label for="sectionBatches">Batches (comma-separated)</label>
-                    <input type="text" id="sectionBatches" placeholder="e.g., B1, B2, B3">
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="action-btn publish-btn">Save Section</button>
-                </div>
+                <button type="submit" class="action-btn publish-btn">Save</button>
             </form>
         </div>
     </div>
 
-    <div id="assignmentModal" class="modal large">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="assignmentModalTitle">Manage Assignments</h2>
-            
-            <div class="assignment-container">
-                <form id="assignmentForm" class="assignment-form">
-                    <h3>Assign New Course</h3>
-                    <div class="form-group">
-                        <label for="assignCourseSelect">Course</label>
-                        <select id="assignCourseSelect" required>
-                            </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="assignFacultySelect">Faculty</label>
-                        <select id="assignFacultySelect" required>
-                            </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="assignBatchSelect">Batch</label>
-                        <select id="assignBatchSelect" required>
-                            </select>
-                    </div>
-                    <button type="submit" class="action-btn publish-btn">Add Assignment</button>
-                </form>
-
-                <div class="assignment-list-container">
-                    <h3>Current Assignments</h3>
-                    <ul id="assignmentList" class="assignment-list">
-                        </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

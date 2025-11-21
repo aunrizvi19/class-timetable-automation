@@ -14,13 +14,67 @@ async function fetchApi(endpoint, options = {}) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. AUTHENTICATION
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    const loginToggle = document.getElementById('loginToggle');
-    const signupToggle = document.getElementById('signupToggle');
+    // --- 0. GLOBAL DARK MODE INIT ---
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    
+    if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+        if(darkModeToggle) darkModeToggle.checked = true;
+    }
 
-    if (loginToggle && signupToggle) {
+    if(darkModeToggle) {
+        darkModeToggle.addEventListener('change', () => {
+            if(darkModeToggle.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'false');
+            }
+        });
+    }
+
+    // --- 1. AUTHENTICATION CHECKS ---
+    const user = JSON.parse(localStorage.getItem('timetableUser'));
+    const isAuthPage = document.body.classList.contains('login-page');
+
+    if (!isAuthPage) {
+        if (!user) { 
+            window.location.href = 'login.html'; 
+            return; 
+        }
+
+        // DYNAMIC BODY CLASS FOR SIDEBAR VISIBILITY
+        // This fixes the issue where sidebar items were hidden on the Timetable page
+        document.body.classList.remove('admin-page', 'faculty-page', 'student-page');
+        if(user.role === 'admin') document.body.classList.add('admin-page');
+        if(user.role === 'faculty') document.body.classList.add('faculty-page');
+        if(user.role === 'student') document.body.classList.add('student-page');
+
+        // Update Header
+        const header = document.querySelector('.dashboard-header') || document.getElementById('welcomeHeader');
+        if(header) header.textContent = `Welcome, ${user.name}!`;
+
+        // Logout
+        document.querySelectorAll('#logoutBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('timetableUser');
+                window.location.href = 'login.html';
+            });
+        });
+
+        loadPageData(user);
+    }
+
+    // Login Form Logic
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        const loginToggle = document.getElementById('loginToggle');
+        const signupToggle = document.getElementById('signupToggle');
+        const signupForm = document.getElementById('signupForm');
+
         loginToggle.addEventListener('click', () => {
             loginForm.style.display = 'block';
             signupForm.style.display = 'none';
@@ -34,49 +88,30 @@ document.addEventListener('DOMContentLoaded', () => {
             signupToggle.classList.add('active');
         });
 
-        document.getElementById('showSignup').addEventListener('click', (e) => { e.preventDefault(); signupToggle.click(); });
-        document.getElementById('showLogin').addEventListener('click', (e) => { e.preventDefault(); loginToggle.click(); });
-
-        const signupRole = document.getElementById('signupRole');
-        if (signupRole) {
-            signupRole.addEventListener('change', () => {
-                const role = signupRole.value;
-                document.getElementById('studentFields').style.display = (role === 'student') ? 'block' : 'none';
-                document.getElementById('facultyFields').style.display = (role === 'faculty') ? 'block' : 'none';
-            });
-        }
-    }
-
-    // Login
-    if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
+            const identifier = document.getElementById('loginIdentifier').value;
             const password = document.getElementById('loginPassword').value;
-            const errorEl = document.getElementById('loginError');
-            errorEl.textContent = "Logging in...";
             
             try {
                 const res = await fetch(`${API_BASE}/login`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ identifier, password })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message);
                 
                 localStorage.setItem('timetableUser', JSON.stringify(data.user));
-                window.location.href = data.user.role === 'admin' ? 'dashboard.html' : 
-                                       data.user.role === 'faculty' ? 'faculty-dashboard.html' : 
-                                       'student-dashboard.html';
+                
+                if (data.user.role === 'admin') window.location.href = 'dashboard.html';
+                else if (data.user.role === 'faculty') window.location.href = 'faculty-dashboard.html';
+                else window.location.href = 'student-dashboard.html';
             } catch(err) {
-                errorEl.textContent = err.message;
+                document.getElementById('loginError').textContent = err.message;
             }
         });
-    }
 
-    // Signup
-    if (signupForm) {
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const role = document.getElementById('signupRole').value;
@@ -95,8 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
                 });
-                const result = await res.json();
-                if(!res.ok) throw new Error(result.message);
+                if(!res.ok) throw new Error((await res.json()).message);
                 alert("Account created! Please login.");
                 location.reload();
             } catch(err) {
@@ -104,91 +138,63 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // 2. GLOBAL INIT
-    if (!document.body.classList.contains('login-page')) {
-        const user = JSON.parse(localStorage.getItem('timetableUser'));
-        if (!user) { window.location.href = 'login.html'; return; }
-
-        const header = document.querySelector('.dashboard-header') || document.getElementById('welcomeHeader');
-        if(header) header.textContent = `Welcome, ${user.name}!`;
-
-        document.querySelectorAll('#logoutBtn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                localStorage.removeItem('timetableUser');
-                window.location.href = 'login.html';
-            });
-        });
-
-        loadPageData(user);
-    }
 });
 
 // 3. DATA LOADERS
 async function loadPageData(user) {
-    // Admin Dashboard
-    if (document.body.classList.contains('admin-page')) {
-        if(document.getElementById('totalCoursesStat')) {
-            const [c, f, r, t] = await Promise.all([
-                fetchApi('/courses'), fetchApi('/faculty'), fetchApi('/rooms'), fetchApi('/timetable')
-            ]);
-            document.getElementById('totalCoursesStat').textContent = c ? c.length : 0;
-            document.getElementById('totalFacultyStat').textContent = f ? f.length : 0;
-            document.getElementById('totalRoomsStat').textContent = r ? r.length : 0;
-            if(t && t.data) updateLiveStatus(t.data);
-        }
-        
-        // Load Tables
-        if(document.getElementById('usersTableBody')) loadTable('users', renderUserRow);
-        if(document.querySelector('.courses-page tbody')) loadTable('courses', renderCourseRow);
-        if(document.querySelector('.rooms-page tbody')) loadTable('rooms', renderRoomRow);
-        if(document.querySelector('.sections-page tbody')) loadTable('sections', renderSectionRow);
-        if(document.querySelector('.faculty-page tbody')) loadTable('faculty', renderFacultyRow);
+    // Admin & Faculty Shared Logic (Courses, Rooms, etc.)
+    if (document.querySelector('.courses-page tbody')) loadTable('courses', renderCourseRow);
+    if (document.querySelector('.rooms-page tbody')) loadTable('rooms', renderRoomRow);
+    if (document.querySelector('.sections-page tbody')) loadTable('sections', renderSectionRow);
+    if (document.querySelector('.faculty-page tbody')) loadTable('faculty', renderFacultyRow);
+    if (document.getElementById('usersTableBody')) loadTable('users', renderUserRow);
 
-        setupAddButtons();
+    // Admin Dashboard Stats
+    if (document.getElementById('totalCoursesStat')) {
+        const [c, f, r] = await Promise.all([
+            fetchApi('/courses'), fetchApi('/faculty'), fetchApi('/rooms')
+        ]);
+        document.getElementById('totalCoursesStat').textContent = c ? c.length : 0;
+        document.getElementById('totalFacultyStat').textContent = f ? f.length : 0;
+        document.getElementById('totalRoomsStat').textContent = r ? r.length : 0;
     }
 
-    // Student View
-    if (document.body.classList.contains('student-page')) {
-        // Check if student has a profileId (Batch), if not show selector
-        if (!user.profileId) {
-            renderSectionSelector();
-        } else {
-            if (document.getElementById('studentSectionStat')) document.getElementById('studentSectionStat').textContent = user.profileId;
-            const t = await fetchApi(`/timetable/section/${user.profileId}`);
-            if (t && t.data) populateTimetable(t.data);
-        }
-    }
-
-    // Faculty View
-    if (document.body.classList.contains('faculty-page') && !document.body.classList.contains('admin-page')) {
-        const t = await fetchApi(`/timetable/faculty/${user.profileId}`);
-        if (t && t.data) {
-            populateTimetable(t.data);
-            let h = 0;
-            Object.values(t.data).forEach(d => Object.values(d).forEach(s => s.forEach(slot => h += (slot.duration||1))));
-            if(document.getElementById('totalHoursStat')) document.getElementById('totalHoursStat').textContent = h;
-        }
-    }
-    
     // Timetable Page
     if (document.body.classList.contains('timetable-page')) {
         const t = await fetchApi('/timetable');
         const sections = await fetchApi('/sections');
         window.allSections = sections || [];
-        if (t && t.data) {
-            populateTimetable(t.data);
-            if(user.role === 'admin') populateFilters();
-        }
+        if (t && t.data) populateTimetable(t.data);
+        
+        // Show filters only for Admin
+        if(user.role === 'admin') populateFilters();
     }
     
+    // Student Dashboard
+    if (document.body.classList.contains('student-page')) {
+         if (!user.profileId) {
+             renderSectionSelector();
+         } else {
+             if (document.getElementById('studentSectionStat')) document.getElementById('studentSectionStat').textContent = user.profileId;
+             const t = await fetchApi(`/timetable/section/${user.profileId}`);
+             if (t && t.data) populateTimetable(t.data);
+         }
+    }
+
+    // Faculty Dashboard
+    if (document.body.classList.contains('faculty-page') && !document.body.classList.contains('admin-page')) {
+        const t = await fetchApi(`/timetable/faculty/${user.profileId}`);
+        if (t && t.data) populateTimetable(t.data);
+        // Add dept info if needed
+        if(document.getElementById('facultyDeptStat')) document.getElementById('facultyDeptStat').textContent = user.department || "CSE";
+    }
+
     // Generate Button
     const genBtn = document.querySelector('.generate-btn');
     if(genBtn) {
         genBtn.addEventListener('click', async () => {
-            if(confirm("Generate new timetable?")) {
-                genBtn.textContent = "Working...";
+            if(confirm("Generate new timetable? This will overwrite the existing one.")) {
+                genBtn.textContent = "Generating...";
                 await fetchApi('/timetable/generate', { method: 'POST' });
                 location.reload();
             }
@@ -196,42 +202,14 @@ async function loadPageData(user) {
     }
 }
 
-// Section Selector (for new Students)
-async function renderSectionSelector() {
-    const container = document.querySelector('.timetable-container');
-    const sections = await fetchApi('/sections');
-    
-    container.innerHTML = `
-        <div style="padding: 40px; text-align: center; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <h2>Select Your Class</h2>
-            <p style="margin-bottom: 20px; color: #666;">You haven't joined a class section yet.</p>
-            <select id="studentBatchSelect" style="padding: 10px; width: 200px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="">Choose Batch...</option>
-                ${sections.map(s => `<option value="${s._id}">${s._id}</option>`).join('')}
-            </select>
-            <br>
-            <button onclick="saveStudentSection()" class="action-btn publish-btn">Join Class</button>
-        </div>
-    `;
-}
-window.saveStudentSection = async () => {
-    const batch = document.getElementById('studentBatchSelect').value;
-    if(!batch) return alert("Please select a batch");
-    
-    // Save locally and reload (In a real app, save to DB via API call here)
-    let user = JSON.parse(localStorage.getItem('timetableUser'));
-    user.profileId = batch; 
-    localStorage.setItem('timetableUser', JSON.stringify(user));
-    location.reload();
-};
-
-// CRUD Helpers
+// CRUD Helper
 async function loadTable(endpoint, renderFn) {
     const data = await fetchApi(`/${endpoint}`);
     const tbody = document.querySelector('tbody');
     if(!tbody || !data) return;
     tbody.innerHTML = data.map(renderFn).join('');
     
+    // Attach Delete Events
     tbody.querySelectorAll('.delete').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             if(!confirm("Delete this item?")) return;
@@ -239,58 +217,75 @@ async function loadTable(endpoint, renderFn) {
             location.reload();
         });
     });
-}
 
-function setupAddButtons() {
-    const bind = (id, url, payload) => {
-        const form = document.getElementById(id);
-        if(form) form.addEventListener('submit', async(e) => {
-            e.preventDefault();
-            await fetchApi(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload()) });
-            location.reload();
+    // Attach Edit Events
+    tbody.querySelectorAll('.edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const item = data.find(i => i._id === e.target.dataset.id);
+            if(endpoint === 'courses') openEditCourseModal(item);
+            if(endpoint === 'sections') openEditSectionModal(item);
         });
-    };
-    bind('courseForm', '/courses', () => ({
-        course_name: document.getElementById('courseName').value,
-        course_type: document.getElementById('courseType').value,
-        lectures_per_week: document.getElementById('lectures_per_week').value,
-        credits: document.getElementById('courseCredits').value
-    }));
-    bind('roomForm', '/rooms', () => ({
-        roomNumber: document.getElementById('roomNumber').value,
-        capacity: document.getElementById('roomCapacity').value,
-        type: document.getElementById('roomType').value
-    }));
-    bind('sectionForm', '/sections', () => ({
-        section_name: document.getElementById('sectionName').value,
-        department: document.getElementById('sectionDept').value,
-        semester: document.getElementById('sectionSem').value
-    }));
-    bind('facultyForm', '/faculty', () => ({
-        name: document.getElementById('facultyName').value,
-        email: document.getElementById('facultyEmail').value,
-        facultyId: document.getElementById('facultyId').value,
-        department: document.getElementById('facultyDept').value
-    }));
+    });
 }
 
-// Renderers
+// --- RENDERERS (Updated with L/T/P and Edit buttons) ---
+
+const renderCourseRow = c => `
+<tr>
+    <td>${c._id}</td>
+    <td>${c.course_name}</td>
+    <td>${c.course_type || '-'}</td>
+    <td>${c.lectures_per_week || 0}</td>
+    <td>${c.tutorials_per_week || 0}</td>
+    <td>${c.practicals_per_week || 0}</td>
+    <td>${c.credits || 0}</td>
+    <td>
+        <button class="action-btn-table edit" data-id="${c._id}">Edit</button>
+        <button class="action-btn-table delete" data-id="${c._id}">Delete</button>
+    </td>
+</tr>`;
+
+const renderSectionRow = s => `
+<tr>
+    <td>${s._id}</td>
+    <td>${s.department}</td>
+    <td>${s.semester}</td>
+    <td>${s.size}</td>
+    <td>
+        <button class="action-btn-table edit" data-id="${s._id}">Edit</button>
+        <button class="action-btn-table delete" data-id="${s._id}">Delete</button>
+    </td>
+</tr>`;
+
 const renderUserRow = u => `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>${u.profileId||u.usn||'-'}</td><td><button class="delete action-btn-table" data-id="${u._id}">Delete</button></td></tr>`;
-const renderCourseRow = c => `<tr><td>${c._id}</td><td>${c.course_name}</td><td>${c.course_type}</td><td>${c.lectures_per_week}</td><td>${c.credits}</td><td><button class="delete action-btn-table" data-id="${c._id}">Delete</button></td></tr>`;
 const renderRoomRow = r => `<tr><td>${r._id}</td><td>${r.capacity}</td><td>${r.type}</td><td><button class="delete action-btn-table" data-id="${r._id}">Delete</button></td></tr>`;
-const renderSectionRow = s => `<tr><td>${s._id}</td><td>${s.department}</td><td>${s.semester}</td><td><button class="delete action-btn-table" data-id="${s._id}">Delete</button></td></tr>`;
 const renderFacultyRow = f => `<tr><td>${f.name}</td><td>${f.email}</td><td>${f.department}</td><td>${f.facultyId||'-'}</td><td><button class="delete action-btn-table" data-id="${f._id}">Delete</button></td></tr>`;
 
+
+// --- EDIT MODAL LOGIC ---
+
+function openEditCourseModal(course) {
+    // You need to add a modal with ID 'editCourseModal' to courses.html first
+    // This is a placeholder prompt for now if modal isn't added
+    // Ideally, replicate the Add Course form into a Modal
+    alert(`Edit functionality coming for: ${course.course_name}. (Add 'editCourseModal' to HTML)`);
+}
+
+function openEditSectionModal(section) {
+    alert(`Edit functionality coming for: ${section.section_name}. (Add 'editSectionModal' to HTML)`);
+}
+
+// --- TIMETABLE LOGIC ---
 function populateTimetable(data) {
     const tbody = document.querySelector('.timetable-grid tbody');
     if (!tbody) return;
     const times = ['08:30', '09:30', '10:30', '10:45', '11:45', '12:45', '13:30', '14:30', '15:30'];
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     
-    // Filters
     const ySel = document.getElementById('year-select');
     const sSel = document.getElementById('semester-select');
     let validBatches = null;
+    
     if (ySel && sSel && (ySel.value !== 'all' || sSel.value !== 'all')) {
          validBatches = window.allSections.filter(b => (ySel.value === 'all' || String(Math.ceil(b.semester/2)) === ySel.value) && (sSel.value === 'all' || String(b.semester) === sSel.value)).map(b => b._id);
     }
@@ -311,15 +306,6 @@ function populateTimetable(data) {
     }).join('');
 }
 
-function updateLiveStatus(data) {
-    const list = document.getElementById('activeFacultyList');
-    if(!list) return;
-    const today = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
-    const active = new Set();
-    if (data[today]) Object.values(data[today]).forEach(slots => slots.forEach(s => active.add(s.faculty)));
-    list.innerHTML = active.size ? [...active].map(n => `<span class="status-badge status-active">🟢 ${n}</span>`).join('') : "No active classes";
-}
-
 function populateFilters() {
     const ySel = document.getElementById('year-select');
     const sSel = document.getElementById('semester-select');
@@ -328,6 +314,4 @@ function populateFilters() {
     window.allSections.forEach(s => { sems.add(s.semester); years.add(Math.ceil(s.semester/2)); });
     ySel.innerHTML = '<option value="all">All Years</option>' + [...years].sort().map(y => `<option value="${y}">Year ${y}</option>`).join('');
     sSel.innerHTML = '<option value="all">All Semesters</option>' + [...sems].sort().map(s => `<option value="${s}">Semester ${s}</option>`).join('');
-    ySel.addEventListener('change', () => populateTimetable(currentTimetableData));
-    sSel.addEventListener('change', () => populateTimetable(currentTimetableData));
 }

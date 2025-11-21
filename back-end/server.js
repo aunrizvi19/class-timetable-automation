@@ -22,21 +22,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // [CONNECTION STRING]
+// Ideally, move this to a .env file
 const uri = "mongodb+srv://mohammadaunrizvi19_db_user:305YJ8h9IsNVu9Ad@cluster0.khbsgco.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-// Connect Mongoose
+// Connect Mongoose (For Login/Signup)
 mongoose.connect(uri)
     .then(() => console.log("✅ Mongoose Connected"))
     .catch(err => console.error("❌ Mongoose Error:", err));
 
-// Connect Native Client (for generator)
+// Connect Native Client (For Timetable Generator)
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
   tlsInsecure: true 
 });
 let db;
 client.connect().then(() => { 
-    db = client.db("timetableDB"); 
+    db = client.db("test"); // Mongoose usually defaults to 'test' unless specified otherwise
     console.log("✅ Native MongoDB Client Connected");
 });
 
@@ -44,12 +45,24 @@ client.connect().then(() => {
 // 1. AUTHENTICATION ROUTES
 // =================================================================
 
-// LOGIN
+// LOGIN - FIXED to accept USN or Email
 app.post('/api/login', async (req, res) => {
-    console.log(`🔹 Login Attempt: ${req.body.email}`);
+    const { identifier, password } = req.body;
+    console.log(`🔹 Login Attempt: ${identifier}`);
+
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        if (!identifier || !password) {
+            return res.status(400).json({ message: "Please provide Email/USN and Password" });
+        }
+
+        // Search in BOTH email and usn fields
+        // Using regex for case-insensitive match
+        const user = await User.findOne({ 
+            $or: [
+                { email: { $regex: new RegExp(`^${identifier}$`, 'i') } }, 
+                { usn: { $regex: new RegExp(`^${identifier}$`, 'i') } }
+            ] 
+        });
         
         if (!user) {
             console.log("❌ User not found");
@@ -62,7 +75,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
         
-        // Determine Profile ID based on role
+        // Determine Profile ID (Batch for student, ID for faculty)
         let pid = user._id;
         if (user.role === 'student') pid = user.section || null; 
         if (user.role === 'faculty') pid = user.facultyId || user._id;
@@ -103,7 +116,6 @@ app.post('/api/signup', async (req, res) => {
 
         const existing = await User.findOne({ email });
         if (existing) {
-            console.log("❌ Email exists");
             return res.status(409).json({ message: "Email already exists." });
         }
 
@@ -117,7 +129,7 @@ app.post('/api/signup', async (req, res) => {
             role,
             usn: role === 'student' ? usn : null,
             facultyId: role === 'faculty' ? facultyId : null,
-            section: null, // Student selects this later on dashboard
+            section: null, 
             verified: true
         });
         
@@ -269,6 +281,7 @@ app.post('/api/timetable/generate', async (req, res) => {
         const data = await generateAndSaveTimetable(db);
         res.status(201).json({ message: "Timetable Generated!", data });
     } catch (err) { 
+        console.error(err);
         res.status(500).json({ message: "Generation Failed: " + err.message }); 
     }
 });
@@ -319,7 +332,7 @@ app.get('/api/timetable/faculty/:id', async (req, res) => {
 });
 
 // =================================================================
-// 4. SERVE FRONTEND (The Fix for 404s)
+// 4. SERVE FRONTEND
 // =================================================================
 app.use(express.static(path.join(__dirname, '../front-end')));
 

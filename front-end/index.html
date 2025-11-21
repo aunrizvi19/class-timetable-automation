@@ -7,158 +7,54 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="timetable-page shared-page">
+<body class="timetable-page">
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Academa</h2>
-            </div>
+            <div class="sidebar-header"><h2>Academa</h2></div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item-admin">
-                        <a href="dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-faculty">
-                        <a href="faculty-dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-student">
-                        <a href="student-dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
-                        </a>
-                    </li>
-            
-                    <li class="nav-item-shared">
-                        <a href="index.html" class="active-timetable">
-                            📅 <span>Timetable</span>
-                        </a>
-                    </li>
-            
-                    <li class="nav-item-admin nav-divider"></li> 
-            
-                    <li class="nav-item-admin">
-                        <a href="courses.html" class="active-courses">
-                            📚 <span>Courses</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="faculty.html" class="active-faculty">
-                            👨‍🏫 <span>Faculty</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="sections.html" class="active-sections">
-                            👥 <span>Class Sections</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="rooms.html" class="active-rooms">
-                            🚪 <span>Rooms</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="users.html" class="active-users">
-                            👤 <span>Users</span>
-                        </a>
-                    </li>
-            
+                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    
+                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>Timetable</span></a></li>
+
                     <li class="nav-item-admin nav-divider"></li>
-            
-                    <li class="nav-item-admin">
-                        <a href="settings.html" class="active-settings">
-                            ⚙️ <span>Settings</span>
-                        </a>
-                    </li>
+                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
                 </ul>
-            
-                <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>Generated Timetable</h1>
-                <div class="header-actions">
-                    <button class="action-btn generate-btn">Generate New Timetable</button>
-                    <button class="action-btn publish-btn">Publish Timetable</button>
-                </div>
+                <h1 class="dashboard-header">Master Timetable</h1>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle"> 🌙
+                </label>
             </header>
 
-            <section class="filters">
-                <div class="filter-group">
-                    <label for="year-select">Year:</label>
-                    <select id="year-select">
-                        <option value="all">All Years</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="semester-select">Semester:</label>
-                    <select id="semester-select">
-                        <option value="all">All Semesters</option>
-                    </select>
-                </div>
-                <input type="hidden" id="section-select" value="all">
-            </section>
+            <div class="filters nav-item-admin" style="margin: 20px; display: flex; gap: 10px;">
+                <select id="year-select"></select>
+                <select id="semester-select"></select>
+            </div>
 
-            <section class="timetable-container">
+            <div class="timetable-container">
                 <table class="timetable-grid">
                     <thead>
                         <tr>
-                            <th>Time</th>
-                            <th>Monday</th>
-                            <th>Tuesday</th>
-                            <th>Wednesday</th>
-                            <th>Thursday</th>
-                            <th>Friday</th>
-                            <th>Saturday</th>
+                            <th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        </tbody>
+                    <tbody></tbody>
                 </table>
-            </section>
+            </div>
         </main>
     </div>
-
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Edit Timetable Slot</h2>
-            <form id="editSlotForm">
-                <input type="hidden" id="editSlotDay">
-                <input type="hidden" id="editSlotTime">
-                <input type="hidden" id="editSlotSectionId">
-
-                <div class="form-group">
-                    <label for="editCourse">Course:</label>
-                    <select id="editCourse" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="editFaculty">Faculty:</label>
-                    <select id="editFaculty" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="editRoom">Room:</label>
-                    <select id="editRoom" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="editBatch">Batch:</label>
-                    <select id="editBatch" required></select>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="action-btn delete-btn" id="deleteSlotBtn">Delete Slot</button>
-                    <button type="submit" class="action-btn publish-btn">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script src="script.js"></script>
 </body>
 </html>

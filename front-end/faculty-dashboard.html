@@ -3,137 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Academa</title>
+    <title>Faculty Dashboard | Academa</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="hold-transition sidebar-mini faculty-page shared-page">
-<div class="container">
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>Academa</h2></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-shared"><a href="index.html">📅 <span>Full Timetable</span></a></li>
+                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+            </nav>
+        </aside>
 
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Academa</h2>
-        </div>
-        <nav class="sidebar-nav">
-            <ul>
-                <li class="nav-item-admin">
-                    <a href="dashboard.html" class="active-dashboard">
-                        🏠 <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item-faculty">
-                    <a href="faculty-dashboard.html" class="active-dashboard">
-                        🏠 <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item-student">
-                    <a href="student-dashboard.html" class="active-dashboard">
-                        🏠 <span>Dashboard</span>
-                    </a>
-                </li>
+        <main class="main-content">
+            <header class="main-header">
+    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+    <h1 class="dashboard-header">Welcome!</h1>
+    
+    <label class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+    </label>
+</header>
 
-                <li class="nav-item-shared">
-                    <a href="index.html" class="active-timetable">
-                        📅 <span>Timetable</span>
-                    </a>
-                </li>
+            <section class="stats-container">
+                <div class="stat-card"><h3>Total Weekly Hours</h3><p id="totalHoursStat">0</p></div>
+                <div class="stat-card"><h3>Department</h3><p id="facultyDeptStat">--</p></div>
+            </section>
 
-                <li class="nav-item-admin nav-divider"></li> 
-
-                <li class="nav-item-admin">
-                    <a href="courses.html" class="active-courses">
-                        📚 <span>Courses</span>
-                    </a>
-                </li>
-                <li class="nav-item-admin">
-                    <a href="faculty.html" class="active-faculty">
-                        👨‍🏫 <span>Faculty</span>
-                    </a>
-                </li>
-                <li class="nav-item-admin">
-                    <a href="sections.html" class="active-sections">
-                        👥 <span>Class Sections</span>
-                    </a>
-                </li>
-                <li class="nav-item-admin">
-                    <a href="rooms.html" class="active-rooms">
-                        🚪 <span>Rooms</span>
-                    </a>
-                </li>
-
-                <li class="nav-item-admin nav-divider"></li>
-
-                <li class="nav-item-admin">
-                    <a href="settings.html" class="active-settings">
-                        ⚙️ <span>Settings</span>
-                    </a>
-                </li>
-            </ul>
-        
-            <ul class="logout-ul">
-                <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-            </ul>
-        </nav>
-    </aside>
-
-    <main class="main-content">
-        <header class="main-header">
-            <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-            
-            <div class="header-title-group">
-                <h1>Faculty Dashboard</h1>
-                <p id="welcomeHeader" style="color: var(--color-gray); font-size: 0.9rem;">Welcome back!</p>
-            </div>
-
-            <div class="header-actions">
-                <button class="action-btn theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark Mode">
-                    🌙
-                </button>
-            </div>
-        </header>
-
-        <section class="stats-container">
-            <div class="stat-card">
-                <h3>Total Weekly Hours</h3>
-                <p id="totalHoursStat">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Department</h3>
-                <p id="facultyDeptStat" style="font-size: 1.5rem; color: var(--color-text);">--</p>
-            </div>
-            <div class="stat-card">
-                <h3>Status</h3>
-                <p style="color: var(--color-success); font-size: 1.2rem;">Active</p>
-            </div>
-        </section>
-
-        <section class="timetable-container">
-            <div style="padding: 10px 0;">
-                <h3 style="margin: 0;">My Weekly Schedule</h3>
-            </div>
-            <div class="table-responsive">
+            <section class="timetable-container">
+                <h3>My Schedule</h3>
                 <table class="timetable-grid">
                     <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Monday</th>
-                            <th>Tuesday</th>
-                            <th>Wednesday</th>
-                            <th>Thursday</th>
-                            <th>Friday</th>
-                            <th>Saturday</th>
-                        </tr>
+                        <tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
                     </thead>
-                    <tbody id="studentTimetableBody">
-                        </tbody>
+                    <tbody id="studentTimetableBody"></tbody>
                 </table>
-            </div>
-        </section>
-    </main>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script.js"></script>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>

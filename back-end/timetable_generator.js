@@ -1,226 +1,261 @@
 const { ObjectId } = require("mongodb");
 
 // ============================================================================
-// 1. CONFIGURATION & TIMINGS
+// 1. CONFIGURATION & CONSTANTS
 // ============================================================================
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const ALL_SLOTS = [
-    "08:30", "09:30", 
-    "10:30",          // Tea Break
-    "10:45", "11:45", 
-    "12:45",          // Lunch Break
-    "13:30", "14:30", "15:30"
+// Time Slots
+const FULL_DAY_SLOTS = [
+    { start: "08:30", end: "09:30", type: "Lecture" },
+    { start: "09:30", end: "10:30", type: "Lecture" },
+    // 10:30 - 10:45 Tea Break (Implicit)
+    { start: "10:45", end: "11:45", type: "Lecture" },
+    { start: "11:45", end: "12:45", type: "Lecture" },
+    // 12:45 - 13:30 Lunch Break (Implicit)
+    { start: "13:30", end: "14:30", type: "Lecture" },
+    { start: "14:30", end: "15:30", type: "Lecture" },
+    { start: "15:30", end: "16:30", type: "Lecture" }
 ];
 
-const BREAKS = ["10:30", "12:45"];
-const LAB_START_TIMES = ["08:30", "10:45", "13:30"];
-const AFTERNOON_SLOTS = ["13:30", "14:30", "15:30"];
+const WEDNESDAY_SLOTS = [
+    { start: "08:30", end: "09:30", type: "Lecture" },
+    { start: "09:30", end: "10:30", type: "Lecture" },
+    // Tea Break
+    { start: "10:45", end: "11:45", type: "Lecture" },
+    { start: "11:45", end: "12:45", type: "Lecture" },
+    // Lunch
+    { start: "13:30", end: "16:30", type: "Activity", name: "Sports/Cultural/Technical Activities" }
+];
 
-const POP_SIZE = 60;
-const GENERATIONS = 150;
-const MUTATION_RATE = 0.1;
+const POPULATION_SIZE = 10; 
+const MAX_GENERATIONS = 20; 
 
 // ============================================================================
-// 2. PREPARE INPUTS (Corrected for Seed Data)
+// 2. MAIN GENERATION FUNCTION
 // ============================================================================
 async function generateAndSaveTimetable(db) {
-    console.log("== GENERATING TIMETABLE (v5 - Seed Integration) ==");
+    console.log("🚀 Starting Timetable Generation...");
 
-    // FETCH FROM NEW COLLECTIONS
-    const allSubjects = await db.collection("subjects").find({}).toArray();
-    const allFaculty = await db.collection("users").find({ role: "faculty" }).toArray();
-    const allRooms = await db.collection("rooms").find({}).toArray();
-    const allBatches = await db.collection("batches").find({}).toArray();
+    // 1. Fetch Data (CORRECTED COLLECTION NAMES)
+    // Using Mongoose default plural names
+    const courses = await db.collection('subjects').find({}).toArray();
+    const faculty = await db.collection('users').find({ role: 'faculty' }).toArray();
+    const rooms = await db.collection('rooms').find({}).toArray();
+    const sections = await db.collection('batches').find({}).toArray();
 
-    if (allSubjects.length === 0 || allBatches.length === 0) {
-        console.error("❌ ERROR: No subjects or batches found. Did you run 'node seed.js'?");
-        return {};
+    console.log(`📊 Data Loaded: ${courses.length} Courses, ${faculty.length} Faculty, ${sections.length} Batches.`);
+
+    if (!courses.length || !faculty.length || !sections.length) {
+        throw new Error("Missing Data: Please run 'node seed.js' to populate the database first.");
     }
 
-    const inputs = [];
-    let facultyIndex = 0; 
-
-    // AUTO-ASSIGN LOGIC
-    for (const batch of allBatches) {
-        const semSubjects = allSubjects.filter(s => 
-            s.semester === batch.semester && 
-            (s.department === batch.department || s.department === "Common")
+    // 2. Build the Gene Pool
+    let genePool = [];
+    
+    for (const section of sections) {
+        // Filter courses for this section's semester and department
+        const relevantCourses = courses.filter(c => 
+            (c.department === section.department) && 
+            (c.semester === section.semester)
         );
 
-        for (const sub of semSubjects) {
-            // Assign Faculty (Round Robin)
-            const deptFaculty = allFaculty.filter(f => f.department === batch.department);
-            const pool = deptFaculty.length > 0 ? deptFaculty : allFaculty;
-            const assignedFaculty = pool[facultyIndex % pool.length];
-            facultyIndex++;
+        for (const course of relevantCourses) {
+            // Assign Faculty
+            const deptFaculty = faculty.filter(f => f.department === course.department);
+            const assignedFaculty = deptFaculty.length > 0 
+                ? deptFaculty[Math.floor(Math.random() * deptFaculty.length)] 
+                : faculty[0];
 
-            // Lab vs Theory Logic
-            const isLab = sub.type.toLowerCase().includes("lab");
-            const sessionDuration = isLab ? 2 : 1;
-            const sessionsPerWeek = isLab ? Math.ceil(sub.weeklyHours / 2) : sub.weeklyHours;
+            if (!assignedFaculty) continue;
 
-            // Filter Rooms
-            const compatibleRooms = allRooms.filter(r => {
-                if (isLab) return r.type.toLowerCase().includes("lab");
-                return r.type.toLowerCase().includes("theory") || r.type.toLowerCase().includes("lecture");
-            });
-            const roomPool = compatibleRooms.length > 0 ? compatibleRooms : allRooms;
+            // Find Substitutes
+            const substitutes = deptFaculty
+                .filter(f => f._id.toString() !== assignedFaculty._id.toString())
+                .map(f => ({ name: f.name, _id: f._id }));
 
-            for (let i = 0; i < sessionsPerWeek; i++) {
-                inputs.push({
-                    id: `${batch._id}-${sub.subjectCode}-${i}`,
-                    course: sub.name,
-                    courseType: isLab ? "Lab" : "Theory",
-                    faculty: assignedFaculty.name,
+            const isLab = course.type && course.type.toLowerCase() === 'lab';
+            const hoursNeeded = parseInt(course.weeklyHours) || 3;
+
+            // Create Schedule Blocks
+            for (let i = 0; i < hoursNeeded; i++) {
+                genePool.push({
+                    sectionId: section.name, // Using Name as ID
+                    courseCode: course.subjectCode,
+                    courseName: course.name,
                     facultyId: assignedFaculty._id,
-                    section: batch._id, // The Batch Name (e.g. CSE-3A)
-                    batch: isLab ? batch.name : null, 
-                    roomType: isLab ? "Lab" : "Theory",
-                    availableRooms: roomPool.map(r => r._id),
-                    duration: sessionDuration
+                    facultyName: assignedFaculty.name,
+                    substitutes: substitutes,
+                    type: isLab ? "Lab" : "Theory",
+                    duration: isLab ? 2 : 1,
+                    roomCandidate: null
                 });
+                if (isLab) i++; // Skip next hour for lab
             }
         }
     }
 
-    console.log(`Prepared ${inputs.length} slots. Starting generation...`);
-    const timetable = runGeneticAlgorithm(inputs);
-    const formatted = formatTimetableForSave(timetable, inputs);
+    if (genePool.length === 0) {
+        throw new Error("No classes to schedule! Check if Courses map to Batch Semesters correctly.");
+    }
 
-    await db.collection("timetables").updateOne(
-        { _id: "main" },
-        { $set: { data: formatted, generatedAt: new Date() } },
+    // 3. Run Genetic Algorithm
+    const bestSchedule = runGeneticAlgorithm(genePool, rooms);
+
+    // 4. Format and Save
+    const finalTimetable = formatForStorage(bestSchedule, sections);
+    
+    await db.collection('timetables').updateOne(
+        { _id: 'main' },
+        { $set: { data: finalTimetable, generatedAt: new Date() } },
         { upsert: true }
     );
 
-    console.log("== TIMETABLE SAVED ==");
-    return formatted;
+    console.log("✅ Timetable Generated Successfully!");
+    return finalTimetable;
 }
 
 // ============================================================================
-// 3. GENETIC ALGORITHM
+// 3. GENETIC ALGORITHM ENGINE
 // ============================================================================
-function runGeneticAlgorithm(inputs) {
+
+function runGeneticAlgorithm(genePool, rooms) {
     let population = [];
-    for (let i = 0; i < POP_SIZE; i++) population.push(createChromosome(inputs));
 
-    let bestChromosome = null;
-    let bestFitness = -Infinity;
-
-    for (let g = 0; g < GENERATIONS; g++) {
-        const evaluatedPop = population.map(ch => ({
-            genes: ch,
-            fitness: calculateFitness(ch)
-        })).sort((a, b) => b.fitness - a.fitness);
-
-        if (evaluatedPop[0].fitness > bestFitness) {
-            bestFitness = evaluatedPop[0].fitness;
-            bestChromosome = evaluatedPop[0].genes;
-        }
-        if (bestFitness === 0) break;
-
-        const nextGen = [evaluatedPop[0].genes, evaluatedPop[1].genes];
-        while (nextGen.length < POP_SIZE) {
-            const pA = selectParent(evaluatedPop);
-            const pB = selectParent(evaluatedPop);
-            let child = crossover(pA, pB);
-            if (Math.random() < MUTATION_RATE) child = mutate(child, inputs);
-            nextGen.push(child);
-        }
-        population = nextGen;
+    for (let i = 0; i < POPULATION_SIZE; i++) {
+        population.push(createRandomSchedule(genePool, rooms));
     }
-    return bestChromosome;
-}
 
-function createChromosome(inputs) { return inputs.map(i => assignRandomSlot(i)); }
+    for (let gen = 0; gen < MAX_GENERATIONS; gen++) {
+        population.sort((a, b) => calculateFitness(b) - calculateFitness(a));
 
-function assignRandomSlot(input) {
-    const day = DAYS[Math.floor(Math.random() * DAYS.length)];
-    const room = input.availableRooms.length > 0 ? input.availableRooms[Math.floor(Math.random() * input.availableRooms.length)] : "Unassigned";
-    const time = getRandomValidTime(input.duration, day);
-    return { ...input, day, time, room };
-}
-
-function getRandomValidTime(duration, day) {
-    let validStarts = (duration === 2) ? [...LAB_START_TIMES] : ALL_SLOTS.filter(t => !BREAKS.includes(t));
-    if (day === "Wednesday") validStarts = validStarts.filter(t => !AFTERNOON_SLOTS.includes(t));
-    return validStarts.length ? validStarts[Math.floor(Math.random() * validStarts.length)] : "08:30";
-}
-
-function selectParent(pop) { return pop[Math.floor(Math.random() * Math.min(5, pop.length))].genes; }
-
-function crossover(pA, pB) { return pA.map((g, i) => Math.random() < 0.5 ? g : pB[i]); }
-
-// FIXED: Replaces object to prevent 'undefined' error
-function mutate(ch, inputs) { 
-    const i = Math.floor(Math.random() * ch.length); 
-    ch[i] = assignRandomSlot(inputs[i]); 
-    return ch; 
-}
-
-function calculateFitness(chromosome) {
-    let score = 0;
-    const HARD = 50000, MEDIUM = 1000, SOFT = 10;
-
-    for (let i = 0; i < chromosome.length; i++) {
-        for (let j = i + 1; j < chromosome.length; j++) {
-            const c1 = chromosome[i];
-            const c2 = chromosome[j];
-            if (c1.day !== c2.day) continue;
-            
-            if (isTimeOverlap(c1, c2)) {
-                if (c1.facultyId === c2.facultyId) score -= HARD; 
-                if (c1.room === c2.room && c1.room !== "Unassigned") score -= HARD;           
-                if (c1.section === c2.section) score -= HARD;    
-            }
-            if (c1.section === c2.section && c1.course === c2.course) score -= SOFT;
+        if (calculateFitness(population[0]) === 0) {
+            return population[0];
         }
-        if (chromosome[i].day === "Wednesday" && AFTERNOON_SLOTS.includes(chromosome[i].time)) score -= HARD;
+
+        const survivors = population.slice(0, POPULATION_SIZE / 2);
+        const newGen = [...survivors];
+        
+        while (newGen.length < POPULATION_SIZE) {
+            const parent = survivors[Math.floor(Math.random() * survivors.length)];
+            newGen.push(mutateSchedule(parent, rooms));
+        }
+        population = newGen;
+    }
+    return population[0];
+}
+
+function createRandomSchedule(genes, rooms) {
+    return genes.map(gene => {
+        const day = DAYS[Math.floor(Math.random() * DAYS.length)];
+        const slots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
+        
+        const validSlots = slots.filter(s => s.type === "Lecture");
+        const slot = validSlots[Math.floor(Math.random() * validSlots.length)];
+        const room = rooms.length ? rooms[Math.floor(Math.random() * rooms.length)].name : "101";
+
+        return { ...gene, day, time: slot.start, room };
+    });
+}
+
+function mutateSchedule(schedule, rooms) {
+    const newSchedule = JSON.parse(JSON.stringify(schedule));
+    const idx = Math.floor(Math.random() * newSchedule.length);
+    const gene = newSchedule[idx];
+
+    const day = DAYS[Math.floor(Math.random() * DAYS.length)];
+    const slots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
+    const validSlots = slots.filter(s => s.type === "Lecture");
+    const slot = validSlots[Math.floor(Math.random() * validSlots.length)];
+    
+    gene.day = day;
+    gene.time = slot.start;
+    gene.room = rooms.length ? rooms[Math.floor(Math.random() * rooms.length)].name : "101";
+
+    return newSchedule;
+}
+
+function calculateFitness(schedule) {
+    let score = 0;
+    for (let i = 0; i < schedule.length; i++) {
+        for (let j = i + 1; j < schedule.length; j++) {
+            const c1 = schedule[i];
+            const c2 = schedule[j];
+
+            if (c1.day === c2.day && c1.time === c2.time) {
+                if (c1.facultyId === c2.facultyId) score -= 100;
+                if (c1.room === c2.room) score -= 100;
+                if (c1.sectionId === c2.sectionId) score -= 100;
+            }
+        }
     }
     return score;
 }
 
-function isTimeOverlap(c1, c2) {
-    const s1 = getOccupiedSlots(c1.time, c1.duration);
-    const s2 = getOccupiedSlots(c2.time, c2.duration);
-    return s1.some(s => s2.includes(s));
-}
-
-function getOccupiedSlots(start, duration) {
-    const idx = ALL_SLOTS.indexOf(start);
-    if (idx === -1) return [];
-    let slots = [], count = 0, i = idx;
-    while (count < duration && i < ALL_SLOTS.length) {
-        if (!BREAKS.includes(ALL_SLOTS[i])) { slots.push(ALL_SLOTS[i]); count++; }
-        i++;
-    }
-    return slots;
-}
-
-function formatTimetableForSave(chromosome, inputs) {
-    const res = {};
-    DAYS.forEach(d => { res[d] = {}; ALL_SLOTS.forEach(t => { if (!BREAKS.includes(t)) res[d][t] = []; }); });
-    if (!chromosome) return res;
-
-    chromosome.forEach(gene => {
-        getOccupiedSlots(gene.time, gene.duration).forEach(t => {
-            if (res[gene.day] && res[gene.day][t]) {
-                res[gene.day][t].push({
-                    _id: new ObjectId(),
-                    id: gene.id,
-                    course: gene.course,
-                    faculty: gene.faculty,
-                    room: gene.room,
-                    section: gene.section,
-                    batch: gene.batch,
-                    duration: gene.duration,
-                    facultyId: gene.facultyId
+// ============================================================================
+// 4. FORMATTING FOR FRONTEND
+// ============================================================================
+function formatForStorage(schedule, sections) {
+    const formatted = {};
+    
+    DAYS.forEach(day => {
+        formatted[day] = {};
+        const daySlots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
+        
+        daySlots.forEach(slot => {
+            formatted[day][slot.start] = [];
+            
+            if (day === "Wednesday" && slot.type === "Activity") {
+                 formatted[day][slot.start].push({
+                    course: slot.name,
+                    faculty: "All Staff",
+                    room: "Campus",
+                    section: "ALL",
+                    type: "Activity",
+                    isUniversal: true
                 });
             }
         });
     });
-    return res;
+
+    schedule.forEach(cls => {
+        if (formatted[cls.day] && formatted[cls.day][cls.time]) {
+            formatted[cls.day][cls.time].push({
+                course: cls.courseName,
+                faculty: cls.facultyName,
+                facultyId: cls.facultyId,
+                room: cls.room,
+                section: cls.sectionId,
+                type: cls.type,
+                substitutes: cls.substitutes
+            });
+        }
+    });
+
+    // Fill Gaps with PBL
+    DAYS.forEach(day => {
+        const daySlots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
+        daySlots.filter(s => s.type === "Lecture").forEach(slot => {
+            const time = slot.start;
+            const classesNow = formatted[day][time] || [];
+            
+            sections.forEach(sec => {
+                const hasClass = classesNow.find(c => c.section === sec.name);
+                if (!hasClass) {
+                    if(!formatted[day][time]) formatted[day][time] = [];
+                    formatted[day][time].push({
+                        course: "PBL / ABL / Library",
+                        faculty: "-",
+                        room: "Library",
+                        section: sec.name,
+                        type: "Self-Learning"
+                    });
+                }
+            });
+        });
+    });
+
+    return formatted;
 }
 
 module.exports = { generateAndSaveTimetable };

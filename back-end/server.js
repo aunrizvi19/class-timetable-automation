@@ -1,11 +1,11 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb'); 
+const { MongoClient, ServerApiVersion } = require('mongodb'); 
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const mongoose = require('mongoose');
 
-// Models
+// Import Models
 const User = require('./models/user');
 const Subject = require('./models/Subject');
 const Room = require('./models/Room');
@@ -16,47 +16,41 @@ const { generateAndSaveTimetable } = require('./timetable_generator');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Enable CORS and JSON parsing
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // [CONNECTION STRING]
-// Ideally, move this to a .env file
 const uri = "mongodb+srv://mohammadaunrizvi19_db_user:305YJ8h9IsNVu9Ad@cluster0.khbsgco.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-// Connect Mongoose (For Login/Signup)
+// 1. Connect Mongoose
 mongoose.connect(uri)
-    .then(() => console.log("✅ Mongoose Connected"))
+    .then(() => console.log("✅ Mongoose Connected (Dashboard Ready)"))
     .catch(err => console.error("❌ Mongoose Error:", err));
 
-// Connect Native Client (For Timetable Generator)
+// 2. Connect Native Client (For Generator)
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
   tlsInsecure: true 
 });
 let db;
 client.connect().then(() => { 
-    db = client.db("test"); // Mongoose usually defaults to 'test' unless specified otherwise
-    console.log("✅ Native MongoDB Client Connected");
-});
+    db = client.db("test"); 
+    console.log("✅ Native MongoDB Client Connected (Generator Ready)");
+}).catch(err => console.error("❌ Native Client Error:", err));
+
 
 // =================================================================
-// 1. AUTHENTICATION ROUTES
+// 1. AUTHENTICATION API
 // =================================================================
 
-// LOGIN - FIXED to accept USN or Email
 app.post('/api/login', async (req, res) => {
+    console.log("📝 Login Attempt:", req.body.identifier);
     const { identifier, password } = req.body;
-    console.log(`🔹 Login Attempt: ${identifier}`);
-
     try {
-        if (!identifier || !password) {
-            return res.status(400).json({ message: "Please provide Email/USN and Password" });
-        }
+        if (!identifier || !password) return res.status(400).json({ message: "Missing credentials" });
 
-        // Search in BOTH email and usn fields
-        // Using regex for case-insensitive match
         const user = await User.findOne({ 
             $or: [
                 { email: { $regex: new RegExp(`^${identifier}$`, 'i') } }, 
@@ -64,20 +58,13 @@ app.post('/api/login', async (req, res) => {
             ] 
         });
         
-        if (!user) {
-            console.log("❌ User not found");
-            return res.status(401).json({ message: "User not found" });
-        }
+        if (!user) return res.status(401).json({ message: "User not found" });
         
-        const isMatch = await bcrypt.compare(password, user.passwordHash || user.password);
-        if (!isMatch) {
-            console.log("❌ Invalid password");
-            return res.status(401).json({ message: "Invalid credentials" });
-        }
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
+        if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
         
-        // Determine Profile ID (Batch for student, ID for faculty)
         let pid = user._id;
-        if (user.role === 'student') pid = user.section || null; 
+        if (user.role === 'student') pid = user.section || "Not Assigned"; 
         if (user.role === 'faculty') pid = user.facultyId || user._id;
         
         res.status(200).json({ 
@@ -87,199 +74,195 @@ app.post('/api/login', async (req, res) => {
                 email: user.email, 
                 role: user.role, 
                 profileId: pid,
+                department: user.department,
                 usn: user.usn
             } 
         });
     } catch (err) {
-        console.error("Server Error:", err);
-        res.status(500).json({ message: "Server error" });
+        console.error("Login Error:", err);
+        res.status(500).json({ message: err.message });
     }
 });
 
-// SIGNUP
 app.post('/api/signup', async (req, res) => {
-    console.log("🔹 Signup Attempt:", req.body);
     try {
         const { name, email, password, role, usn, facultyId } = req.body;
-
-        if (!name || !email || !password || !role) {
-            return res.status(400).json({ message: "Missing required fields." });
-        }
-        
-        // Role-Specific Validation
-        if (role === 'student' && !usn) {
-             return res.status(400).json({ message: "Students must provide a USN." });
-        }
-        if (role === 'faculty' && !facultyId) {
-             return res.status(400).json({ message: "Faculty must provide a Faculty ID." });
-        }
-
-        const existing = await User.findOne({ email });
-        if (existing) {
-            return res.status(409).json({ message: "Email already exists." });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = new User({
-            _id: email,
-            name,
-            email,
-            passwordHash: hashedPassword,
-            role,
+            _id: email, 
+            name, email, passwordHash: hashedPassword, role,
             usn: role === 'student' ? usn : null,
             facultyId: role === 'faculty' ? facultyId : null,
-            section: null, 
             verified: true
         });
         
         await newUser.save();
-        console.log("✅ User created successfully");
-        res.status(201).json({ message: "Account created! Please log in." });
-
+        res.status(201).json({ message: "User created" });
     } catch (err) {
-        console.error("Signup Error:", err);
-        res.status(500).json({ message: "Signup failed: " + err.message });
+        res.status(500).json({ message: err.message });
     }
 });
 
-
 // =================================================================
-// 2. DATA API (CRUD)
+// 2. CRUD API (With Fixes for Missing Fields)
 // =================================================================
 
-// USERS
-app.get('/api/users', async (req, res) => {
-    const users = await User.find({});
-    res.json(users);
-});
-app.delete('/api/users/:id', async (req, res) => {
-    try {
-        await User.deleteOne({ _id: req.params.id });
-        res.json({ message: "User deleted" });
-    } catch(e) { res.status(500).json({message: e.message}); }
-});
-
-// COURSES
+// --- COURSES ---
 app.get('/api/courses', async (req, res) => {
-    const subjects = await Subject.find({});
-    res.json(subjects.map(s => ({
-        _id: s.subjectCode,
-        course_name: s.name,
-        course_type: s.type.charAt(0).toUpperCase() + s.type.slice(1),
-        credits: s.credits,
-        lectures_per_week: s.weeklyHours
-    })));
+    try {
+        const subjects = await Subject.find({});
+        // Robust mapping that won't crash if fields are missing
+        const mapped = subjects.map(s => ({
+            _id: s.subjectCode || "NO_ID", 
+            course_name: s.name || "Unnamed Course",
+            course_type: s.type ? (s.type.charAt(0).toUpperCase() + s.type.slice(1)) : 'Theory',
+            credits: s.credits || 0,
+            lectures_per_week: s.weeklyHours || s.lectures_per_week || 0,
+            tutorials_per_week: 0,
+            practicals_per_week: 0
+        }));
+        res.json(mapped);
+    } catch(e) {
+        console.error("GET /courses error:", e);
+        res.status(500).json({message: e.message});
+    }
 });
+
 app.post('/api/courses', async (req, res) => {
     try {
-        const code = "SUB" + Math.floor(Math.random() * 10000);
+        console.log("Adding Course:", req.body);
+        const { course_name, course_type, lectures_per_week, credits } = req.body;
+        
+        // AUTO-GENERATE MISSING REQUIRED FIELDS
+        const code = course_name.substring(0,3).toUpperCase() + Math.floor(100 + Math.random() * 900); 
+        
         const newSub = new Subject({
-            subjectCode: req.body._id || code, 
-            name: req.body.course_name,
-            type: req.body.course_type.toLowerCase(),
-            weeklyHours: parseInt(req.body.lectures_per_week) || 0,
-            credits: parseInt(req.body.credits) || 0,
-            department: "CSE", year: 1, semester: 1
+            subjectCode: code,
+            name: course_name,
+            type: (course_type || 'theory').toLowerCase(),
+            department: "CSE", // Defaulting to CSE since UI doesn't send it yet
+            semester: 1,       // Default
+            year: 1,           // Default
+            credits: credits || 4,
+            weeklyHours: lectures_per_week || 4
         });
+        
         await newSub.save();
-        res.status(201).json({ message: "Course added" });
-    } catch (e) { res.status(500).json({ message: e.message }); }
+        res.status(201).json({ message: "Course Added" });
+    } catch(err) { 
+        console.error("POST /courses Failed:", err);
+        res.status(500).json({ message: "Error adding course: " + err.message }); 
+    }
 });
+
 app.delete('/api/courses/:id', async (req, res) => {
     await Subject.deleteOne({ subjectCode: req.params.id });
-    res.json({ message: "Course deleted" });
+    res.json({ message: "Deleted" });
 });
 
-// FACULTY
-app.get('/api/faculty', async (req, res) => {
-    const faculty = await User.find({ role: 'faculty' });
-    res.json(faculty);
-});
-app.post('/api/faculty', async (req, res) => {
-    try {
-        const { name, email, facultyId, department } = req.body;
-        const hashedPassword = await bcrypt.hash("password123", 10);
-        const newUser = new User({
-            _id: email,
-            name, email, 
-            passwordHash: hashedPassword,
-            role: 'faculty',
-            facultyId, department, verified: true
-        });
-        await newUser.save();
-        res.status(201).json({ message: "Faculty added" });
-    } catch (e) { res.status(500).json({ message: e.message }); }
-});
-app.delete('/api/faculty/:id', async (req, res) => {
-    await User.deleteOne({ _id: req.params.id });
-    res.json({ message: "Faculty deleted" });
-});
-
-// ROOMS
+// --- ROOMS ---
 app.get('/api/rooms', async (req, res) => {
     const rooms = await Room.find({});
     res.json(rooms);
 });
+
 app.post('/api/rooms', async (req, res) => {
     try {
+        const { roomNumber, capacity, type } = req.body;
         const newRoom = new Room({
-            _id: req.body.roomNumber,
-            name: req.body.roomNumber,
-            capacity: req.body.capacity,
-            type: req.body.type,
-            floor: 1
+            _id: roomNumber, 
+            name: roomNumber,
+            capacity: capacity || 60,
+            floor: 1, // Default
+            type: type || 'Lecture'
         });
         await newRoom.save();
-        res.status(201).json({ message: "Room added" });
-    } catch (e) { res.status(500).json({ message: e.message }); }
-});
-app.delete('/api/rooms/:id', async (req, res) => {
-    await Room.deleteOne({ _id: req.params.id });
-    res.json({ message: "Room deleted" });
+        res.status(201).json({ message: "Room Added" });
+    } catch(err) { res.status(500).json({ message: err.message }); }
 });
 
-// SECTIONS
+app.delete('/api/rooms/:id', async (req, res) => {
+    await Room.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+});
+
+// --- SECTIONS (BATCHES) ---
 app.get('/api/sections', async (req, res) => {
     const batches = await Batch.find({});
-    res.json(batches.map(b => ({
-        _id: b.name,
+    const mapped = batches.map(b => ({
+        _id: b._id,
         section_name: b.name,
         department: b.department,
         semester: b.semester,
-        size: b.size,
-        batches: [b.name]
-    })));
+        size: b.size
+    }));
+    res.json(mapped);
 });
+
 app.post('/api/sections', async (req, res) => {
     try {
+        console.log("Adding Section:", req.body);
+        const { section_name, department, semester, size } = req.body;
         const newBatch = new Batch({
-            _id: req.body.section_name,
-            name: req.body.section_name,
-            department: req.body.department || "CSE",
-            semester: parseInt(req.body.semester) || 1,
-            year: Math.ceil((parseInt(req.body.semester)||1)/2),
-            size: req.body.size || 60
+            _id: section_name,
+            name: section_name,
+            department: department || "CSE",
+            year: Math.ceil((semester || 1)/2), // Calculate year from sem
+            semester: semester || 1,
+            size: size || 60
         });
         await newBatch.save();
-        res.status(201).json({ message: "Section added" });
-    } catch (e) { res.status(500).json({ message: e.message }); }
+        res.status(201).json({ message: "Section Added" });
+    } catch(err) { 
+        console.error("POST /sections Failed:", err);
+        res.status(500).json({ message: err.message }); 
+    }
 });
+
 app.delete('/api/sections/:id', async (req, res) => {
-    await Batch.deleteOne({ _id: req.params.id });
-    res.json({ message: "Section deleted" });
+    await Batch.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+});
+
+// --- USERS / FACULTY ---
+app.get('/api/users', async(req, res) => res.json(await User.find({})));
+app.get('/api/faculty', async(req, res) => res.json(await User.find({ role: 'faculty' })));
+
+app.post('/api/faculty', async (req, res) => {
+    try {
+        const { name, email, facultyId, department } = req.body;
+        const hashedPassword = await bcrypt.hash("password123", 10); 
+        
+        const newFac = new User({
+            _id: email,
+            name, email, passwordHash: hashedPassword, role: 'faculty',
+            facultyId, department, verified: true
+        });
+        await newFac.save();
+        res.status(201).json({ message: "Faculty Added" });
+    } catch(err) { res.status(500).json({ message: err.message }); }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+});
+app.delete('/api/faculty/:id', async (req, res) => {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
 });
 
 
 // =================================================================
-// 3. TIMETABLE OPERATIONS
+// 3. TIMETABLE GENERATION
 // =================================================================
 
 app.post('/api/timetable/generate', async (req, res) => {
-    if (!db) return res.status(500).json({ message: "No DB" });
+    if (!db) return res.status(500).json({ message: "Database not connected yet." });
     try {
         const data = await generateAndSaveTimetable(db);
-        res.status(201).json({ message: "Timetable Generated!", data });
+        res.status(201).json({ message: "Timetable Published!", data });
     } catch (err) { 
         console.error(err);
         res.status(500).json({ message: "Generation Failed: " + err.message }); 
@@ -287,12 +270,11 @@ app.post('/api/timetable/generate', async (req, res) => {
 });
 
 app.get('/api/timetable', async (req, res) => {
-    if (!db) return res.status(500).json({ message: "No DB" });
+    if (!db) return res.status(500).json({ message: "Database not connected yet." });
     const doc = await db.collection('timetables').findOne({ _id: 'main' });
     res.json(doc || { data: {} });
 });
 
-// Student Filter
 app.get('/api/timetable/section/:id', async (req, res) => {
     if (!db) return res.json({ data: {} });
     const main = await db.collection('timetables').findOne({ _id: 'main' });
@@ -310,7 +292,6 @@ app.get('/api/timetable/section/:id', async (req, res) => {
     res.json({ data: filtered });
 });
 
-// Faculty Filter
 app.get('/api/timetable/faculty/:id', async (req, res) => {
     if (!db) return res.json({ data: {} });
     const main = await db.collection('timetables').findOne({ _id: 'main' });
@@ -331,9 +312,7 @@ app.get('/api/timetable/faculty/:id', async (req, res) => {
     res.json({ data: filtered });
 });
 
-// =================================================================
 // 4. SERVE FRONTEND
-// =================================================================
 app.use(express.static(path.join(__dirname, '../front-end')));
 
 app.get('*', (req, res) => {

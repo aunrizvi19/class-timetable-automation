@@ -20,47 +20,34 @@
                             🏠 <span>Dashboard</span>
                         </a>
                     </li>
+                    <li class="nav-item-faculty">
+                        <a href="faculty-dashboard.html" class="active-dashboard">
+                            🏠 <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-student">
+                        <a href="student-dashboard.html" class="active-dashboard">
+                            🏠 <span>Dashboard</span>
+                        </a>
+                    </li>
+
                     <li class="nav-item-shared">
-                        <a href="index.html" class="active-timetable">
+                        <a href="index.html">
                             📅 <span>Timetable</span>
                         </a>
                     </li>
 
                     <li class="nav-item-admin nav-divider"></li> 
 
-                    <li class="nav-item-admin">
-                        <a href="courses.html" class="active-courses">
-                            📚 <span>Courses</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="faculty.html" class="active-faculty">
-                            👨‍🏫 <span>Faculty</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="rooms.html" class="active-rooms">
-                            🏢 <span>Rooms</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="sections.html" class="active-sections">
-                            👥 <span>Sections</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="users.html" class="active-users">
-                            👤 <span>Users</span>
-                        </a>
-                    </li>
+                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
 
                     <li class="nav-item-admin nav-divider"></li>
 
-                    <li class="nav-item-admin">
-                        <a href="settings.html" class="active-settings">
-                            ⚙️ <span>Settings</span>
-                        </a>
-                    </li>
+                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
                 </ul>
             
                 <ul class="logout-ul">
@@ -71,19 +58,28 @@
 
         <main class="main-content">
             <header class="main-header">
-    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-    <h1 class="dashboard-header">Welcome!</h1>
-    
-    <label class="toggle-switch">
-        <input type="checkbox" id="darkModeToggle">
-        <span class="slider"></span>
-    </label>
-</header>
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">Admin Dashboard</h1>
+                </div>
+                
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
+            </header>
 
-            <div class="live-status-container" style="background: var(--color-bg-content); padding: 20px; border-radius: 10px; margin: 20px; box-shadow: var(--color-shadow); border: 1px solid var(--color-border);">
-                <h3 style="margin-top: 0; color: var(--color-primary);">🔴 Teachers Present Now (Live)</h3>
-                <div id="activeFacultyList" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
-                    <span style="color: var(--color-gray);">Loading status...</span>
+            <div class="live-status-container" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(0,123,255,0.3); border: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 2.5rem; font-weight: 700;" id="liveTime">00:00:00</h2>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem;" id="liveDate">Loading Date...</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8;">Current Status</p>
+                        <h3 style="margin: 5px 0 0 0; font-size: 1.8rem;" id="currentClassInfo">System Active</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;" id="currentRoomInfo">Monitoring all classes</p>
+                    </div>
                 </div>
             </div>
 
@@ -102,16 +98,15 @@
                 </div>
             </div>
 
-            <div class="action-header" style="margin-top: 20px; justify-content: center;">
-                <button class="action-btn generate-btn" style="padding: 15px 30px; font-size: 1.2rem;">🚀 Generate New Timetable</button>
+            <div class="live-status-container">
+                <h3>🔴 Live Faculty Presence</h3>
+                <div id="activeFacultyList">
+                    <span style="color: var(--color-gray);">Calculating schedule...</span>
+                </div>
             </div>
 
-            <div class="chart-container">
-                <canvas id="occupancyChart"></canvas>
-            </div>
         </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

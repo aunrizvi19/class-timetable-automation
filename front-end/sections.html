@@ -14,12 +14,20 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
+
                     <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
+
                     <li class="nav-item-admin nav-divider"></li>
                     <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
                     <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
                     <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
                     <li class="nav-item-admin"><a href="sections.html" class="active-sections">👥 <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
                 </ul>
                 <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
             </nav>
@@ -27,12 +35,19 @@
 
         <main class="main-content">
             <header class="main-header">
-                <h1 class="dashboard-header">Manage Sections</h1>
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">Manage Sections</h1>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
             </header>
 
             <section class="content-table">
                 <div class="action-header">
-                    <button onclick="document.getElementById('sectionModal').style.display='block'" class="action-btn publish-btn">Add New Section</button>
+                    <button onclick="document.getElementById('sectionModal').style.display='block'" class="action-btn publish-btn">Add New Batch</button>
                 </div>
                 <table class="data-table">
                     <thead>
@@ -41,7 +56,7 @@
                             <th>Dept</th>
                             <th>Sem</th>
                             <th>Size</th>
-                            <th>Actions</th>
+                            <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -53,11 +68,11 @@
     <div id="sectionModal" class="modal">
         <div class="modal-content">
             <span class="close-button" onclick="document.getElementById('sectionModal').style.display='none'">&times;</span>
-            <h2>Add Section / Batch</h2>
+            <h2>Add Batch / Section</h2>
             <form id="sectionForm">
                 <div class="form-group">
-                    <label>Section Name (e.g. CSE-5A)</label>
-                    <input type="text" id="sectionName" required>
+                    <label>Section Name</label>
+                    <input type="text" id="sectionName" placeholder="e.g. CSE-5A" required>
                 </div>
                 <div class="form-group">
                     <label>Department</label>
@@ -65,17 +80,18 @@
                 </div>
                 <div class="form-group">
                     <label>Semester</label>
-                    <input type="number" id="sectionSem" required>
+                    <input type="number" id="sectionSem" placeholder="e.g. 5" required>
                 </div>
                 <div class="form-group">
                     <label>Batch Size</label>
                     <input type="number" id="sectionSize" value="60">
                 </div>
-                <button type="submit" class="action-btn publish-btn">Save</button>
+                <div style="text-align: right;">
+                    <button type="submit" class="action-btn publish-btn">Save Batch</button>
+                </div>
             </form>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

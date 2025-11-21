@@ -15,75 +15,38 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item-admin">
-                        <a href="dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-faculty">
-                        <a href="faculty-dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-student">
-                        <a href="student-dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
-                        </a>
-                    </li>
+                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
 
-                    <li class="nav-item-shared">
-                        <a href="index.html" class="active-timetable">
-                            📅 <span>Timetable</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item-admin nav-divider"></li> 
-
-                    <li class="nav-item-admin">
-                        <a href="courses.html" class="active-courses">
-                            📚 <span>Courses</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="faculty.html" class="active-faculty">
-                            👨‍🏫 <span>Faculty</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="sections.html" class="active-sections">
-                            👥 <span>Class Sections</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="rooms.html" class="active-rooms">
-                            🚪 <span>Rooms</span>
-                        </a>
-                    </li>
-                    <li class="nav-item-admin">
-                        <a href="users.html" class="active-users">
-                            👤 <span>Users</span>
-                        </a>
-                    </li>
+                    <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
 
                     <li class="nav-item-admin nav-divider"></li>
-
+                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
                     <li class="nav-item-admin">
-                        <a href="settings.html" class="active-settings">
-                            ⚙️ <span>Settings</span>
-                        </a>
+                        <a href="users.html" class="active-users">👤 <span>Users</span></a>
                     </li>
+                    
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
                 </ul>
-            
-                <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>User Management</h1>
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">User Management</h1>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
             </header>
 
             <section class="content-table">
@@ -93,8 +56,8 @@
                             <th>Name</th>
                             <th>Email (Username)</th>
                             <th>Role</th>
-                            <th>Profile ID (Section/Faculty)</th>
-                            <th>Actions</th>
+                            <th>Profile ID</th>
+                            <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
@@ -103,8 +66,6 @@
             </section>
         </main>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

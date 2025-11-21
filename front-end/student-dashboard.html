@@ -7,14 +7,18 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="student-page shared-page">
     <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header"><h2>Academa</h2></div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-shared"><a href="index.html">📅 <span>My Timetable</span></a></li>
+                    <li class="nav-item-student">
+                        <a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a>
+                    </li>
+                    <li class="nav-item-shared">
+                        <a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a>
+                    </li>
                 </ul>
                 <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
             </nav>
@@ -22,20 +26,29 @@
 
         <main class="main-content">
             <header class="main-header">
-    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-    <h1 class="dashboard-header">Welcome!</h1>
-    
-    <label class="toggle-switch">
-        <input type="checkbox" id="darkModeToggle">
-        <span class="slider"></span>
-    </label>
-</header>
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">Student Portal</h1>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
+            </header>
 
             <div class="stats-container">
-                <div class="stat-card"><h3>My Section</h3><p id="studentSectionStat">Select...</p></div>
+                <div class="stat-card">
+                    <h3>My Section</h3>
+                    <p id="studentSectionStat">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Academic Status</h3>
+                    <p style="color: var(--color-success); font-size: 1.5rem;">Active</p>
+                </div>
             </div>
 
             <div class="timetable-container">
+                <h3 style="margin-bottom: 15px; color: var(--color-gray);">Weekly Schedule</h3>
                 <table class="timetable-grid">
                     <thead>
                         <tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>

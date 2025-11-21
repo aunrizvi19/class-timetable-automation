@@ -12,7 +12,7 @@
     <div class="auth-container">
         <div class="auth-box">
             <div class="auth-header">
-                <img src="imgs/images.jpeg" alt="Logo" class="auth-logo">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" class="auth-logo">
                 <h1 id="formTitle">Login</h1>
                 <p>Welcome to Academa</p>
             </div>
@@ -25,61 +25,57 @@
             <form id="loginForm" class="auth-form" autocomplete="off">
                 <div class="form-group">
                     <label for="loginIdentifier">Email or USN</label>
-                    <input type="text" id="loginIdentifier" name="identifier" placeholder="Enter Email or USN" required>
+                    <input type="text" id="loginIdentifier" placeholder="Enter Email or USN" required>
                 </div>
                 <div class="form-group">
                     <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" name="password" required>
+                    <input type="password" id="loginPassword" placeholder="Enter Password" required>
                 </div>
-                
                 <p class="auth-error" id="loginError"></p>
-                
                 <button type="submit" class="auth-btn">Login</button>
-                <p class="auth-switch">Don't have an account? <a href="#" id="showSignup">Sign Up</a></p>
             </form>
 
             <form id="signupForm" class="auth-form" style="display: none;" autocomplete="off">
                 <div class="form-group">
-                    <label for="signupName">Full Name</label>
+                    <label>Full Name</label>
                     <input type="text" id="signupName" required>
                 </div>
                 <div class="form-group">
-                    <label for="signupEmail">Email</label>
+                    <label>Email Address</label>
                     <input type="email" id="signupEmail" required>
                 </div>
                 <div class="form-group">
-                    <label for="signupPassword">Password</label>
+                    <label>Password</label>
                     <input type="password" id="signupPassword" required>
                 </div>
                 <div class="form-group">
-                    <label for="signupRole">I am a...</label>
+                    <label>Role</label>
                     <select id="signupRole" required>
-                        <option value="">Select Role</option>
+                        <option value="">Select Role...</option>
                         <option value="student">Student</option>
                         <option value="faculty">Faculty</option>
                         <option value="admin">Admin</option>
                     </select>
                 </div>
                 
-                <div id="studentFields" style="display: none; margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+                <div id="studentFields" style="display: none;">
                     <div class="form-group">
-                        <label for="signupUSN">USN (University Seat Number)</label>
-                        <input type="text" id="signupUSN" placeholder="e.g. 1JB21CS...">
+                        <label>USN (Student ID)</label>
+                        <input type="text" id="signupUSN" placeholder="e.g. 1JB21CS001">
                     </div>
                 </div>
 
-                <div id="facultyFields" style="display: none; margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+                <div id="facultyFields" style="display: none;">
                     <div class="form-group">
-                        <label for="signupFacultyID">Faculty ID</label>
+                        <label>Faculty ID</label>
                         <input type="text" id="signupFacultyID" placeholder="e.g. FAC001">
                     </div>
                 </div>
 
                 <p class="auth-error" id="signupError"></p>
-                
                 <button type="submit" class="auth-btn">Create Account</button>
-                <p class="auth-switch">Already have an account? <a href="#" id="showLogin">Login</a></p>
             </form>
+
         </div>
     </div>
 

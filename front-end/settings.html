@@ -7,130 +7,72 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="admin-page"> <div class="container">
+<body class="settings-page admin-page shared-page">
+    <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Academa</h2>
-            </div>
+            <div class="sidebar-header"><h2>Academa</h2></div>
             <nav class="sidebar-nav">
-    <ul>
-        <li class="nav-item-admin">
-            <a href="dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item-faculty">
-            <a href="faculty-dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item-student">
-            <a href="student-dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-
-        <li class="nav-item-shared">
-            <a href="index.html" class="active-timetable">
-                📅 <span>Timetable</span>
-            </a>
-        </li>
-
-        <li class="nav-item-admin nav-divider"></li> 
-
-        <li class="nav-item-admin">
-            <a href="courses.html" class="active-courses">
-                📚 <span>Courses</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="faculty.html" class="active-faculty">
-                👨‍🏫 <span>Faculty</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="sections.html" class="active-sections">
-                👥 <span>Class Sections</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="rooms.html" class="active-rooms">
-                🚪 <span>Rooms</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="users.html" class="active-users">
-                👤 <span>Users</span>
-            </a>
-        </li>
-
-        <li class="nav-item-admin nav-divider"></li>
-
-        <li class="nav-item-admin">
-            <a href="settings.html" class="active-settings">
-                ⚙️ <span>Settings</span>
-            </a>
-        </li>
-    </ul>
-
-    <ul class="logout-ul">
-        <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-    </ul>
-</nav>
+                <ul>
+                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
+                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+            </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>Settings</h1>
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">System Settings</h1>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
             </header>
 
-            <section class="settings-container">
-                <div class="settings-section">
-                    <h2>Generation Constraints</h2>
-                    <div class="settings-form-layout">
-                        <div class="form-group">
-                            <label for="max-hours">Max Consecutive Hours (Faculty):</label>
-                            <input type="number" id="max-hours" value="3" min="1">
-                        </div>
+            <section style="max-width: 600px; margin: 0 auto;">
+                <div class="live-status-container" style="background: var(--color-bg-content);">
+                    <h3>General Configuration</h3>
+                    <div class="form-group">
+                        <label>University Name</label>
+                        <input type="text" value="SJB Institute of Technology" disabled>
                     </div>
-                </div>
-
-                <div class="settings-section">
-                    <h2>Academic Calendar</h2>
-                    <div class="settings-form-layout">
-                        <div class="form-group">
-                            <label for="lunchBreakStart">Lunch Break Start:</label>
-                            <input type="time" id="lunchBreakStart" value="12:45">
-                        </div>
-                         <div class="form-group">
-                            <label for="lunchBreakDuration">Lunch Break Duration (minutes):</label>
-                            <input type="number" id="lunchBreakDuration" value="45" min="15" step="15">
-                        </div>
-                         <div class="form-group">
-                            <label for="teaBreakStart">Tea Break Start:</label>
-                            <input type="time" id="teaBreakStart" value="10:30">
-                        </div>
-                         <div class="form-group">
-                            <label for="teaBreakDuration">Tea Break Duration (minutes):</label>
-                            <input type="number" id="teaBreakDuration" value="15" min="15" step="15">
-                        </div>
+                    <div class="form-group">
+                        <label>Academic Year</label>
+                        <select>
+                            <option>2023-2024</option>
+                            <option selected>2024-2025</option>
+                        </select>
                     </div>
-                </div>
-
-                <div class="settings-section">
-                    <h2>Appearance</h2>
-                    <div class="form-group-toggle">
-                        <label for="darkModeToggle">Dark Mode:</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="darkModeToggle">
-                            <span class="slider"></span>
-                        </label>
+                    
+                    <h3 style="margin-top: 30px;">Timetable Rules</h3>
+                    <div class="form-group">
+                        <label>Slots Per Day</label>
+                        <input type="number" value="7" disabled>
                     </div>
-                </div>
-
-                <div class="form-actions">
-                    <button id="saveSettingsBtn" class="action-btn publish-btn">Save Settings</button>
+                    <div class="form-group">
+                        <label>Wednesday Half-Day?</label>
+                        <select disabled>
+                            <option selected>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button class="action-btn publish-btn">Save Changes</button>
+                    </div>
                 </div>
             </section>
         </main>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty | Academa</title>
+    <title>Manage Faculty | Academa</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
@@ -14,90 +14,51 @@
                 <h2>Academa</h2>
             </div>
             <nav class="sidebar-nav">
-    <ul>
-        <li class="nav-item-admin">
-            <a href="dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item-faculty">
-            <a href="faculty-dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item-student">
-            <a href="student-dashboard.html" class="active-dashboard">
-                🏠 <span>Dashboard</span>
-            </a>
-        </li>
+                <ul>
+                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
 
-        <li class="nav-item-shared">
-            <a href="index.html" class="active-timetable">
-                📅 <span>Timetable</span>
-            </a>
-        </li>
+                    <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
 
-        <li class="nav-item-admin nav-divider"></li> 
-
-        <li class="nav-item-admin">
-            <a href="courses.html" class="active-courses">
-                📚 <span>Courses</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="faculty.html" class="active-faculty">
-                👨‍🏫 <span>Faculty</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="sections.html" class="active-sections">
-                👥 <span>Class Sections</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="rooms.html" class="active-rooms">
-                🚪 <span>Rooms</span>
-            </a>
-        </li>
-        <li class="nav-item-admin">
-            <a href="users.html" class="active-users">
-                👤 <span>Users</span>
-            </a>
-        </li>
-
-        <li class="nav-item-admin nav-divider"></li>
-
-        <li class="nav-item-admin">
-            <a href="settings.html" class="active-settings">
-                ⚙️ <span>Settings</span>
-            </a>
-        </li>
-    </ul>
-
-    <ul class="logout-ul">
-        <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-    </ul>
-</nav>
+                    <li class="nav-item-admin nav-divider"></li> 
+                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html" class="active-faculty">👨‍🏫 <span>Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
+                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+            </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1>Manage Faculty</h1>
-                <div class="header-actions">
-                    <button class="action-btn publish-btn">Add New Faculty</button>
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">Manage Faculty</h1>
                 </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
             </header>
 
             <section class="content-table">
+                <div class="action-header">
+                    <button onclick="document.getElementById('facultyModal').style.display='block'" class="action-btn publish-btn">Add New Faculty</button>
+                </div>
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Faculty ID</th>
                             <th>Name</th>
+                            <th>Email</th>
                             <th>Department</th>
-                            <th>Designation</th>
-                            <th>Account</th> <th>Actions</th>
+                            <th>Faculty ID</th>
+                            <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,59 +70,37 @@
 
     <div id="facultyModal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="modalTitle">Add New Faculty</h2>
+            <span class="close-button" onclick="document.getElementById('facultyModal').style.display='none'">&times;</span>
+            <h2>Add Faculty Member</h2>
             <form id="facultyForm">
                 <div class="form-group">
-                    <label for="facultyId">Faculty ID</label>
-                    <input type="text" id="facultyId" required>
-                </div>
-                <div class="form-group">
-                    <label for="facultyName">Name</label>
+                    <label>Full Name</label>
                     <input type="text" id="facultyName" required>
                 </div>
                 <div class="form-group">
-                    <label for="facultyDept">Department</label>
-                    <input type="text" id="facultyDept" required>
+                    <label>Email Address</label>
+                    <input type="email" id="facultyEmail" required>
                 </div>
                 <div class="form-group">
-                    <label for="facultyDesignation">Designation</label>
-                    <input type="text" id="facultyDesignation" required>
+                    <label>Faculty ID</label>
+                    <input type="text" id="facultyId" required>
                 </div>
-                <div class="form-actions">
+                <div class="form-group">
+                    <label>Department</label>
+                    <select id="facultyDept">
+                        <option value="CSE">CSE</option>
+                        <option value="ECE">ECE</option>
+                        <option value="ME">ME</option>
+                        <option value="ISE">ISE</option>
+                    </select>
+                </div>
+                <div style="text-align: right;">
                     <button type="submit" class="action-btn publish-btn">Save Faculty</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="createLoginModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="createLoginModalTitle">Create Login</h2>
-            <form id="createLoginForm">
-                <input type="hidden" id="createLoginFacultyId">
-                <div class="form-group">
-                    <label for="createLoginFacultyName">Faculty Name</label>
-                    <input type="text" id="createLoginFacultyName" disabled>
-                </div>
-                <div class="form-group">
-                    <label for="createLoginEmail">Email</label>
-                    <input type="email" id="createLoginEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="createLoginPassword">Password</label>
-                    <input type="password" id="createLoginPassword" required>
-                </div>
-                <p class="auth-error" id="createLoginError"></p>
-                <div class="form-actions">
-                    <button type="submit" class="action-btn publish-btn">Create Login</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

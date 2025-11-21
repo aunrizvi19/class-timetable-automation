@@ -4,88 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard | Academa</title>
-    
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="hold-transition sidebar-mini student-page shared-page">
-<div class="container">
+<body class="student-page shared-page">
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>Academa</h2></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
+                </ul>
+                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+            </nav>
+        </aside>
 
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Academa</h2>
-        </div>
-        <nav class="sidebar-nav">
-            <ul>
-                <li class="nav-item-student"><a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a></li>
-                <li class="nav-item-shared"><a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a></li>
-            </ul>
-            <ul class="logout-ul">
-                <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
-            </ul>
-        </nav>
-    </aside>
+        <main class="main-content">
+            <header class="main-header">
+                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                <h1 class="dashboard-header">Welcome!</h1>
+            </header>
 
-    <main class="main-content">
-        <header class="main-header">
-            <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-            
-            <div class="header-title-group">
-                <h1>Student Dashboard</h1>
-                <p id="welcomeHeader" class="text-muted">Welcome back!</p>
-            </div>
-
-            <div class="header-actions">
-                <button class="action-btn theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark Mode">
-                    🌙
-                </button>
-            </div>
-        </header>
-
-        <section class="stats-container">
-            <div class="stat-card">
-                <h3>Total Classes</h3>
-                <p id="totalClassesStat">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>My Section</h3>
-                <p id="studentSectionStat">--</p>
-            </div>
-            <div class="stat-card">
-                <h3>Status</h3>
-                <p style="color: var(--color-success); font-size: 1.2rem;">Active</p>
-            </div>
-        </section>
-
-        <section class="timetable-container">
-            <div class="card-header">
-                <h3 class="card-title">My Weekly Schedule</h3>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="timetable-grid">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Monday</th>
-                                <th>Tuesday</th>
-                                <th>Wednesday</th>
-                                <th>Thursday</th>
-                                <th>Friday</th>
-                                <th>Saturday</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentTimetableBody">
-                            </tbody>
-                    </table>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>My Section</h3>
+                    <p id="studentSectionStat">Select...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Status</h3>
+                    <p style="color: var(--color-success); font-size: 1.2rem;">Active Student</p>
                 </div>
             </div>
-        </section>
-    </main>
 
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script.js"></script>
+            <div class="timetable-container">
+                <table class="timetable-grid">
+                    <thead>
+                        <tr>
+                            <th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>

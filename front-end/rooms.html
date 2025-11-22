@@ -10,26 +10,80 @@
 <body class="rooms-page admin-page shared-page">
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header"><h2>Academa</h2></div>
+            <div class="sidebar-header">
+                <h2>Academa</h2>
+            </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-faculty">
+                        <a href="faculty-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-student">
+                        <a href="student-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
 
-                    <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
+                    <li class="nav-item-shared">
+                        <a href="index.html">
+                            <span class="icon">📅</span>
+                            <span class="text">Timetable</span>
+                        </a>
+                    </li>
 
                     <li class="nav-item-admin nav-divider"></li>
-                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
-                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
-                    <li class="nav-item-admin"><a href="rooms.html" class="active-rooms">🏢 <span>Rooms</span></a></li>
-                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
-                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="courses.html">
+                            <span class="icon">📚</span>
+                            <span class="text">Courses</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="faculty.html">
+                            <span class="icon">👨‍🏫</span>
+                            <span class="text">Faculty</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="rooms.html" class="active-rooms">
+                            <span class="icon">🏢</span>
+                            <span class="text">Rooms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="sections.html">
+                            <span class="icon">👥</span>
+                            <span class="text">Sections</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="users.html">
+                            <span class="icon">👤</span>
+                            <span class="text">Users</span>
+                        </a>
+                    </li>
                     
                     <li class="nav-item-admin nav-divider"></li>
-                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="settings.html">
+                            <span class="icon">⚙️</span>
+                            <span class="text">Settings</span>
+                        </a>
+                    </li>
                 </ul>
-                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+                <ul class="logout-ul">
+                    <li><a href="#" id="logoutBtn"><span class="icon">🚪</span><span class="text">Logout</span></a></li>
+                </ul>
             </nav>
         </aside>
 
@@ -46,7 +100,8 @@
             </header>
 
             <section class="content-table">
-                <div class="action-header">
+                <div class="action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin:0;">All Rooms</h3>
                     <button onclick="document.getElementById('roomModal').style.display='block'" class="action-btn publish-btn">Add New Room</button>
                 </div>
                 <table class="data-table">

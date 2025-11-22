@@ -1,261 +1,176 @@
-const { ObjectId } = require("mongodb");
+// ============================================================================
+// TIMETABLE GENERATOR (Smart Labs & Rotating Batches)
+// ============================================================================
 
-// ============================================================================
-// 1. CONFIGURATION & CONSTANTS
-// ============================================================================
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// Time Slots
+// Standard Slots
 const FULL_DAY_SLOTS = [
     { start: "08:30", end: "09:30", type: "Lecture" },
     { start: "09:30", end: "10:30", type: "Lecture" },
-    // 10:30 - 10:45 Tea Break (Implicit)
+    // 10:30 - 10:45 Tea Break (handled by frontend)
     { start: "10:45", end: "11:45", type: "Lecture" },
     { start: "11:45", end: "12:45", type: "Lecture" },
-    // 12:45 - 13:30 Lunch Break (Implicit)
-    { start: "13:30", end: "14:30", type: "Lecture" },
-    { start: "14:30", end: "15:30", type: "Lecture" },
-    { start: "15:30", end: "16:30", type: "Lecture" }
+    // 12:45 - 13:30 Lunch Break (handled by frontend)
+    { start: "13:30", end: "14:30", type: "LabOrLecture" },
+    { start: "14:30", end: "15:30", type: "LabOrLecture" },
+    { start: "15:30", end: "16:30", type: "LabOrLecture" }
 ];
 
+// Wednesday Half-Day Logic
 const WEDNESDAY_SLOTS = [
     { start: "08:30", end: "09:30", type: "Lecture" },
     { start: "09:30", end: "10:30", type: "Lecture" },
-    // Tea Break
     { start: "10:45", end: "11:45", type: "Lecture" },
     { start: "11:45", end: "12:45", type: "Lecture" },
-    // Lunch
-    { start: "13:30", end: "16:30", type: "Activity", name: "Sports/Cultural/Technical Activities" }
+    { start: "13:30", end: "16:30", type: "Activity" } // Sports/Club
 ];
 
-const POPULATION_SIZE = 10; 
-const MAX_GENERATIONS = 20; 
-
-// ============================================================================
-// 2. MAIN GENERATION FUNCTION
-// ============================================================================
 async function generateAndSaveTimetable(db) {
-    console.log("🚀 Starting Timetable Generation...");
+    console.log("🚀 Starting Smart Generation: Parallel Labs & Rotating Batches...");
 
-    // 1. Fetch Data (CORRECTED COLLECTION NAMES)
-    // Using Mongoose default plural names
-    const courses = await db.collection('subjects').find({}).toArray();
+    // 1. Fetch All Resources
+    const subjects = await db.collection('subjects').find({}).toArray();
     const faculty = await db.collection('users').find({ role: 'faculty' }).toArray();
     const rooms = await db.collection('rooms').find({}).toArray();
     const sections = await db.collection('batches').find({}).toArray();
 
-    console.log(`📊 Data Loaded: ${courses.length} Courses, ${faculty.length} Faculty, ${sections.length} Batches.`);
-
-    if (!courses.length || !faculty.length || !sections.length) {
-        throw new Error("Missing Data: Please run 'node seed.js' to populate the database first.");
+    if (sections.length === 0 || subjects.length === 0) {
+        throw new Error("Missing Data: Add Sections and Courses first.");
     }
 
-    // 2. Build the Gene Pool
-    let genePool = [];
+    let schedule = [];
     
+    // Helper: Get Random Item from Array
+    const getRandom = (arr) => arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+
+    // 2. Generate Schedule per Section
     for (const section of sections) {
-        // Filter courses for this section's semester and department
-        const relevantCourses = courses.filter(c => 
-            (c.department === section.department) && 
-            (c.semester === section.semester)
-        );
+        // Filter subjects for this specific class (Dept + Semester)
+        const theorySubjects = subjects.filter(s => s.department === section.department && s.semester === section.semester && s.type === 'theory');
+        const labSubjects = subjects.filter(s => s.department === section.department && s.semester === section.semester && s.type === 'lab');
 
-        for (const course of relevantCourses) {
-            // Assign Faculty
-            const deptFaculty = faculty.filter(f => f.department === course.department);
-            const assignedFaculty = deptFaculty.length > 0 
-                ? deptFaculty[Math.floor(Math.random() * deptFaculty.length)] 
-                : faculty[0];
-
-            if (!assignedFaculty) continue;
-
-            // Find Substitutes
-            const substitutes = deptFaculty
-                .filter(f => f._id.toString() !== assignedFaculty._id.toString())
-                .map(f => ({ name: f.name, _id: f._id }));
-
-            const isLab = course.type && course.type.toLowerCase() === 'lab';
-            const hoursNeeded = parseInt(course.weeklyHours) || 3;
-
-            // Create Schedule Blocks
-            for (let i = 0; i < hoursNeeded; i++) {
-                genePool.push({
-                    sectionId: section.name, // Using Name as ID
-                    courseCode: course.subjectCode,
-                    courseName: course.name,
-                    facultyId: assignedFaculty._id,
-                    facultyName: assignedFaculty.name,
-                    substitutes: substitutes,
-                    type: isLab ? "Lab" : "Theory",
-                    duration: isLab ? 2 : 1,
-                    roomCandidate: null
-                });
-                if (isLab) i++; // Skip next hour for lab
-            }
-        }
-    }
-
-    if (genePool.length === 0) {
-        throw new Error("No classes to schedule! Check if Courses map to Batch Semesters correctly.");
-    }
-
-    // 3. Run Genetic Algorithm
-    const bestSchedule = runGeneticAlgorithm(genePool, rooms);
-
-    // 4. Format and Save
-    const finalTimetable = formatForStorage(bestSchedule, sections);
-    
-    await db.collection('timetables').updateOne(
-        { _id: 'main' },
-        { $set: { data: finalTimetable, generatedAt: new Date() } },
-        { upsert: true }
-    );
-
-    console.log("✅ Timetable Generated Successfully!");
-    return finalTimetable;
-}
-
-// ============================================================================
-// 3. GENETIC ALGORITHM ENGINE
-// ============================================================================
-
-function runGeneticAlgorithm(genePool, rooms) {
-    let population = [];
-
-    for (let i = 0; i < POPULATION_SIZE; i++) {
-        population.push(createRandomSchedule(genePool, rooms));
-    }
-
-    for (let gen = 0; gen < MAX_GENERATIONS; gen++) {
-        population.sort((a, b) => calculateFitness(b) - calculateFitness(a));
-
-        if (calculateFitness(population[0]) === 0) {
-            return population[0];
-        }
-
-        const survivors = population.slice(0, POPULATION_SIZE / 2);
-        const newGen = [...survivors];
+        // Faculty for this dept
+        const deptFaculty = faculty.filter(f => f.department === section.department);
         
-        while (newGen.length < POPULATION_SIZE) {
-            const parent = survivors[Math.floor(Math.random() * survivors.length)];
-            newGen.push(mutateSchedule(parent, rooms));
-        }
-        population = newGen;
-    }
-    return population[0];
-}
+        // Rooms
+        const lectureRooms = rooms.filter(r => r.type === 'Lecture');
+        const labRooms = rooms.filter(r => r.type === 'Lab');
 
-function createRandomSchedule(genes, rooms) {
-    return genes.map(gene => {
-        const day = DAYS[Math.floor(Math.random() * DAYS.length)];
-        const slots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
-        
-        const validSlots = slots.filter(s => s.type === "Lecture");
-        const slot = validSlots[Math.floor(Math.random() * validSlots.length)];
-        const room = rooms.length ? rooms[Math.floor(Math.random() * rooms.length)].name : "101";
+        // State tracking to prevent too many labs
+        let labsScheduledThisWeek = 0;
 
-        return { ...gene, day, time: slot.start, room };
-    });
-}
+        for (const day of DAYS) {
+            const slots = (day === "Wednesday") ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
+            let hasHadLabToday = false;
 
-function mutateSchedule(schedule, rooms) {
-    const newSchedule = JSON.parse(JSON.stringify(schedule));
-    const idx = Math.floor(Math.random() * newSchedule.length);
-    const gene = newSchedule[idx];
-
-    const day = DAYS[Math.floor(Math.random() * DAYS.length)];
-    const slots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
-    const validSlots = slots.filter(s => s.type === "Lecture");
-    const slot = validSlots[Math.floor(Math.random() * validSlots.length)];
-    
-    gene.day = day;
-    gene.time = slot.start;
-    gene.room = rooms.length ? rooms[Math.floor(Math.random() * rooms.length)].name : "101";
-
-    return newSchedule;
-}
-
-function calculateFitness(schedule) {
-    let score = 0;
-    for (let i = 0; i < schedule.length; i++) {
-        for (let j = i + 1; j < schedule.length; j++) {
-            const c1 = schedule[i];
-            const c2 = schedule[j];
-
-            if (c1.day === c2.day && c1.time === c2.time) {
-                if (c1.facultyId === c2.facultyId) score -= 100;
-                if (c1.room === c2.room) score -= 100;
-                if (c1.sectionId === c2.sectionId) score -= 100;
-            }
-        }
-    }
-    return score;
-}
-
-// ============================================================================
-// 4. FORMATTING FOR FRONTEND
-// ============================================================================
-function formatForStorage(schedule, sections) {
-    const formatted = {};
-    
-    DAYS.forEach(day => {
-        formatted[day] = {};
-        const daySlots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
-        
-        daySlots.forEach(slot => {
-            formatted[day][slot.start] = [];
-            
-            if (day === "Wednesday" && slot.type === "Activity") {
-                 formatted[day][slot.start].push({
-                    course: slot.name,
-                    faculty: "All Staff",
-                    room: "Campus",
-                    section: "ALL",
-                    type: "Activity",
-                    isUniversal: true
-                });
-            }
-        });
-    });
-
-    schedule.forEach(cls => {
-        if (formatted[cls.day] && formatted[cls.day][cls.time]) {
-            formatted[cls.day][cls.time].push({
-                course: cls.courseName,
-                faculty: cls.facultyName,
-                facultyId: cls.facultyId,
-                room: cls.room,
-                section: cls.sectionId,
-                type: cls.type,
-                substitutes: cls.substitutes
-            });
-        }
-    });
-
-    // Fill Gaps with PBL
-    DAYS.forEach(day => {
-        const daySlots = day === "Wednesday" ? WEDNESDAY_SLOTS : FULL_DAY_SLOTS;
-        daySlots.filter(s => s.type === "Lecture").forEach(slot => {
-            const time = slot.start;
-            const classesNow = formatted[day][time] || [];
-            
-            sections.forEach(sec => {
-                const hasClass = classesNow.find(c => c.section === sec.name);
-                if (!hasClass) {
-                    if(!formatted[day][time]) formatted[day][time] = [];
-                    formatted[day][time].push({
-                        course: "PBL / ABL / Library",
-                        faculty: "-",
-                        room: "Library",
-                        section: sec.name,
-                        type: "Self-Learning"
+            for (const slot of slots) {
+                
+                // A. ACTIVITY SLOT (Wednesdays)
+                if (slot.type === "Activity") {
+                    schedule.push({
+                        day, time: slot.start, 
+                        section: section._id, batch: "All",
+                        course: "Sports / Co-Curricular", faculty: "Sports Dept", room: "Ground", type: "Activity"
                     });
+                    continue;
                 }
-            });
+
+                // B. LAB LOGIC (Parallel & Rotating)
+                // Criteria: Afternoon slot, Labs exist, haven't done lab today, max 2 labs/week
+                const isAfternoon = parseInt(slot.start.split(':')[0]) >= 13;
+                
+                if (isAfternoon && !hasHadLabToday && labsScheduledThisWeek < 2 && labSubjects.length >= 1 && Math.random() > 0.5) {
+                    
+                    hasHadLabToday = true;
+                    labsScheduledThisWeek++;
+
+                    // We assume 3 batches: B1, B2, B3
+                    const batches = ['B1', 'B2', 'B3'];
+                    
+                    // Shuffle labs so B1 doesn't always get the same lab first
+                    const availableLabs = [...labSubjects].sort(() => 0.5 - Math.random());
+
+                    batches.forEach((batchName, index) => {
+                        // ROTATION LOGIC: 
+                        // Ensure B1, B2, B3 get DIFFERENT labs if possible
+                        const labSubject = availableLabs[index % availableLabs.length];
+                        
+                        // Ensure B1, B2, B3 get DIFFERENT rooms
+                        const labRoom = labRooms[index % labRooms.length] || { _id: "Lab-Default" };
+                        
+                        // Assign a teacher
+                        const teacher = getRandom(deptFaculty) || { name: "Staff", _id: "TBD" };
+
+                        schedule.push({
+                            day,
+                            time: slot.start,
+                            section: section._id,         // Main filter
+                            batch: `${section._id}-${batchName}`, // Display: CSE-5A-B1
+                            course: labSubject.name,
+                            faculty: teacher.name,
+                            facultyId: teacher._id,
+                            room: labRoom._id,
+                            type: "Lab"
+                        });
+                    });
+
+                } 
+                // C. THEORY LOGIC (Standard Lecture)
+                else {
+                    if (theorySubjects.length > 0) {
+                        const sub = getRandom(theorySubjects);
+                        const teacher = getRandom(deptFaculty) || { name: "Staff", _id: "TBD" };
+                        const room = getRandom(lectureRooms) || { _id: "101" };
+
+                        schedule.push({
+                            day,
+                            time: slot.start,
+                            section: section._id,
+                            batch: "All",
+                            course: sub.name,
+                            faculty: teacher.name,
+                            facultyId: teacher._id,
+                            room: room._id,
+                            type: "Theory"
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Transform Data for Frontend Grid
+    // Structure: { "Monday": { "08:30": [ { class... }, { class... } ] } }
+    const finalData = {};
+    
+    DAYS.forEach(day => {
+        finalData[day] = {};
+        FULL_DAY_SLOTS.forEach(slot => {
+            finalData[day][slot.start] = [];
         });
+        // Ensure Wed activity slot exists
+        if (day === "Wednesday") finalData[day]["13:30"] = [];
     });
 
-    return formatted;
+    schedule.forEach(entry => {
+        if (!finalData[entry.day]) finalData[entry.day] = {};
+        if (!finalData[entry.day][entry.time]) finalData[entry.day][entry.time] = [];
+        
+        finalData[entry.day][entry.time].push(entry);
+    });
+
+    // 4. Save to Database (Overwrite 'main' document)
+    const timetableCollection = db.collection('timetables');
+    await timetableCollection.deleteMany({}); // Clear old
+    await timetableCollection.insertOne({ 
+        _id: 'main', 
+        createdAt: new Date(), 
+        data: finalData 
+    });
+
+    console.log("✅ Smart Timetable Generated successfully!");
+    return finalData;
 }
 
 module.exports = { generateAndSaveTimetable };

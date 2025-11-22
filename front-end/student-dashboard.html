@@ -13,14 +13,44 @@
             <div class="sidebar-header"><h2>Academa</h2></div>
             <nav class="sidebar-nav">
                 <ul>
+                    <li class="nav-item-admin">
+                        <a href="dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-faculty">
+                        <a href="faculty-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
                     <li class="nav-item-student">
-                        <a href="student-dashboard.html" class="active-dashboard">🏠 <span>Dashboard</span></a>
+                        <a href="student-dashboard.html" class="active-dashboard">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
                     </li>
+            
                     <li class="nav-item-shared">
-                        <a href="index.html" class="active-timetable">📅 <span>My Timetable</span></a>
+                        <a href="index.html" class="active-timetable">
+                            <span class="icon">📅</span>
+                            <span class="text">My Timetable</span>
+                        </a>
                     </li>
+
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="courses.html"><span class="icon">📚</span><span class="text">Courses</span></a></li>
+                    <li class="nav-item-admin"><a href="faculty.html"><span class="icon">👨‍🏫</span><span class="text">Faculty</span></a></li>
+                    <li class="nav-item-admin"><a href="rooms.html"><span class="icon">🏢</span><span class="text">Rooms</span></a></li>
+                    <li class="nav-item-admin"><a href="sections.html"><span class="icon">👥</span><span class="text">Sections</span></a></li>
+                    <li class="nav-item-admin"><a href="users.html"><span class="icon">👤</span><span class="text">Users</span></a></li>
+                    <li class="nav-item-admin nav-divider"></li>
+                    <li class="nav-item-admin"><a href="settings.html"><span class="icon">⚙️</span><span class="text">Settings</span></a></li>
                 </ul>
-                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+                <ul class="logout-ul">
+                    <li><a href="#" id="logoutBtn"><span class="icon">🚪</span><span class="text">Logout</span></a></li>
+                </ul>
             </nav>
         </aside>
 
@@ -35,6 +65,20 @@
                     <span class="slider"></span>
                 </label>
             </header>
+
+            <div class="live-status-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 2rem; font-weight: 700;" id="liveTime">00:00</h2>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9;" id="liveDate">Loading...</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Happening Now</p>
+                        <h3 style="margin: 5px 0 0 0; font-size: 1.5rem;" id="currentClassInfo">No Class Currently</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;" id="currentRoomInfo">--</p>
+                    </div>
+                </div>
+            </div>
 
             <div class="stats-container">
                 <div class="stat-card">

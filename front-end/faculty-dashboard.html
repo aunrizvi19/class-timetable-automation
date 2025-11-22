@@ -15,31 +15,43 @@
         </div>
         <nav class="sidebar-nav">
             <ul>
-                <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
-                
-                <li class="nav-item-faculty">
-                    <a href="faculty-dashboard.html" class="active-dashboard">
-                        🏠 <span>Dashboard</span>
+                <li class="nav-item-admin">
+                    <a href="dashboard.html">
+                        <span class="icon">🏠</span>
+                        <span class="text">Dashboard</span>
                     </a>
                 </li>
-                
-                <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                <li class="nav-item-faculty">
+                    <a href="faculty-dashboard.html" class="active-dashboard">
+                        <span class="icon">🏠</span>
+                        <span class="text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item-student">
+                    <a href="student-dashboard.html">
+                        <span class="icon">🏠</span>
+                        <span class="text">Dashboard</span>
+                    </a>
+                </li>
 
                 <li class="nav-item-shared">
-                    <a href="index.html">📅 <span>Full Timetable</span></a>
+                    <a href="index.html">
+                        <span class="icon">📅</span>
+                        <span class="text">Full Timetable</span>
+                    </a>
                 </li>
-                
+
                 <li class="nav-item-admin nav-divider"></li>
-                <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
-                <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
-                <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
-                <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
-                <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                <li class="nav-item-admin"><a href="courses.html"><span class="icon">📚</span><span class="text">Courses</span></a></li>
+                <li class="nav-item-admin"><a href="faculty.html"><span class="icon">👨‍🏫</span><span class="text">Faculty</span></a></li>
+                <li class="nav-item-admin"><a href="rooms.html"><span class="icon">🏢</span><span class="text">Rooms</span></a></li>
+                <li class="nav-item-admin"><a href="sections.html"><span class="icon">👥</span><span class="text">Sections</span></a></li>
+                <li class="nav-item-admin"><a href="users.html"><span class="icon">👤</span><span class="text">Users</span></a></li>
                 <li class="nav-item-admin nav-divider"></li>
-                <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
+                <li class="nav-item-admin"><a href="settings.html"><span class="icon">⚙️</span><span class="text">Settings</span></a></li>
             </ul>
             <ul class="logout-ul">
-                <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
+                <li><a href="#" id="logoutBtn"><span class="icon">🚪</span><span class="text">Logout</span></a></li>
             </ul>
         </nav>
     </aside>
@@ -56,19 +68,33 @@
             </label>
         </header>
 
-        <section class="stats-container">
-            <div class="stat-card">
-                <h3>Workload (Hrs/Week)</h3>
-                <p id="totalHoursStat">0</p>
+        <div class="live-status-container" style="background: linear-gradient(135deg, #13547a 0%, #80d0c7 100%); color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 2rem; font-weight: 700;" id="liveTime">00:00</h2>
+                    <p style="margin: 5px 0 0 0; opacity: 0.9;" id="liveDate">Loading...</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Current Session</p>
+                    <h3 style="margin: 5px 0 0 0; font-size: 1.5rem;" id="currentClassInfo">Free Slot</h3>
+                    <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;" id="currentRoomInfo">--</p>
+                </div>
             </div>
+        </div>
+
+        <section class="stats-container">
             <div class="stat-card">
                 <h3>Department</h3>
                 <p id="facultyDeptStat" style="font-size: 1.5rem;">--</p>
             </div>
+            <div class="stat-card">
+                <h3>Status</h3>
+                <p style="color: var(--color-success); font-size: 1.2rem;">Active Faculty</p>
+            </div>
         </section>
 
         <section class="timetable-container">
-            <h3 style="margin-bottom: 15px; color: var(--color-gray);">My Schedule</h3>
+            <h3 style="margin-bottom: 15px; color: var(--color-gray);">My Weekly Schedule</h3>
             <table class="timetable-grid">
                 <thead>
                     <tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>

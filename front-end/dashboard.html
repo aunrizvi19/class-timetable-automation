@@ -17,41 +17,80 @@
                 <ul>
                     <li class="nav-item-admin">
                         <a href="dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item-faculty">
-                        <a href="faculty-dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
+                        <a href="faculty-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item-student">
-                        <a href="student-dashboard.html" class="active-dashboard">
-                            🏠 <span>Dashboard</span>
+                        <a href="student-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
                         </a>
                     </li>
 
                     <li class="nav-item-shared">
                         <a href="index.html">
-                            📅 <span>Timetable</span>
+                            <span class="icon">📅</span>
+                            <span class="text">Timetable</span>
                         </a>
                     </li>
 
                     <li class="nav-item-admin nav-divider"></li> 
 
-                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
-                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
-                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
-                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
-                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="courses.html">
+                            <span class="icon">📚</span>
+                            <span class="text">Courses</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="faculty.html">
+                            <span class="icon">👨‍🏫</span>
+                            <span class="text">Faculty</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="rooms.html">
+                            <span class="icon">🏢</span>
+                            <span class="text">Rooms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="sections.html">
+                            <span class="icon">👥</span>
+                            <span class="text">Sections</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="users.html">
+                            <span class="icon">👤</span>
+                            <span class="text">Users</span>
+                        </a>
+                    </li>
 
                     <li class="nav-item-admin nav-divider"></li>
 
-                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="settings.html">
+                            <span class="icon">⚙️</span>
+                            <span class="text">Settings</span>
+                        </a>
+                    </li>
                 </ul>
             
                 <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
+                    <li>
+                        <a href="#" id="logoutBtn">
+                            <span class="icon">🚪</span>
+                            <span class="text">Logout</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -69,16 +108,15 @@
                 </label>
             </header>
 
-            <div class="live-status-container" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(0,123,255,0.3); border: none;">
+            <div class="live-status-container" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%); color: white;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h2 style="margin: 0; font-size: 2.5rem; font-weight: 700;" id="liveTime">00:00:00</h2>
                         <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem;" id="liveDate">Loading Date...</p>
                     </div>
                     <div style="text-align: right;">
-                        <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8;">Current Status</p>
-                        <h3 style="margin: 5px 0 0 0; font-size: 1.8rem;" id="currentClassInfo">System Active</h3>
-                        <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;" id="currentRoomInfo">Monitoring all classes</p>
+                        <p style="margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8;">System Status</p>
+                        <h3 style="margin: 5px 0 0 0; font-size: 1.4rem;" id="currentClassInfo">Active</h3>
                     </div>
                 </div>
             </div>
@@ -98,11 +136,23 @@
                 </div>
             </div>
 
-            <div class="live-status-container">
-                <h3>🔴 Live Faculty Presence</h3>
-                <div id="activeFacultyList">
-                    <span style="color: var(--color-gray);">Calculating schedule...</span>
+            <div class="content-table" style="margin-top: 30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                    <h3 style="margin:0;">📋 Mark Faculty Attendance (Today)</h3>
+                    <button class="action-btn publish-btn" id="saveAttendanceBtn">Save Changes</button>
                 </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Faculty Name</th>
+                            <th>Status</th>
+                            <th>Assign Substitute</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <tr><td colspan="3">Loading faculty list...</td></tr>
+                    </tbody>
+                </table>
             </div>
 
         </main>

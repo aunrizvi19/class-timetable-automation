@@ -15,28 +15,81 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-faculty">
+                        <a href="faculty-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-student">
+                        <a href="student-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
 
                     <li class="nav-item-shared">
                         <a href="index.html" class="active-timetable">
-                            📅 <span>Timetable</span>
+                            <span class="icon">📅</span>
+                            <span class="text">Timetable</span>
                         </a>
                     </li>
 
                     <li class="nav-item-admin nav-divider"></li>
-                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
-                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
-                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
-                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
-                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    
+                    <li class="nav-item-admin">
+                        <a href="courses.html">
+                            <span class="icon">📚</span>
+                            <span class="text">Courses</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="faculty.html">
+                            <span class="icon">👨‍🏫</span>
+                            <span class="text">Faculty</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="rooms.html">
+                            <span class="icon">🏢</span>
+                            <span class="text">Rooms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="sections.html">
+                            <span class="icon">👥</span>
+                            <span class="text">Sections</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="users.html">
+                            <span class="icon">👤</span>
+                            <span class="text">Users</span>
+                        </a>
+                    </li>
                     
                     <li class="nav-item-admin nav-divider"></li>
-                    <li class="nav-item-admin"><a href="settings.html">⚙️ <span>Settings</span></a></li>
+                    
+                    <li class="nav-item-admin">
+                        <a href="settings.html">
+                            <span class="icon">⚙️</span>
+                            <span class="text">Settings</span>
+                        </a>
+                    </li>
                 </ul>
                 <ul class="logout-ul">
-                    <li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li>
+                    <li>
+                        <a href="#" id="logoutBtn">
+                            <span class="icon">🚪</span>
+                            <span class="text">Logout</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -49,12 +102,12 @@
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <button onclick="window.print()" class="action-btn" style="background: var(--color-gray); color: white;">
-                        🖨️ Print / PDF
+                    <button onclick="window.print()" class="action-btn" style="background: var(--text-muted); color: white;">
+                        🖨️ PDF
                     </button>
 
-                    <button class="action-btn generate-btn nav-item-admin" style="background-color: var(--color-success); box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);">
-                        🚀 Publish New Timetable
+                    <button class="action-btn generate-btn nav-item-admin" style="background-color: var(--color-success); box-shadow: 0 4px 12px rgba(6, 214, 160, 0.4);">
+                        🚀 Publish New
                     </button>
 
                     <label class="toggle-switch">

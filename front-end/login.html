@@ -5,78 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Academa</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="login-page">
 
-    <div class="auth-container">
-        <div class="auth-box">
-            <div class="auth-header">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" class="auth-logo">
-                <h1 id="formTitle">Login</h1>
-                <p>Welcome to Academa</p>
+    <div class="auth-box">
+        <div class="auth-header">
+            <img src="https://cdn-icons-png.flaticon.com/512/2997/2997300.png" alt="Academa Logo" class="auth-logo">
+            <h1 id="formTitle">Welcome Back</h1>
+            <p>Please enter your details to sign in</p>
+        </div>
+        
+        <div class="auth-toggle">
+            <div class="toggle-option active" id="loginToggle">Login</div>
+            <div class="toggle-option" id="signupToggle">Sign Up</div>
+        </div>
+
+        <form id="loginForm" class="auth-form" autocomplete="off">
+            <div class="form-group">
+                <label for="loginIdentifier">Email or USN</label>
+                <input type="text" id="loginIdentifier" placeholder="e.g. admin@academa.com" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
+            </div>
+            <p class="auth-error" id="loginError"></p>
+            <button type="submit" class="auth-btn">Sign In</button>
+        </form>
+
+        <form id="signupForm" class="auth-form" style="display: none;" autocomplete="off">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="signupName" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signupEmail" placeholder="john@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signupPassword" placeholder="Create a strong password" required>
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="signupRole" required>
+                    <option value="">Select Role...</option>
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
             
-            <div class="auth-toggle">
-                <div class="toggle-option active" id="loginToggle">Login</div>
-                <div class="toggle-option" id="signupToggle">Sign Up</div>
+            <div id="studentFields" style="display: none;">
+                <div class="form-group">
+                    <label>USN (Student ID)</label>
+                    <input type="text" id="signupUSN" placeholder="e.g. 1JB21CS001">
+                </div>
             </div>
 
-            <form id="loginForm" class="auth-form" autocomplete="off">
+            <div id="facultyFields" style="display: none;">
                 <div class="form-group">
-                    <label for="loginIdentifier">Email or USN</label>
-                    <input type="text" id="loginIdentifier" placeholder="Enter Email or USN" required>
+                    <label>Faculty ID</label>
+                    <input type="text" id="signupFacultyID" placeholder="e.g. FAC001">
                 </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter Password" required>
-                </div>
-                <p class="auth-error" id="loginError"></p>
-                <button type="submit" class="auth-btn">Login</button>
-            </form>
+            </div>
 
-            <form id="signupForm" class="auth-form" style="display: none;" autocomplete="off">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="signupName" required>
-                </div>
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="signupEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="signupPassword" required>
-                </div>
-                <div class="form-group">
-                    <label>Role</label>
-                    <select id="signupRole" required>
-                        <option value="">Select Role...</option>
-                        <option value="student">Student</option>
-                        <option value="faculty">Faculty</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                
-                <div id="studentFields" style="display: none;">
-                    <div class="form-group">
-                        <label>USN (Student ID)</label>
-                        <input type="text" id="signupUSN" placeholder="e.g. 1JB21CS001">
-                    </div>
-                </div>
-
-                <div id="facultyFields" style="display: none;">
-                    <div class="form-group">
-                        <label>Faculty ID</label>
-                        <input type="text" id="signupFacultyID" placeholder="e.g. FAC001">
-                    </div>
-                </div>
-
-                <p class="auth-error" id="signupError"></p>
-                <button type="submit" class="auth-btn">Create Account</button>
-            </form>
-
-        </div>
+            <p class="auth-error" id="signupError"></p>
+            <button type="submit" class="auth-btn" style="background: var(--color-secondary);">Create Account</button>
+        </form>
     </div>
 
     <script src="script.js"></script>

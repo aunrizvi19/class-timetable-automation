@@ -10,13 +10,13 @@ const User = require('./models/user');
 const Subject = require('./models/Subject');
 const Room = require('./models/Room');
 const Batch = require('./models/Batch');
+const Attendance = require('./models/Attendance'); // <--- NEW
 
 const { generateAndSaveTimetable } = require('./timetable_generator'); 
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,38 +26,30 @@ const uri = "mongodb+srv://mohammadaunrizvi19_db_user:305YJ8h9IsNVu9Ad@cluster0.
 
 // 1. Connect Mongoose
 mongoose.connect(uri)
-    .then(() => console.log("✅ Mongoose Connected (Dashboard Ready)"))
+    .then(() => console.log("✅ Mongoose Connected"))
     .catch(err => console.error("❌ Mongoose Error:", err));
 
-// 2. Connect Native Client (For Generator)
+// 2. Connect Native Client
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
   tlsInsecure: true 
 });
 let db;
-client.connect().then(() => { 
-    db = client.db("test"); 
-    console.log("✅ Native MongoDB Client Connected (Generator Ready)");
-}).catch(err => console.error("❌ Native Client Error:", err));
-
+client.connect().then(() => { db = client.db("test"); console.log("✅ Native Client Connected"); });
 
 // =================================================================
-// 1. AUTHENTICATION API
+// AUTHENTICATION & PASSWORD MANAGEMENT
 // =================================================================
 
 app.post('/api/login', async (req, res) => {
-    console.log("📝 Login Attempt:", req.body.identifier);
     const { identifier, password } = req.body;
     try {
-        if (!identifier || !password) return res.status(400).json({ message: "Missing credentials" });
-
         const user = await User.findOne({ 
             $or: [
                 { email: { $regex: new RegExp(`^${identifier}$`, 'i') } }, 
                 { usn: { $regex: new RegExp(`^${identifier}$`, 'i') } }
             ] 
         });
-        
         if (!user) return res.status(401).json({ message: "User not found" });
         
         const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -69,208 +61,144 @@ app.post('/api/login', async (req, res) => {
         
         res.status(200).json({ 
             message: "Login successful", 
-            user: { 
-                name: user.name, 
-                email: user.email, 
-                role: user.role, 
-                profileId: pid,
-                department: user.department,
-                usn: user.usn
-            } 
+            user: { name: user.name, email: user.email, role: user.role, profileId: pid, department: user.department, usn: user.usn } 
         });
-    } catch (err) {
-        console.error("Login Error:", err);
-        res.status(500).json({ message: err.message });
-    }
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// NEW: Change Password
+app.post('/api/change-password', async (req, res) => {
+    const { email, newPassword } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await User.updateOne({ email }, { $set: { passwordHash: hashedPassword } });
+        res.json({ message: "Password updated successfully" });
+    } catch (err) { res.status(500).json({ message: "Update failed" }); }
 });
 
 app.post('/api/signup', async (req, res) => {
     try {
         const { name, email, password, role, usn, facultyId } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-
         const newUser = new User({
-            _id: email, 
-            name, email, passwordHash: hashedPassword, role,
+            _id: email, name, email, passwordHash: hashedPassword, role,
             usn: role === 'student' ? usn : null,
             facultyId: role === 'faculty' ? facultyId : null,
             verified: true
         });
-        
         await newUser.save();
         res.status(201).json({ message: "User created" });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // =================================================================
-// 2. CRUD API (With Fixes for Missing Fields)
+// ATTENDANCE & SUBSTITUTION API (NEW)
 // =================================================================
 
-// --- COURSES ---
+app.post('/api/attendance', async (req, res) => {
+    // Expected body: { date: "2023-11-01", facultyId: "...", status: "absent", substitutions: [] }
+    const { date, facultyId, status, substitutions } = req.body;
+    try {
+        await Attendance.findOneAndUpdate(
+            { date, facultyId },
+            { status, substitutions },
+            { upsert: true, new: true }
+        );
+        res.json({ message: "Attendance updated" });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/attendance/:date', async (req, res) => {
+    try {
+        const records = await Attendance.find({ date: req.params.date });
+        res.json(records);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// =================================================================
+// CRUD DATA API (With Mapping Fixes)
+// =================================================================
+
+// Courses (Subjects)
 app.get('/api/courses', async (req, res) => {
-    try {
-        const subjects = await Subject.find({});
-        // Robust mapping that won't crash if fields are missing
-        const mapped = subjects.map(s => ({
-            _id: s.subjectCode || "NO_ID", 
-            course_name: s.name || "Unnamed Course",
-            course_type: s.type ? (s.type.charAt(0).toUpperCase() + s.type.slice(1)) : 'Theory',
-            credits: s.credits || 0,
-            lectures_per_week: s.weeklyHours || s.lectures_per_week || 0,
-            tutorials_per_week: 0,
-            practicals_per_week: 0
-        }));
-        res.json(mapped);
-    } catch(e) {
-        console.error("GET /courses error:", e);
-        res.status(500).json({message: e.message});
-    }
+    const subjects = await Subject.find({});
+    res.json(subjects.map(s => ({
+        _id: s.subjectCode, 
+        course_name: s.name, 
+        course_type: s.type, 
+        credits: s.credits,
+        lectures_per_week: s.weeklyHours || 3, 
+        tutorials_per_week: 0, 
+        practicals_per_week: 0
+    })));
 });
 
-app.post('/api/courses', async (req, res) => {
+app.post('/api/courses', async(req,res) => {
     try {
-        console.log("Adding Course:", req.body);
         const { course_name, course_type, lectures_per_week, credits } = req.body;
-        
-        // AUTO-GENERATE MISSING REQUIRED FIELDS
-        const code = course_name.substring(0,3).toUpperCase() + Math.floor(100 + Math.random() * 900); 
-        
-        const newSub = new Subject({
-            subjectCode: code,
-            name: course_name,
-            type: (course_type || 'theory').toLowerCase(),
-            department: "CSE", // Defaulting to CSE since UI doesn't send it yet
-            semester: 1,       // Default
-            year: 1,           // Default
-            credits: credits || 4,
-            weeklyHours: lectures_per_week || 4
-        });
-        
-        await newSub.save();
-        res.status(201).json({ message: "Course Added" });
-    } catch(err) { 
-        console.error("POST /courses Failed:", err);
-        res.status(500).json({ message: "Error adding course: " + err.message }); 
-    }
+        const code = course_name.substring(0,3).toUpperCase() + Math.floor(100+Math.random()*900);
+        await new Subject({
+            subjectCode: code, name: course_name, type: (course_type||'theory').toLowerCase(),
+            department: "CSE", semester: 1, credits: credits||4, weeklyHours: lectures_per_week||4
+        }).save();
+        res.status(201).json({message: "Course Added"});
+    } catch(e){ res.status(500).json({message:e.message}); }
 });
+app.delete('/api/courses/:id', async(req,res) => { await Subject.deleteOne({subjectCode:req.params.id}); res.json({message:"Deleted"}); });
 
-app.delete('/api/courses/:id', async (req, res) => {
-    await Subject.deleteOne({ subjectCode: req.params.id });
-    res.json({ message: "Deleted" });
-});
-
-// --- ROOMS ---
-app.get('/api/rooms', async (req, res) => {
-    const rooms = await Room.find({});
-    res.json(rooms);
-});
-
-app.post('/api/rooms', async (req, res) => {
+// Rooms
+app.get('/api/rooms', async(req,res) => res.json(await Room.find({})));
+app.post('/api/rooms', async(req,res) => {
     try {
         const { roomNumber, capacity, type } = req.body;
-        const newRoom = new Room({
-            _id: roomNumber, 
-            name: roomNumber,
-            capacity: capacity || 60,
-            floor: 1, // Default
-            type: type || 'Lecture'
-        });
-        await newRoom.save();
-        res.status(201).json({ message: "Room Added" });
-    } catch(err) { res.status(500).json({ message: err.message }); }
+        await new Room({_id: roomNumber, name: roomNumber, capacity, type}).save();
+        res.status(201).json({message:"Room Added"});
+    } catch(e){ res.status(500).json({message:e.message}); }
 });
+app.delete('/api/rooms/:id', async(req,res)=>{ await Room.findByIdAndDelete(req.params.id); res.json({message:"Deleted"}); });
 
-app.delete('/api/rooms/:id', async (req, res) => {
-    await Room.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
-});
-
-// --- SECTIONS (BATCHES) ---
-app.get('/api/sections', async (req, res) => {
+// Sections
+app.get('/api/sections', async(req,res) => {
     const batches = await Batch.find({});
-    const mapped = batches.map(b => ({
-        _id: b._id,
-        section_name: b.name,
-        department: b.department,
-        semester: b.semester,
-        size: b.size
-    }));
-    res.json(mapped);
+    res.json(batches.map(b => ({ _id: b._id, section_name: b.name, department: b.department, semester: b.semester, size: b.size })));
 });
-
-app.post('/api/sections', async (req, res) => {
+app.post('/api/sections', async(req,res) => {
     try {
-        console.log("Adding Section:", req.body);
         const { section_name, department, semester, size } = req.body;
-        const newBatch = new Batch({
-            _id: section_name,
-            name: section_name,
-            department: department || "CSE",
-            year: Math.ceil((semester || 1)/2), // Calculate year from sem
-            semester: semester || 1,
-            size: size || 60
-        });
-        await newBatch.save();
-        res.status(201).json({ message: "Section Added" });
-    } catch(err) { 
-        console.error("POST /sections Failed:", err);
-        res.status(500).json({ message: err.message }); 
-    }
+        await new Batch({ _id: section_name, name: section_name, department, semester, size }).save();
+        res.status(201).json({message:"Section Added"});
+    } catch(e){ res.status(500).json({message:e.message}); }
 });
+app.delete('/api/sections/:id', async(req,res) => { await Batch.findByIdAndDelete(req.params.id); res.json({message:"Deleted"}); });
 
-app.delete('/api/sections/:id', async (req, res) => {
-    await Batch.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
-});
-
-// --- USERS / FACULTY ---
-app.get('/api/users', async(req, res) => res.json(await User.find({})));
-app.get('/api/faculty', async(req, res) => res.json(await User.find({ role: 'faculty' })));
-
-app.post('/api/faculty', async (req, res) => {
+// Faculty & Users
+app.get('/api/faculty', async(req,res) => res.json(await User.find({role:'faculty'})));
+app.post('/api/faculty', async(req,res) => {
     try {
         const { name, email, facultyId, department } = req.body;
-        const hashedPassword = await bcrypt.hash("password123", 10); 
-        
-        const newFac = new User({
-            _id: email,
-            name, email, passwordHash: hashedPassword, role: 'faculty',
-            facultyId, department, verified: true
-        });
-        await newFac.save();
-        res.status(201).json({ message: "Faculty Added" });
-    } catch(err) { res.status(500).json({ message: err.message }); }
+        const pass = await bcrypt.hash("password123", 10);
+        await new User({ _id: email, name, email, passwordHash: pass, role: 'faculty', facultyId, department }).save();
+        res.status(201).json({message:"Faculty Added"});
+    } catch(e){ res.status(500).json({message:e.message}); }
 });
-
-app.delete('/api/users/:id', async (req, res) => {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
-});
-app.delete('/api/faculty/:id', async (req, res) => {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
-});
-
+app.delete('/api/faculty/:id', async(req,res) => { await User.findByIdAndDelete(req.params.id); res.json({message:"Deleted"}); });
+app.get('/api/users', async(req,res) => res.json(await User.find({})));
+app.delete('/api/users/:id', async(req,res) => { await User.findByIdAndDelete(req.params.id); res.json({message:"Deleted"}); });
 
 // =================================================================
-// 3. TIMETABLE GENERATION
+// TIMETABLE GENERATION
 // =================================================================
 
 app.post('/api/timetable/generate', async (req, res) => {
-    if (!db) return res.status(500).json({ message: "Database not connected yet." });
+    if (!db) return res.status(500).json({ message: "DB not ready" });
     try {
         const data = await generateAndSaveTimetable(db);
-        res.status(201).json({ message: "Timetable Published!", data });
-    } catch (err) { 
-        console.error(err);
-        res.status(500).json({ message: "Generation Failed: " + err.message }); 
-    }
+        res.status(201).json({ message: "Published", data });
+    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 app.get('/api/timetable', async (req, res) => {
-    if (!db) return res.status(500).json({ message: "Database not connected yet." });
+    if (!db) return res.status(500).json({ message: "DB not ready" });
     const doc = await db.collection('timetables').findOne({ _id: 'main' });
     res.json(doc || { data: {} });
 });
@@ -285,8 +213,9 @@ app.get('/api/timetable/section/:id', async (req, res) => {
         filtered[day] = {};
         for (const time in main.data[day]) {
             const slots = main.data[day][time] || [];
-            const match = slots.find(s => s.section === req.params.id);
-            if (match) filtered[day][time] = [match];
+            // Matches Exact Section (CSE-5A) OR Batch (CSE-5A-B1)
+            const matches = slots.filter(s => s.section === req.params.id || (s.batch && s.batch.startsWith(req.params.id)));
+            if (matches.length > 0) filtered[day][time] = matches;
         }
     }
     res.json({ data: filtered });
@@ -296,7 +225,7 @@ app.get('/api/timetable/faculty/:id', async (req, res) => {
     if (!db) return res.json({ data: {} });
     const main = await db.collection('timetables').findOne({ _id: 'main' });
     if (!main) return res.json({ data: {} });
-
+    
     const user = await User.findOne({ $or: [{ _id: req.params.id }, { facultyId: req.params.id }] });
     const nameToFind = user ? user.name : req.params.id;
 
@@ -312,15 +241,11 @@ app.get('/api/timetable/faculty/:id', async (req, res) => {
     res.json({ data: filtered });
 });
 
-// 4. SERVE FRONTEND
+// Serve Frontend
 app.use(express.static(path.join(__dirname, '../front-end')));
-
 app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, '../front-end/login.html'));
-    } else {
-        res.status(404).json({ message: "Endpoint not found" });
-    }
+    if(!req.path.startsWith('/api')) res.sendFile(path.join(__dirname, '../front-end/login.html'));
+    else res.status(404).json({message:"API Not Found"});
 });
 
-app.listen(port, () => { console.log(`✅ Server running at http://localhost:${port}`); });
+app.listen(port, () => { console.log(`✅ Server running on ${port}`); });

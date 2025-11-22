@@ -10,23 +10,81 @@
 <body class="settings-page admin-page shared-page">
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header"><h2>Academa</h2></div>
+            <div class="sidebar-header">
+                <h2>Academa</h2>
+            </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item-admin"><a href="dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-faculty"><a href="faculty-dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-student"><a href="student-dashboard.html">🏠 <span>Dashboard</span></a></li>
-                    <li class="nav-item-shared"><a href="index.html">📅 <span>Timetable</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-faculty">
+                        <a href="faculty-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-student">
+                        <a href="student-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item-shared">
+                        <a href="index.html">
+                            <span class="icon">📅</span>
+                            <span class="text">Timetable</span>
+                        </a>
+                    </li>
+
                     <li class="nav-item-admin nav-divider"></li>
-                    <li class="nav-item-admin"><a href="courses.html">📚 <span>Courses</span></a></li>
-                    <li class="nav-item-admin"><a href="faculty.html">👨‍🏫 <span>Faculty</span></a></li>
-                    <li class="nav-item-admin"><a href="rooms.html">🏢 <span>Rooms</span></a></li>
-                    <li class="nav-item-admin"><a href="sections.html">👥 <span>Sections</span></a></li>
-                    <li class="nav-item-admin"><a href="users.html">👤 <span>Users</span></a></li>
+                    <li class="nav-item-admin">
+                        <a href="courses.html">
+                            <span class="icon">📚</span>
+                            <span class="text">Courses</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="faculty.html">
+                            <span class="icon">👨‍🏫</span>
+                            <span class="text">Faculty</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="rooms.html">
+                            <span class="icon">🏢</span>
+                            <span class="text">Rooms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="sections.html">
+                            <span class="icon">👥</span>
+                            <span class="text">Sections</span>
+                        </a>
+                    </li>
+                    <li class="nav-item-admin">
+                        <a href="users.html">
+                            <span class="icon">👤</span>
+                            <span class="text">Users</span>
+                        </a>
+                    </li>
+                    
                     <li class="nav-item-admin nav-divider"></li>
-                    <li class="nav-item-admin"><a href="settings.html" class="active-settings">⚙️ <span>Settings</span></a></li>
+                    
+                    <li class="nav-item-admin">
+                        <a href="settings.html" class="active-settings">
+                            <span class="icon">⚙️</span>
+                            <span class="text">Settings</span>
+                        </a>
+                    </li>
                 </ul>
-                <ul class="logout-ul"><li><a href="#" id="logoutBtn">🚪 <span>Logout</span></a></li></ul>
+                <ul class="logout-ul">
+                    <li><a href="#" id="logoutBtn"><span class="icon">🚪</span><span class="text">Logout</span></a></li>
+                </ul>
             </nav>
         </aside>
 
@@ -43,11 +101,12 @@
             </header>
 
             <section style="max-width: 600px; margin: 0 auto;">
-                <div class="live-status-container" style="background: var(--color-bg-content);">
-                    <h3>General Configuration</h3>
+                <div class="live-status-container" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color);">
+                    <h3 style="color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">General Configuration</h3>
+                    
                     <div class="form-group">
                         <label>University Name</label>
-                        <input type="text" value="SJB Institute of Technology" disabled>
+                        <input type="text" value="SJB Institute of Technology" disabled style="cursor: not-allowed; opacity: 0.7;">
                     </div>
                     <div class="form-group">
                         <label>Academic Year</label>
@@ -57,21 +116,21 @@
                         </select>
                     </div>
                     
-                    <h3 style="margin-top: 30px;">Timetable Rules</h3>
+                    <h3 style="margin-top: 30px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">Timetable Rules</h3>
                     <div class="form-group">
                         <label>Slots Per Day</label>
-                        <input type="number" value="7" disabled>
+                        <input type="number" value="7" disabled style="cursor: not-allowed; opacity: 0.7;">
                     </div>
                     <div class="form-group">
                         <label>Wednesday Half-Day?</label>
-                        <select disabled>
+                        <select disabled style="cursor: not-allowed; opacity: 0.7;">
                             <option selected>Yes</option>
                             <option>No</option>
                         </select>
                     </div>
                     
-                    <div style="text-align: right; margin-top: 20px;">
-                        <button class="action-btn publish-btn">Save Changes</button>
+                    <div style="text-align: right; margin-top: 30px;">
+                        <button class="action-btn publish-btn" onclick="alert('Settings Saved!')">Save Changes</button>
                     </div>
                 </div>
             </section>

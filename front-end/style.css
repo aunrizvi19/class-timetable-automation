@@ -259,12 +259,14 @@ ul { list-style: none; }
     font-size: 1rem;
     transition: all 0.2s;
     background: #f8fafc;
+    color: #333333;
 }
 
 .auth-form input:focus, .auth-form select:focus {
     border-color: var(--color-primary);
     background: white;
     outline: none;
+    color: #000000;
 }
 
 .auth-btn {

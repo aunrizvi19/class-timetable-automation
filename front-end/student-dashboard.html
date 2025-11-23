@@ -91,15 +91,38 @@
                 </div>
             </div>
 
-            <div class="timetable-container">
-                <h3 style="margin-bottom: 15px; color: var(--color-gray);">Weekly Schedule</h3>
-                <table class="timetable-grid">
-                    <thead>
-                        <tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
-                    </thead>
-                    <tbody id="studentTimetableBody"></tbody>
-                </table>
-            </div>
+           <div class="timetable-container">
+    <div class="timetable-header">
+        <h2>Weekly Schedule</h2>
+        <div class="filters">
+            <select id="year-select" class="filter-select">
+                <option value="all">All Years</option>
+            </select>
+            <select id="semester-select" class="filter-select">
+                <option value="all">All Semesters</option>
+            </select>
+            <button class="action-btn generate-btn" style="display:none;">Regenerate Timetable</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="timetable-grid">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+</div>
         </main>
     </div>
     <script src="script.js"></script>

@@ -7,103 +7,119 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body class="faculty-page shared-page">
-<div class="container">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Academa</h2>
-        </div>
-        <nav class="sidebar-nav">
-            <ul>
-                <li class="nav-item-admin">
-                    <a href="dashboard.html">
-                        <span class="icon">🏠</span>
-                        <span class="text">Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item-faculty">
-                    <a href="faculty-dashboard.html" class="active-dashboard">
-                        <span class="icon">🏠</span>
-                        <span class="text">Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item-student">
-                    <a href="student-dashboard.html">
-                        <span class="icon">🏠</span>
-                        <span class="text">Dashboard</span>
-                    </a>
-                </li>
-
-                <li class="nav-item-shared">
-                    <a href="index.html">
-                        <span class="icon">📅</span>
-                        <span class="text">Full Timetable</span>
-                    </a>
-                </li>
-
-                <li class="nav-item-admin nav-divider"></li>
-                <li class="nav-item-admin"><a href="courses.html"><span class="icon">📚</span><span class="text">Courses</span></a></li>
-                <li class="nav-item-admin"><a href="faculty.html"><span class="icon">👨‍🏫</span><span class="text">Faculty</span></a></li>
-                <li class="nav-item-admin"><a href="rooms.html"><span class="icon">🏢</span><span class="text">Rooms</span></a></li>
-                <li class="nav-item-admin"><a href="sections.html"><span class="icon">👥</span><span class="text">Sections</span></a></li>
-                <li class="nav-item-admin"><a href="users.html"><span class="icon">👤</span><span class="text">Users</span></a></li>
-                <li class="nav-item-admin nav-divider"></li>
-                <li class="nav-item-admin"><a href="settings.html"><span class="icon">⚙️</span><span class="text">Settings</span></a></li>
-            </ul>
-            <ul class="logout-ul">
-                <li><a href="#" id="logoutBtn"><span class="icon">🚪</span><span class="text">Logout</span></a></li>
-            </ul>
-        </nav>
-    </aside>
-
-    <main class="main-content">
-        <header class="main-header">
-            <div style="display: flex; align-items: center;">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
-                <h1 class="dashboard-header">Faculty Portal</h1>
+<body class="faculty-page">
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Academa</h2>
             </div>
-            <label class="toggle-switch">
-                <input type="checkbox" id="darkModeToggle">
-                <span class="slider"></span>
-            </label>
-        </header>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item-admin">
+                        <a href="dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
 
-        <div class="live-status-container" style="background: linear-gradient(135deg, #13547a 0%, #80d0c7 100%); color: white;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h2 style="margin: 0; font-size: 2rem; font-weight: 700;" id="liveTime">00:00</h2>
-                    <p style="margin: 5px 0 0 0; opacity: 0.9;" id="liveDate">Loading...</p>
+                    <li class="nav-item-faculty">
+                        <a href="faculty-dashboard.html" class="active-dashboard">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item-student">
+                        <a href="student-dashboard.html">
+                            <span class="icon">🏠</span>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item-shared">
+                        <a href="index.html">
+                            <span class="icon">📅</span>
+                            <span class="text">Full Timetable</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item-admin nav-divider"></li>
+
+                    <li style="margin-top: auto;">
+                        <a href="#" id="logoutBtn">
+                            <span class="icon">🚪</span>
+                            <span class="text">Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <div style="display: flex; align-items: center;">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="dashboard-header">Faculty Portal</h1>
                 </div>
-                <div style="text-align: right;">
-                    <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Current Session</p>
-                    <h3 style="margin: 5px 0 0 0; font-size: 1.5rem;" id="currentClassInfo">Free Slot</h3>
-                    <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;" id="currentRoomInfo">--</p>
+                
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
+            </header>
+
+            <div class="live-status-container" style="background: linear-gradient(135deg, var(--color-secondary) 0%, #4a00e0 100%); color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 2.5rem; font-weight: 700;" id="liveTime">00:00:00</h2>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem;" id="liveDate">Loading Date...</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8;">Upcoming / Current Class</p>
+                        <h3 style="margin: 5px 0 0 0; font-size: 1.4rem;" id="currentClassInfo">No Active Class</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #ffd700;" id="currentRoomInfo"></p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <section class="stats-container">
-            <div class="stat-card">
-                <h3>Department</h3>
-                <p id="facultyDeptStat" style="font-size: 1.5rem;">--</p>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>My Department</h3>
+                    <p id="facultyDeptStat">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Weekly Load</h3>
+                    <p>-- Hours</p>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>Status</h3>
-                <p style="color: var(--color-success); font-size: 1.2rem;">Active Faculty</p>
-            </div>
-        </section>
 
-        <section class="timetable-container">
-            <h3 style="margin-bottom: 15px; color: var(--color-gray);">My Weekly Schedule</h3>
-            <table class="timetable-grid">
-                <thead>
-                    <tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
-                </thead>
-                <tbody id="studentTimetableBody"></tbody>
-            </table>
-        </section>
-    </main>
-</div>
-<script src="script.js"></script>
+            <div class="timetable-container" style="margin-top: 30px;">
+                <div class="timetable-header">
+                    <h2>My Weekly Schedule</h2>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="timetable-grid">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Monday</th>
+                                <th>Tuesday</th>
+                                <th>Wednesday</th>
+                                <th>Thursday</th>
+                                <th>Friday</th>
+                                <th>Saturday</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" style="text-align:center; padding:20px;">Loading your schedule...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>

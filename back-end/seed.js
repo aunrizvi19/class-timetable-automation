@@ -14,62 +14,87 @@ async function seed() {
     console.log("✅ Connected to MongoDB via Mongoose");
 
     // -----------------------------------------
-    // 1. SEED SUBJECTS
+    // 1. SEED SUBJECTS (Updated for 2023 Scheme)
     // -----------------------------------------
+    // NOTE: 'type' must be lowercase ("theory" or "lab") to match Subject Schema
+    
     const subjects = [
-      // 🧮 YEAR 1 - SEM 1
-      { subjectCode: "23MAT11A", name: "Calculus, Differential Equations & Linear Algebra", department: "CSE", year: 1, semester: 1, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23PHI12A", name: "Physics of Applied Science", department: "CSE", year: 1, semester: 1, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23EET13A", name: "Fundamentals of Electrical Engineering", department: "CSE", year: 1, semester: 1, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23MET14A", name: "Essentials of Mechanical Engineering", department: "CSE", year: 1, semester: 1, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CPI15A", name: "Problem Solving Using C", department: "CSE", year: 1, semester: 1, credits: 4, weeklyHours: 4, type: "theory" },
+      // --- YEAR 1: SEMESTER 1 (Physics Cycle) ---
+      { subjectCode: "23MAT11A", name: "Mathematics-I", department: "CSE", year: 1, semester: 1, credits: 4, weeklyHours: 4, type: "theory" },
+      { subjectCode: "23PHI12A", name: "Physics for CSE Stream", department: "CSE", year: 1, semester: 1, credits: 4, weeklyHours: 4, type: "theory" },
+      { subjectCode: "23EET13A", name: "Electrical Engineering", department: "CSE", year: 1, semester: 1, credits: 3, weeklyHours: 3, type: "theory" },
+      { subjectCode: "23MET14A", name: "Mechanical Engineering", department: "CSE", year: 1, semester: 1, credits: 3, weeklyHours: 3, type: "theory" },
+      { subjectCode: "23CPI15A", name: "C Programming (Integrated)", department: "CSE", year: 1, semester: 1, credits: 4, weeklyHours: 5, type: "theory" },
 
-      // 🧮 YEAR 1 - SEM 2
-      { subjectCode: "23MAT21B", name: "Multivariable Calculus & Vector Analysis", department: "CSE", year: 1, semester: 2, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23PHI22B", name: "Physics Laboratory", department: "CSE", year: 1, semester: 2, credits: 2, weeklyHours: 2, type: "lab" },
-      { subjectCode: "23EET23B", name: "Electrical Engineering Laboratory", department: "CSE", year: 1, semester: 2, credits: 2, weeklyHours: 2, type: "lab" },
-      { subjectCode: "23CPI25B", name: "Problem Solving Using C++", department: "CSE", year: 1, semester: 2, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23ENG26B", name: "Technical English", department: "CSE", year: 1, semester: 2, credits: 2, weeklyHours: 2, type: "theory" },
+      // --- YEAR 1: SEMESTER 2 (Chemistry Cycle) ---
+      { subjectCode: "23MAT21A", name: "Mathematics-II", department: "CSE", year: 1, semester: 2, credits: 4, weeklyHours: 4, type: "theory" },
+      { subjectCode: "23CHI22A", name: "Chemistry for CSE Stream", department: "CSE", year: 1, semester: 2, credits: 4, weeklyHours: 4, type: "theory" },
+      { subjectCode: "23ECT23A", name: "Electronics Engineering", department: "CSE", year: 1, semester: 2, credits: 3, weeklyHours: 3, type: "theory" },
+      { subjectCode: "23CVT24A", name: "Civil Engineering", department: "CSE", year: 1, semester: 2, credits: 3, weeklyHours: 3, type: "theory" },
+      { subjectCode: "23CDI25A", name: "CAED (Integrated)", department: "CSE", year: 1, semester: 2, credits: 4, weeklyHours: 5, type: "theory" },
 
-      // 🧮 YEAR 2 - SEM 3
-      { subjectCode: "23CDI301", name: "Discrete Mathematics and Graph Theory", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDT302", name: "Data Structures and its Applications", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDI303", name: "Digital Design & Computer Organization", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDI304", name: "Operating Systems", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDL305", name: "Data Structures Lab", department: "CSE", year: 2, semester: 3, credits: 2, weeklyHours: 2, type: "lab" },
+      // --- YEAR 2: SEMESTER 3 (2023 Scheme) ---
+      // IBSC: Discrete Maths
+      { subjectCode: "23CSI301", name: "Discrete Mathematics & Graph Theory", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 4, type: "theory" },
+      // PCC: Data Structures (Theory)
+      { subjectCode: "23CST302", name: "Data Structures & Applications", department: "CSE", year: 2, semester: 3, credits: 3, weeklyHours: 3, type: "theory" },
+      // IPCC: Logic Design (Theory + Lab)
+      { subjectCode: "23CSI303", name: "Logic Design & Comp. Org", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 5, type: "theory" },
+      // IPCC: OS (Theory + Lab)
+      { subjectCode: "23CSI304", name: "Operating Systems", department: "CSE", year: 2, semester: 3, credits: 4, weeklyHours: 5, type: "theory" },
+      // PCCL: Data Structures Lab
+      { subjectCode: "23CSL305", name: "Data Structures Lab", department: "CSE", year: 2, semester: 3, credits: 1, weeklyHours: 2, type: "lab" },
+      // ETC: Emerging Tech (Using Computer Graphics as default choice)
+      { subjectCode: "23CSE311", name: "Computer Graphics", department: "CSE", year: 2, semester: 3, credits: 3, weeklyHours: 3, type: "theory" },
+      // AEC: Git
+      { subjectCode: "23CSAE31", name: "Version Controller (Git)", department: "CSE", year: 2, semester: 3, credits: 1, weeklyHours: 2, type: "lab" },
 
-      // 🧮 YEAR 2 - SEM 4
-      { subjectCode: "23CDT311", name: "Object Oriented Programming with Java", department: "CSE", year: 2, semester: 4, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDE312", name: "Python Programming for Data Science", department: "CSE", year: 2, semester: 4, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDE313", name: "Data Analytics with R", department: "CSE", year: 2, semester: 4, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDE314", name: "Introduction to Cyber Security", department: "CSE", year: 2, semester: 4, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDL315", name: "Java & Python Lab", department: "CSE", year: 2, semester: 4, credits: 2, weeklyHours: 2, type: "lab" },
+      // --- YEAR 2: SEMESTER 4 (2023 Scheme) ---
+      // BSC: Stats
+      { subjectCode: "23CST401", name: "Probability & Statistical Methods", department: "CSE", year: 2, semester: 4, credits: 3, weeklyHours: 3, type: "theory" },
+      // PCC: DAA
+      { subjectCode: "23CST402", name: "Design & Analysis of Algorithms", department: "CSE", year: 2, semester: 4, credits: 4, weeklyHours: 4, type: "theory" },
+      // IPCC: Java (Theory + Lab)
+      { subjectCode: "23CSI403", name: "OOP with JAVA", department: "CSE", year: 2, semester: 4, credits: 4, weeklyHours: 5, type: "theory" },
+      // IPCC: IoT (Theory + Lab)
+      { subjectCode: "23CSI404", name: "Microcontroller & IoT", department: "CSE", year: 2, semester: 4, credits: 4, weeklyHours: 5, type: "theory" },
+      // PCCL: DAA Lab
+      { subjectCode: "23CSL405", name: "Algorithms Lab", department: "CSE", year: 2, semester: 4, credits: 1, weeklyHours: 2, type: "lab" },
+      // ETC: Multimedia (Default Choice)
+      { subjectCode: "23CSE421", name: "Multimedia Technology", department: "CSE", year: 2, semester: 4, credits: 3, weeklyHours: 3, type: "theory" },
 
-      // 🧮 YEAR 3 - SEM 5
-      { subjectCode: "23CDT401", name: "Probability Distributions & Statistical Methods", department: "CSE", year: 3, semester: 5, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDT402", name: "Analysis & Design of Algorithms", department: "CSE", year: 3, semester: 5, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDI403", name: "Data Science for Engineers", department: "CSE", year: 3, semester: 5, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDI404", name: "Database Management Systems", department: "CSE", year: 3, semester: 5, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDL405", name: "Algorithms Lab", department: "CSE", year: 3, semester: 5, credits: 2, weeklyHours: 2, type: "lab" },
+      // --- YEAR 3: SEMESTER 5 (2023 Scheme) ---
+      // PCC: CN
+      { subjectCode: "23CST501", name: "Computer Networks", department: "CSE", year: 3, semester: 5, credits: 3, weeklyHours: 3, type: "theory" },
+      // IPCC: SE & PM (Theory + Lab)
+      { subjectCode: "23CSI502", name: "Software Engineering & PM", department: "CSE", year: 3, semester: 5, credits: 4, weeklyHours: 5, type: "theory" },
+      // IPCC: DBMS (Theory + Lab)
+      { subjectCode: "23CSI503", name: "Database Management Systems", department: "CSE", year: 3, semester: 5, credits: 4, weeklyHours: 5, type: "theory" },
+      // PCCL: CN Lab
+      { subjectCode: "23CSL504", name: "Computer Networks Lab", department: "CSE", year: 3, semester: 5, credits: 1, weeklyHours: 2, type: "lab" },
+      // PEC: Elective 1 (Unix as default)
+      { subjectCode: "23CSP511", name: "Unix System Programming", department: "CSE", year: 3, semester: 5, credits: 3, weeklyHours: 3, type: "theory" },
+      // ETC: Emerging Tech 3 (DIP as default)
+      { subjectCode: "23CSE531", name: "Digital Image Processing", department: "CSE", year: 3, semester: 5, credits: 3, weeklyHours: 3, type: "theory" },
 
-      // 🧮 YEAR 3 - SEM 6
-      { subjectCode: "23CDT411", name: "Software Engineering", department: "CSE", year: 3, semester: 6, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDT412", name: "Artificial Intelligence", department: "CSE", year: 3, semester: 6, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDI413", name: "Machine Learning", department: "CSE", year: 3, semester: 6, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDL415", name: "ML & AI Lab", department: "CSE", year: 3, semester: 6, credits: 2, weeklyHours: 2, type: "lab" },
+      // --- YEAR 3: SEMESTER 6 (2023 Scheme) ---
+      // PCC: AIML
+      { subjectCode: "23CST601", name: "AI & Machine Learning", department: "CSE", year: 3, semester: 6, credits: 3, weeklyHours: 3, type: "theory" },
+      // IPCC: TOC (Theory + Lab)
+      { subjectCode: "23CSI602", name: "Theory of Computation", department: "CSE", year: 3, semester: 6, credits: 4, weeklyHours: 5, type: "theory" },
+      // PCCL: AIML Lab
+      { subjectCode: "23CSL603", name: "AI & ML Lab", department: "CSE", year: 3, semester: 6, credits: 1, weeklyHours: 2, type: "lab" },
+      // PEC: Elective 2 (C# as default)
+      { subjectCode: "23CSP621", name: "C# and .NET", department: "CSE", year: 3, semester: 6, credits: 3, weeklyHours: 3, type: "theory" },
+      // OEC: Open Elective 1 (Data Structures as default)
+      { subjectCode: "23CSO611", name: "Intro to Data Structures", department: "CSE", year: 3, semester: 6, credits: 3, weeklyHours: 3, type: "theory" },
+      // ETC: Emerging Tech 4 (Computer Vision as default)
+      { subjectCode: "23CSE641", name: "Computer Vision", department: "CSE", year: 3, semester: 6, credits: 3, weeklyHours: 3, type: "theory" },
 
-      // 🧮 YEAR 4 - SEM 7
-      { subjectCode: "23CDE404", name: "Cloud Computing", department: "CSE", year: 4, semester: 7, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDE422", name: "Edge Computing", department: "CSE", year: 4, semester: 7, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDE423", name: "Predictive Analysis", department: "CSE", year: 4, semester: 7, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDE424", name: "Internet of Things", department: "CSE", year: 4, semester: 7, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDL425", name: "IoT & Edge Lab", department: "CSE", year: 4, semester: 7, credits: 2, weeklyHours: 2, type: "lab" },
-
-      // 🧮 YEAR 4 - SEM 8
-      { subjectCode: "23CDT431", name: "Big Data Analytics", department: "CSE", year: 4, semester: 8, credits: 4, weeklyHours: 4, type: "theory" },
-      { subjectCode: "23CDT432", name: "Blockchain Technologies", department: "CSE", year: 4, semester: 8, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDI433", name: "Cyber Physical Systems", department: "CSE", year: 4, semester: 8, credits: 3, weeklyHours: 3, type: "theory" },
-      { subjectCode: "23CDL435", name: "Big Data & Blockchain Lab", department: "CSE", year: 4, semester: 8, credits: 2, weeklyHours: 2, type: "lab" },
+      // --- YEAR 4: SEMESTER 7 (Legacy/Placeholder Scheme) ---
+      { subjectCode: "18CS71", name: "AI & ML (Legacy)", department: "CSE", year: 4, semester: 7, credits: 4, weeklyHours: 4, type: "theory" },
+      { subjectCode: "18CS72", name: "Big Data Analytics", department: "CSE", year: 4, semester: 7, credits: 4, weeklyHours: 4, type: "theory" },
+      { subjectCode: "18CSL76", name: "AI & ML Lab", department: "CSE", year: 4, semester: 7, credits: 2, weeklyHours: 2, type: "lab" },
     ];
 
     // Clear existing and insert
@@ -113,7 +138,7 @@ async function seed() {
       { name: "Mr. Manjunath V", email: "manjunath.v@sjbit.edu.in", role: "faculty", department: "CSE" }
     ];
 
-    // Clear existing users (optional, for clean slate)
+    // Clear existing users
     await User.deleteMany({});
 
     const hash = await bcrypt.hash("password123", 10);
@@ -121,7 +146,7 @@ async function seed() {
     // Insert Faculty
     for (const f of faculty) {
         await User.create({
-            _id: f.email, // Explicitly setting _id as email to match legacy logic
+            _id: f.email, // Explicitly setting _id as email
             name: f.name,
             email: f.email,
             passwordHash: hash,
@@ -147,6 +172,9 @@ async function seed() {
     // -----------------------------------------
     // 3. SEED ROOMS
     // -----------------------------------------
+    // Note: 'type' in Room schema might be flexible, but usually keeping it 
+    // consistent with generator logic (Capitalized 'Lab'/'Lecture') is safer for rooms.
+    // Only Subject schema enforced lowercase strictness.
     const rooms = [
       { name: "CSE Room 101", capacity: 60, floor: 1, type: "Theory" },
       { name: "CSE Room 102", capacity: 60, floor: 1, type: "Theory" },
@@ -166,7 +194,6 @@ async function seed() {
 
     // Clear and Insert Rooms
     await Room.deleteMany({});
-    // We explicitly set _id to name for compatibility with the scheduling logic
     await Room.insertMany(rooms.map(r => ({ ...r, _id: r.name })));
     console.log(`✅ ${rooms.length} rooms added`);
 
@@ -175,15 +202,15 @@ async function seed() {
     // 4. SEED BATCHES
     // -----------------------------------------
     const batches = [
-      { name: "CSE-2A", department: "CSE", year: 2, semester: 3, size: 40 },
-      { name: "CSE-2B", department: "CSE", year: 2, semester: 3, size: 38 },
-      { name: "CSE-2C", department: "CSE", year: 2, semester: 3, size: 39 },
-      { name: "CSE-3A", department: "CSE", year: 3, semester: 5, size: 42 },
-      { name: "CSE-3B", department: "CSE", year: 3, semester: 5, size: 41 },
-      { name: "CSE-3C", department: "CSE", year: 3, semester: 5, size: 40 },
-      { name: "CSE-4A", department: "CSE", year: 4, semester: 7, size: 45 },
-      { name: "CSE-4B", department: "CSE", year: 4, semester: 7, size: 44 },
-      { name: "CSE-4C", department: "CSE", year: 4, semester: 7, size: 43 }
+      { name: "CSE-2A", department: "CSE", year: 2, semester: 3, size: 60 },
+      { name: "CSE-2B", department: "CSE", year: 2, semester: 3, size: 60 },
+      { name: "CSE-2C", department: "CSE", year: 2, semester: 3, size: 60 },
+      { name: "CSE-3A", department: "CSE", year: 3, semester: 5, size: 60 },
+      { name: "CSE-3B", department: "CSE", year: 3, semester: 5, size: 60 },
+      { name: "CSE-3C", department: "CSE", year: 3, semester: 5, size: 60 },
+      { name: "CSE-4A", department: "CSE", year: 4, semester: 7, size: 60 },
+      { name: "CSE-4B", department: "CSE", year: 4, semester: 7, size: 60 },
+      { name: "CSE-4C", department: "CSE", year: 4, semester: 7, size: 60 }
     ];
 
     await Batch.deleteMany({});

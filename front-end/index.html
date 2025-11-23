@@ -106,7 +106,7 @@
                         🖨️ PDF
                     </button>
 
-                    <button class="action-btn generate-btn nav-item-admin" style="background-color: var(--color-success); box-shadow: 0 4px 12px rgba(6, 214, 160, 0.4);">
+                    <button class="action-btn generate-btn nav-item-admin" style="background-color: var(--color-success); box-shadow: 0 4px 12px rgba(6, 214, 160, 0.4); display: none;">
                         🚀 Publish New
                     </button>
 
@@ -118,32 +118,32 @@
             </header>
 
             <div class="filters nav-item-admin" style="margin-top: 0;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Filter Year</label>
-                    <select id="year-select"><option>Loading...</option></select>
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Filter Semester</label>
-                    <select id="semester-select"><option>Loading...</option></select>
+                <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                    <label>Filter View by Semester</label>
+                    <select id="semester-select">
+                        <option value="all">Show All Semesters</option>
+                    </select>
                 </div>
             </div>
 
             <div class="timetable-container">
-                <table class="timetable-grid">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Monday</th>
-                            <th>Tuesday</th>
-                            <th>Wednesday</th>
-                            <th>Thursday</th>
-                            <th>Friday</th>
-                            <th>Saturday</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="timetable-grid">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Monday</th>
+                                <th>Tuesday</th>
+                                <th>Wednesday</th>
+                                <th>Thursday</th>
+                                <th>Friday</th>
+                                <th>Saturday</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
